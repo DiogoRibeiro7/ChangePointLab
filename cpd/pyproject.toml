@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "wp-cpd"
+version = "0.1.0"
+description = "Within-period changepoint detection (RJMCMC + PT) with plotting and CSV loader"
+license = "MIT"
+readme = "README.md"
+authors = ["Maintainers <maintainers@example.com>"]
+
+# If your modules live at the repo root (e.g., within_period_cpd.py, cli.py, ...),
+# Poetry still exposes the console script in editable installs.
+# If you later move code under a package dir, update this to the new import path.
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+numpy = "^1.26"
+matplotlib = "^3.8"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.10"
+ruff = "^0.5"
+
+[tool.poetry.scripts]
+wp-cpd = "cli:main"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "I"]
