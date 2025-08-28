@@ -1,38 +1,85 @@
-[tool.poetry]
-name = "wp-cpd"
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cp-ss-toolkit"
 version = "0.1.0"
-description = "Within-period changepoint detection (RJMCMC + PT) with plotting and CSV loader"
-license = "MIT"
+description = "Change-Point & State-Space Toolkit: Bayesian Blocks, E-Divisive, Kernel CPD (PELT), RFF CPD, SD-HMM, HSMM — NumPy-only implementations."
 readme = "README.md"
-authors = ["Maintainers <maintainers@example.com>"]
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+  { name = "Contributors" }
+]
+keywords = [
+  "changepoint", "change-point", "kernel", "PELT", "Bayesian Blocks", "E-Divisive",
+  "HMM", "HSMM", "RFF", "time-series", "nonparametric"
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+# Minimal runtime deps; matplotlib kept optional via extras
+dependencies = [
+  "numpy>=1.21"
+]
 
-# If your modules live at the repo root (e.g., within_period_cpd.py, cli.py, ...),
-# Poetry still exposes the console script in editable installs.
-# If you later move code under a package dir, update this to the new import path.
+[project.optional-dependencies]
+plot = ["matplotlib>=3.3"]
+dev = [
+  "pytest>=7",
+  "ruff>=0.3",
+  "mypy>=1.6",
+  "types-setuptools"
+]
 
-[tool.poetry.dependencies]
-python = ">=3.10,<3.13"
-numpy = "^1.26"
-matplotlib = "^3.8"
+[project.urls]
+Homepage = "https://example.com/"
+Repository = "https://example.com/repo"
+Issues = "https://example.com/repo/issues"
 
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.10"
-ruff = "^0.5"
+# ---- setuptools config -------------------------------------------------------
+[tool.setuptools]
+# This project is laid out as a collection of single-file modules at the repo root.
+# If you later move code into a package directory, switch to `packages = ["yourpkg"]`.
+py-modules = [
+  "bayesian_blocks",
+  "bb_plotting",
+  "bb_utils",
+  "edivisive",
+  "edivisive_plotting",
+  "kcp",
+  "kcp_plotting",
+  "kcp_rff",
+  "sdhmm",
+  "sdhmm_mix_vi",
+  "hsmm",
+  "gaussian_diag",
+]
+include-package-data = true
 
-[tool.poetry.scripts]
-wp-cpd = "cli:main"
-
-[tool.mypy]
-python_version = "3.10"
-ignore_missing_imports = true
-strict_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_return_any = true
-disallow_untyped_defs = true
-disallow_any_generics = true
-
+# ---- tooling (optional but handy) -------------------------------------------
 [tool.ruff]
 line-length = 100
-target-version = "py310"
-select = ["E", "F", "I"]
+target-version = "py39"
+select = ["E", "F", "I", "B", "UP"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.9"
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+strict_optional = true
+no_implicit_optional = true
+check_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-q"
+python_files = ["test_*.py", "*_test.py"]
