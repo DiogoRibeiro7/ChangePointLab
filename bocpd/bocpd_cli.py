@@ -11,7 +11,7 @@ from typing import Optional
 import numpy as np
 import matplotlib.pyplot as plt
 
-from bocpd import BOCPD, BOCPDConfig, ConstantHazard, ScheduledHazard, BoostedBoundaryHazard
+from bocpd import BOCPD, BOCPDConfig, ConstantHazard, ScheduledHazard, BoostedBoundaryHazard, Hazard
 from bocpd_plotting import plot_run_length_heatmap, plot_cp_probability
 from data_loader import load_binary_from_csv
 
@@ -113,6 +113,7 @@ def main() -> None:
     schedule = _parse_schedule(args.schedule)
     boost_idx = _parse_indices(args.boost_boundary)
 
+    hazard: Hazard
     if schedule is not None:
         if args.period is None:
             raise ValueError("--schedule provided but --period is None")
@@ -125,7 +126,7 @@ def main() -> None:
             raise ValueError("--boost-boundary provided but --period is None")
         hazard = BoostedBoundaryHazard(
             base=hazard,
-            boundaries=set(int(i) for i in boost_idx),
+            boundary_indices=set(int(i) for i in boost_idx),
             period=int(args.period),
             boost_factor=float(args.boost_factor),
         )

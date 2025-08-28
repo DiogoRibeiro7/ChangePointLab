@@ -7,7 +7,7 @@ name = "cp-ss-toolkit"
 version = "0.1.0"
 description = "Change-Point & State-Space Toolkit: Bayesian Blocks, E-Divisive, Kernel CPD (PELT), RFF CPD, SD-HMM, HSMM — NumPy-only implementations."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
   { name = "Contributors" }
@@ -66,12 +66,12 @@ include-package-data = true
 # ---- tooling (optional but handy) -------------------------------------------
 [tool.ruff]
 line-length = 100
-target-version = "py39"
+target-version = "py310"
 select = ["E", "F", "I", "B", "UP"]
 ignore = []
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 warn_unused_ignores = true
 warn_redundant_casts = true
 warn_unreachable = true
