@@ -66,6 +66,169 @@ class BBResult:
         )
 
 
+# ---------------------------------------------------------------------
+# Priors / penalties (from original)
+# ---------------------------------------------------------------------
+
+
+def ncp_prior_from_p0(n: int, p0: float = 0.05) -> float:
+    """
+    Nonconformity (changepoint) prior for Bayesian Blocks from Scargle (2013),
+    calibrated by the desired overall false positive rate p0 for a signal with n cells.
+
+    Returns
+    -------
+    gamma : float
+        Additive penalty per block (i.e., subtracted once per block in the fitness DP).
+
+    Notes
+    -----
+    This is the common analytic approximation used in practice (e.g., astropy):
+        gamma = 4 - log(73.53 * p0 * n**(-0.478))
+    where log is natural log.
+    """
+    if not (0 < p0 < 1):
+        raise ValueError("p0 must be in (0,1).")
+    if n < 1:
+        raise ValueError("n must be >= 1.")
+    return 4.0 - math.log(73.53 * p0 * (n**-0.478))
+
+
+# ---------------------------------------------------------------------
+# Core DP solver (from original but enhanced)
+# ---------------------------------------------------------------------
+
+
+def _dp_solve(
+    *,
+    # cumulative sufficient statistics over "cells" 0..N-1
+    # These must be prefix sums so a block [i, j) uses sums[j] - sums[i].
+    stat_num: ArrayF,  # numerator-like (e.g., counts, successes)
+    stat_den: ArrayF,  # denominator-like (e.g., exposure, trials); for Bernoulli this is "trials"
+    fitness_per_block: Callable[[float, float], float],  # f(num, den) -> scalar
+    gamma: float,
+) -> Tuple[ArrayI, ArrayI, ArrayF]:
+    """
+    Generic O(N^2) dynamic program for Bayesian Blocks.
+
+    Parameters
+    ----------
+    stat_num : prefix sum of numerators, shape (N+1,)
+    stat_den : prefix sum of denominators, shape (N+1,)
+    fitness_per_block : function on block totals (num, den)
+    gamma : additive penalty per block
+
+    Returns
+    -------
+    last : ArrayI
+        Backpointers: last[j] = argmax i
+    cp : ArrayI
+        List of changepoints in cell index (right-exclusive), reconstructed.
+    opt : ArrayF
+        DP objective F[j] (max fitness up to cell j)
+    """
+    Np = int(stat_num.size)
+    if stat_den.size != Np:
+        raise ValueError(
+            "stat_num and stat_den must have the same length (prefix arrays)."
+        )
+    if Np < 2:
+        # nothing to segment
+        return (
+            np.array([], dtype=np.int64),
+            np.array([], dtype=np.int64),
+            np.zeros(1, dtype=float),
+        )
+
+    N = Np - 1  # number of cells
+
+    # DP arrays: opt[j] = best fitness up to j; last[j] = argmax i for j
+    opt = np.empty(N + 1, dtype=float)
+    last = np.empty(N + 1, dtype=np.int64)
+    # base case: no cells -> 0 (we apply -gamma inside transitions so m*gamma overall)
+    opt[0] = 0.0
+    last[0] = -1
+
+    for j in range(1, N + 1):
+        # Try all possible starts i in [0, j)
+        # Block totals:
+        num = stat_num[j] - stat_num[:j]  # shape (j,)
+        den = stat_den[j] - stat_den[:j]  # shape (j,)
+        # Fitness for each candidate block [i, j)
+        fit = np.fromiter(
+            (fitness_per_block(nu, de) for nu, de in zip(num, den)),
+            count=j,
+            dtype=float,
+        )
+        # Total objective if last change at i: opt[i] + fit(i->j) - gamma
+        total = opt[:j] + fit - gamma
+        i_star = int(np.argmax(total))
+        opt[j] = float(total[i_star])
+        last[j] = i_star
+
+    # Reconstruct change points by backtracking
+    cps: List[int] = []
+    j = N
+    while j > 0:
+        i = int(last[j])
+        if i == 0:
+            cps.append(j)
+            break
+        cps.append(j)
+        j = i
+    cps = list(reversed(cps))
+
+    return last, np.asarray(cps, dtype=np.int64), opt
+
+
+# ---------------------------------------------------------------------
+# Fitness functions (from original)
+# ---------------------------------------------------------------------
+
+
+def _fit_poisson(num: float, den: float) -> float:
+    """
+    Poisson process / counts:
+      num = total counts in block (k),
+      den = total exposure/width in block (T),
+      fitness = k * (log k - log T), with convention 0*log(0/T) := 0.
+    """
+    if den <= 0:
+        return -np.inf
+    if num <= 0:
+        return 0.0
+    return num * (math.log(num) - math.log(den))
+
+
+def _fit_bernoulli(success: float, trials: float) -> float:
+    """
+    Bernoulli/Binomial:
+      success = # successes in block (s),
+      trials  = # trials in block (n >= s),
+      fitness = s*log(s/n) + (n-s)*log(1 - s/n), with 0*log 0 := 0.
+
+    Note: we omit the binomial coefficient log C(n, s) since it's constant w.r.t the
+    parameter and standard in Bayesian Blocks to drop parameter-independent terms.
+    """
+    if trials <= 0:
+        return -np.inf
+    s = success
+    n = trials
+    if s <= 0 or s >= n:
+        # handle edge cases; use limits s->0 or s->n
+        if s <= 0:
+            return n * math.log(max(1.0 - 1e-16, 1.0))  # -> 0
+        else:
+            return n * math.log(1e-16)  # ~ -inf, but this path is uncommon
+    p = s / n
+    return s * math.log(p) + (n - s) * math.log(1.0 - p)
+
+
+# ---------------------------------------------------------------------
+# Input validation utilities
+# ---------------------------------------------------------------------
+
+
 def _validate_input_array(
     arr: Sequence,
     name: str,
@@ -82,8 +245,7 @@ def _validate_input_array(
         raise ValueError(f"{name} must be 1-dimensional, got shape {arr.shape}")
 
     if arr.size == 0:
-        warnings.warn(f"{name} is empty, returning empty result")
-        return arr
+        return arr  # Allow empty arrays
 
     if min_val is not None and np.any(arr < min_val):
         raise ValueError(f"All values in {name} must be >= {min_val}")
@@ -97,98 +259,259 @@ def _validate_input_array(
     return arr
 
 
-def _optimized_dp_solve(
-    stat_num: ArrayF,
-    stat_den: ArrayF,
-    fitness_func: Callable[[ArrayF, ArrayF], ArrayF],
-    gamma: float,
-    min_block_size: int = 1,
-) -> Tuple[ArrayI, ArrayI, ArrayF]:
-    """
-    Optimized O(N^2) DP with vectorized operations and memory efficiency.
-    """
-    N = len(stat_num) - 1
-    if N < min_block_size:
-        return np.array([], dtype=np.int64), np.array([], dtype=np.int64), np.zeros(1)
-
-    # Pre-allocate arrays
-    opt = np.empty(N + 1, dtype=float)
-    last = np.empty(N + 1, dtype=np.int64)
-    opt[0] = 0.0
-    last[0] = -1
-
-    # Vectorized computation of all pairwise block statistics
-    # This is the key optimization - compute all at once instead of in nested loops
-    for j in range(1, N + 1):
-        # Ensure minimum block size constraint
-        start_idx = max(0, j - (N // min_block_size) if min_block_size > 1 else 0)
-
-        # Vectorized block totals for all possible starting points
-        i_range = np.arange(start_idx, j)
-        if len(i_range) == 0:
-            continue
-
-        # Block statistics
-        block_num = stat_num[j] - stat_num[i_range]
-        block_den = stat_den[j] - stat_den[i_range]
-
-        # Vectorized fitness computation
-        fitness_vals = fitness_func(block_num, block_den)
-
-        # Total objective including previous optimal and penalty
-        total_obj = opt[i_range] + fitness_vals - gamma
-
-        # Find optimal predecessor
-        best_idx = np.argmax(total_obj)
-        opt[j] = total_obj[best_idx]
-        last[j] = i_range[best_idx]
-
-    # Backtrack to find changepoints
-    changepoints = []
-    j = N
-    while j > 0 and last[j] >= 0:
-        if last[j] == 0:
-            changepoints.append(j)
-            break
-        changepoints.append(j)
-        j = last[j]
-
-    changepoints = np.array(list(reversed(changepoints)), dtype=np.int64)
-    return last, changepoints, opt
+# ---------------------------------------------------------------------
+# Individual algorithm implementations (FIXED)
+# ---------------------------------------------------------------------
 
 
-def _vectorized_poisson_fitness(num: ArrayF, den: ArrayF) -> ArrayF:
-    """Vectorized Poisson fitness computation with proper handling of edge cases."""
-    with np.errstate(divide="ignore", invalid="ignore"):
-        # Handle the case where num = 0
-        result = np.where(
-            (den <= 0),
-            -np.inf,
-            np.where((num <= 0), 0.0, num * (np.log(num) - np.log(den))),
+def _bayesian_blocks_events(data, config: BBConfig, **kwargs) -> BBResult:
+    """Enhanced events algorithm with better parameter handling."""
+    t = _validate_input_array(data, "event times")
+
+    if t.size == 0:
+        return BBResult(
+            edges=np.array([], dtype=float),
+            block_value=np.array([], dtype=float),
+            change_points=np.array([], dtype=np.int64),
+            config=config,
         )
-    return result
+
+    # Extract additional parameters
+    t_start = kwargs.get("t_start", None)
+    t_stop = kwargs.get("t_stop", None)
+
+    t = np.sort(t)
+
+    # Build event-cell edges (Voronoi): midpoints between events; clip/extend at t_start/t_stop.
+    edges = np.empty(t.size + 1, dtype=float)
+    edges[1:-1] = 0.5 * (t[:-1] + t[1:])
+    edges[0] = t[0] - 0.5 * (t[1] - t[0]) if t.size > 1 else t[0] - 0.5
+    edges[-1] = t[-1] + 0.5 * (t[-1] - t[-2]) if t.size > 1 else t[-1] + 0.5
+
+    if t_start is not None:
+        edges[0] = float(t_start)
+    if t_stop is not None:
+        edges[-1] = float(t_stop)
+
+    # Each event defines one "cell": count=1, exposure = cell width
+    widths = np.diff(edges)  # (N,)
+    counts = np.ones(t.size, dtype=float)  # (N,)
+
+    # Prefix sums
+    K = np.concatenate([[0.0], np.cumsum(counts)])  # counts
+    T = np.concatenate([[0.0], np.cumsum(widths)])  # exposures
+
+    # Penalty
+    gamma = config.gamma
+    if gamma is None and config.p0 is not None:
+        gamma = ncp_prior_from_p0(len(counts), config.p0)
+    elif gamma is None:
+        gamma = 0.0
+
+    # Solve
+    last, cps, opt = _dp_solve(
+        stat_num=K, stat_den=T, fitness_per_block=_fit_poisson, gamma=gamma
+    )
+
+    if len(cps) == 0:
+        # Single block case
+        cp_edges = np.array([edges[0], edges[-1]])
+        rates = np.array([K[-1] / T[-1]] if T[-1] > 0 else [0.0])
+        final_cps = np.array([], dtype=np.int64)
+    else:
+        # Build final block edges and rates
+        cp_edges = np.concatenate([[edges[0]], edges[cps]])
+        if cp_edges[-1] != edges[-1]:
+            cp_edges = np.concatenate([cp_edges, [edges[-1]]])
+
+        # Per-block MLE rates
+        block_indices = np.concatenate([[0], cps, [len(counts)]])
+        block_counts = np.diff(K[block_indices])
+        block_exposure = np.diff(T[block_indices])
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            rates = np.where(block_exposure > 0, block_counts / block_exposure, 0.0)
+
+        final_cps = cps
+
+    return BBResult(
+        edges=cp_edges,
+        block_value=rates,
+        change_points=final_cps,
+        log_likelihood=opt[-1] if len(opt) > 0 else 0.0,
+        config=config,
+    )
 
 
-def _vectorized_bernoulli_fitness(success: ArrayF, trials: ArrayF) -> ArrayF:
-    """Vectorized Bernoulli fitness with numerical stability."""
-    with np.errstate(divide="ignore", invalid="ignore"):
-        p = success / trials
-        # Clamp p to avoid log(0)
-        p_safe = np.clip(p, 1e-16, 1 - 1e-16)
-        result = np.where(
-            (trials <= 0),
-            -np.inf,
-            np.where(
-                (success <= 0),
-                trials * np.log(1 - p_safe),
-                np.where(
-                    (success >= trials),
-                    trials * np.log(p_safe),
-                    success * np.log(p_safe) + (trials - success) * np.log(1 - p_safe),
-                ),
-            ),
+def _bayesian_blocks_counts(data, config: BBConfig, **kwargs) -> BBResult:
+    """Enhanced counts algorithm."""
+    if isinstance(data, tuple) and len(data) == 2:
+        counts, widths = data
+    else:
+        counts = data
+        widths = kwargs.get("widths", None)
+
+    c = _validate_input_array(counts, "counts", min_val=0)
+
+    if c.size == 0:
+        return BBResult(
+            edges=np.array([], dtype=float),
+            block_value=np.array([], dtype=float),
+            change_points=np.array([], dtype=np.int64),
+            config=config,
         )
-    return result
+
+    N = c.size
+    if widths is None:
+        w = np.ones(N, dtype=float)
+    else:
+        w = _validate_input_array(widths, "widths", min_val=1e-16)
+        if w.shape != c.shape:
+            raise ValueError("widths must match counts shape")
+
+    K = np.concatenate([[0.0], np.cumsum(c)])
+    T = np.concatenate([[0.0], np.cumsum(w)])
+
+    # Penalty
+    gamma = config.gamma
+    if gamma is None and config.p0 is not None:
+        gamma = ncp_prior_from_p0(N, config.p0)
+    elif gamma is None:
+        gamma = 0.0
+
+    last, cps, opt = _dp_solve(
+        stat_num=K, stat_den=T, fitness_per_block=_fit_poisson, gamma=gamma
+    )
+
+    # Build edges (bin indices) and block rates
+    if len(cps) == 0:
+        edges = np.array([0, N], dtype=float)
+        rates = np.array([K[-1] / T[-1]] if T[-1] > 0 else [0.0])
+        final_cps = np.array([], dtype=np.int64)
+    else:
+        edges = np.array([0, *cps.tolist(), N], dtype=float)
+        block_indices = np.concatenate([[0], cps, [N]])
+        block_counts = np.diff(K[block_indices])
+        block_exposure = np.diff(T[block_indices])
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            rates = np.where(block_exposure > 0, block_counts / block_exposure, 0.0)
+
+        final_cps = cps
+
+    return BBResult(
+        edges=edges,
+        block_value=rates,
+        change_points=final_cps,
+        log_likelihood=opt[-1] if len(opt) > 0 else 0.0,
+        config=config,
+    )
+
+
+def _bayesian_blocks_bernoulli(data, config: BBConfig, **kwargs) -> BBResult:
+    """Enhanced Bernoulli algorithm."""
+    if isinstance(data, tuple) and len(data) == 2:
+        successes, trials = data
+    else:
+        successes = data
+        trials = kwargs.get("trials", None)
+
+    s = _validate_input_array(successes, "successes", min_val=0)
+
+    if s.size == 0:
+        return BBResult(
+            edges=np.array([], dtype=float),
+            block_value=np.array([], dtype=float),
+            change_points=np.array([], dtype=np.int64),
+            config=config,
+        )
+
+    N = s.size
+    if trials is None:
+        n = np.ones(N, dtype=float)
+    else:
+        n = _validate_input_array(trials, "trials", min_val=1e-16)
+        if n.shape != s.shape:
+            raise ValueError("trials must match successes shape")
+        if np.any(s > n):
+            raise ValueError("successes must be <= trials")
+
+    S = np.concatenate([[0.0], np.cumsum(s)])
+    Ntr = np.concatenate([[0.0], np.cumsum(n)])
+
+    # Penalty
+    gamma = config.gamma
+    if gamma is None and config.p0 is not None:
+        gamma = ncp_prior_from_p0(N, config.p0)
+    elif gamma is None:
+        gamma = 0.0
+
+    last, cps, opt = _dp_solve(
+        stat_num=S, stat_den=Ntr, fitness_per_block=_fit_bernoulli, gamma=gamma
+    )
+
+    if len(cps) == 0:
+        edges = np.array([0, N], dtype=float)
+        p_hat = np.array([S[-1] / Ntr[-1]] if Ntr[-1] > 0 else [0.0])
+        final_cps = np.array([], dtype=np.int64)
+    else:
+        edges = np.array([0, *cps.tolist(), N], dtype=float)
+        block_indices = np.concatenate([[0], cps, [N]])
+        block_succ = np.diff(S[block_indices])
+        block_trials = np.diff(Ntr[block_indices])
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            p_hat = np.where(block_trials > 0, block_succ / block_trials, 0.0)
+
+        final_cps = cps
+
+    return BBResult(
+        edges=edges,
+        block_value=p_hat,
+        change_points=final_cps,
+        log_likelihood=opt[-1] if len(opt) > 0 else 0.0,
+        config=config,
+    )
+
+
+# ---------------------------------------------------------------------
+# Data type detection
+# ---------------------------------------------------------------------
+
+
+def _detect_data_type(data) -> DataType:
+    """Attempt to automatically detect the data type."""
+    if isinstance(data, tuple) and len(data) == 2:
+        # Tuple input suggests either (counts, widths) or (successes, trials)
+        arr1, arr2 = data
+        arr1, arr2 = np.asarray(arr1), np.asarray(arr2)
+
+        # If second array is all 1s, likely (successes, trials) with trials=1
+        if np.all(arr2 == 1):
+            return DataType.BERNOULLI
+        # If first array <= second array and all integers, likely Bernoulli
+        elif np.all(arr1 <= arr2) and np.all(arr1 == arr1.astype(int)):
+            return DataType.BERNOULLI
+        else:
+            return DataType.COUNTS
+    else:
+        # Single array - need to distinguish between events, counts, and binary
+        arr = np.asarray(data)
+
+        # If all 0s and 1s, likely binary
+        if np.all(np.isin(arr, [0, 1])):
+            return DataType.BERNOULLI
+        # If all non-negative integers, likely counts
+        elif np.all(arr >= 0) and np.all(arr == arr.astype(int)):
+            return DataType.COUNTS
+        # Otherwise assume continuous event times
+        else:
+            return DataType.EVENTS
+
+
+# ---------------------------------------------------------------------
+# Unified API
+# ---------------------------------------------------------------------
 
 
 def bayesian_blocks(
@@ -255,64 +578,98 @@ def bayesian_blocks(
         raise ValueError(f"Unsupported data_type: {data_type}")
 
 
-def _detect_data_type(data) -> DataType:
-    """Attempt to automatically detect the data type."""
-    if isinstance(data, tuple) and len(data) == 2:
-        # Tuple input suggests either (counts, widths) or (successes, trials)
-        arr1, arr2 = data
-        arr1, arr2 = np.asarray(arr1), np.asarray(arr2)
-
-        # If second array is all 1s, likely (successes, trials) with trials=1
-        if np.all(arr2 == 1):
-            return DataType.BERNOULLI
-        # If first array <= second array and all integers, likely Bernoulli
-        elif np.all(arr1 <= arr2) and np.all(arr1 == arr1.astype(int)):
-            return DataType.BERNOULLI
-        else:
-            return DataType.COUNTS
-    else:
-        # Single array - need to distinguish between events, counts, and binary
-        arr = np.asarray(data)
-
-        # If all 0s and 1s, likely binary
-        if np.all(np.isin(arr, [0, 1])):
-            return DataType.BERNOULLI
-        # If all non-negative integers, likely counts
-        elif np.all(arr >= 0) and np.all(arr == arr.astype(int)):
-            return DataType.COUNTS
-        # Otherwise assume continuous event times
-        else:
-            return DataType.EVENTS
+# ---------------------------------------------------------------------
+# Backward compatibility functions
+# ---------------------------------------------------------------------
 
 
-def _bayesian_blocks_events(data, config: BBConfig, **kwargs) -> BBResult:
-    """Enhanced events algorithm with better parameter handling."""
-    # Implementation would be similar to original but with improved validation
-    # and the optimized DP solver
-    pass  # Placeholder - would implement full algorithm
+def bayesian_blocks_events(
+    t: Sequence[float],
+    *,
+    t_start: Optional[float] = None,
+    t_stop: Optional[float] = None,
+    p0: Optional[float] = 0.05,
+    gamma: Optional[float] = None,
+) -> BBResult:
+    """
+    Bayesian Blocks for **event times** (unbinned Poisson process).
+
+    Parameters
+    ----------
+    t : sequence of floats
+        Sorted or unsorted event timestamps.
+    t_start, t_stop : optional floats
+        Start and stop of observation window. If None, inferred from data using
+        half-interval edges around the min/max event times.
+    p0 : Optional[float], default=0.05
+        Target false positive rate. If provided, overrides `gamma` via the Scargle prior.
+    gamma : Optional[float]
+        Direct penalty per block. Use either p0 or gamma (p0 takes precedence if both set).
+
+    Returns
+    -------
+    BBResult with:
+        edges: breakpoints in time (length = #blocks+1)
+        block_value: MLE rate per block (events per unit time)
+        change_points: indices in the *event-cell* space
+    """
+    config = BBConfig(p0=p0, gamma=gamma)
+    return _bayesian_blocks_events(t, config, t_start=t_start, t_stop=t_stop)
 
 
-def _bayesian_blocks_counts(data, config: BBConfig, **kwargs) -> BBResult:
-    """Enhanced counts algorithm."""
-    pass  # Placeholder
+def bayesian_blocks_counts(
+    counts: Sequence[float],
+    widths: Optional[Sequence[float]] = None,
+    *,
+    p0: Optional[float] = 0.05,
+    gamma: Optional[float] = None,
+) -> BBResult:
+    """
+    Bayesian Blocks for **binned Poisson counts** with per-bin exposure/width.
+
+    Parameters
+    ----------
+    counts : sequence (N,)
+        Count in each bin (non-negative).
+    widths : optional sequence (N,)
+        Exposure/width for each bin (positive). If None, all ones.
+    p0, gamma : as in bayesian_blocks_events (p0 takes precedence if set).
+
+    Returns
+    -------
+    BBResult with:
+        edges: integer bin edges [0..N]
+        block_value: rate per unit exposure within each block
+        change_points: bin indices (right-exclusive)
+    """
+    config = BBConfig(p0=p0, gamma=gamma)
+    return _bayesian_blocks_counts(counts, config, widths=widths)
 
 
-def _bayesian_blocks_bernoulli(data, config: BBConfig, **kwargs) -> BBResult:
-    """Enhanced Bernoulli algorithm."""
-    pass  # Placeholder
+def bayesian_blocks_bernoulli(
+    successes: Sequence[int] | Sequence[float],
+    trials: Optional[Sequence[int] | Sequence[float]] = None,
+    *,
+    p0: Optional[float] = 0.05,
+    gamma: Optional[float] = None,
+) -> BBResult:
+    """
+    Bayesian Blocks for **Bernoulli/Binomial** data: successes out of trials per cell.
 
+    Parameters
+    ----------
+    successes : sequence (N,)
+        Number of successes in each cell (0..trials).
+    trials : sequence (N,), optional
+        Number of trials per cell (>0). If None, all ones (i.e., raw binary stream).
+    p0, gamma : as before (p0 overrides gamma if set).
 
-# Convenience functions for backward compatibility
-def bayesian_blocks_events(t: Sequence[float], **kwargs) -> BBResult:
-    """Backward compatibility wrapper."""
-    return bayesian_blocks(t, data_type="events", **kwargs)
-
-
-def bayesian_blocks_counts(counts: Sequence[float], **kwargs) -> BBResult:
-    """Backward compatibility wrapper."""
-    return bayesian_blocks(counts, data_type="counts", **kwargs)
-
-
-def bayesian_blocks_bernoulli(successes: Sequence, **kwargs) -> BBResult:
-    """Backward compatibility wrapper."""
-    return bayesian_blocks(successes, data_type="bernoulli", **kwargs)
+    Returns
+    -------
+    BBResult with:
+        edges: integer cell edges [0..N]
+        block_value: MLE success probability p̂ per block
+        change_points: cell indices (right-exclusive)
+    """
+    config = BBConfig(p0=p0, gamma=gamma)
+    return _bayesian_blocks_bernoulli(successes, config, trials=trials)

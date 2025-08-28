@@ -613,3 +613,153 @@ def plot_sensitivity_analysis(
 
     plt.tight_layout()
     return fig
+
+
+def plot_blocks_time(
+    *,
+    t_min: float,
+    t_max: float,
+    result: BBResult,
+    ax: Optional[Axes] = None,
+    title: Optional[str] = "Bayesian Blocks (rate over time)",
+) -> Axes:
+    """
+    Step plot of blockwise rate (Poisson) over time.
+    
+    Parameters
+    ----------
+    t_min, t_max : float
+        Time range for plot
+    result : BBResult
+        Result from bayesian_blocks_events
+    ax : Axes, optional
+        Matplotlib axes to plot on
+    title : str, optional
+        Plot title
+        
+    Returns
+    -------
+    Axes
+        The matplotlib axes object
+    """
+    if ax is None:
+        _, ax = plt.subplots(figsize=(10, 3))
+    
+    edges = result.edges
+    vals = result.block_value
+    
+    # Plot horizontal lines for each block
+    for i in range(len(vals)):
+        ax.hlines(vals[i], edges[i], edges[i + 1], linewidth=2, color='blue')
+        ax.vlines(edges[i], 0, vals[i], linestyles="dotted", linewidth=0.8, color='gray')
+    
+    # Final vertical line
+    ax.vlines(edges[-1], 0, vals[-1], linestyles="dotted", linewidth=0.8, color='gray')
+    
+    ax.set_xlim(t_min, t_max)
+    ax.set_ylabel("rate")
+    ax.set_xlabel("time")
+    
+    if title:
+        ax.set_title(title)
+    
+    ax.grid(True, axis="y", alpha=0.3)
+    return ax
+
+
+def plot_blocks_index(
+    *,
+    N: int,
+    result: BBResult,
+    ax: Optional[Axes] = None,
+    title: Optional[str] = "Bayesian Blocks (per-index)",
+    ylabel: str = "value",
+) -> Axes:
+    """
+    Step plot of block values over integer index (counts/bernoulli settings).
+    
+    Parameters
+    ----------
+    N : int
+        Total number of data points
+    result : BBResult
+        Result from bayesian_blocks_counts or bayesian_blocks_bernoulli
+    ax : Axes, optional
+        Matplotlib axes to plot on
+    title : str, optional
+        Plot title
+    ylabel : str, default "value"
+        Y-axis label
+        
+    Returns
+    -------
+    Axes
+        The matplotlib axes object
+    """
+    if ax is None:
+        _, ax = plt.subplots(figsize=(10, 3))
+    
+    edges = result.edges.astype(int)
+    vals = result.block_value
+    
+    # Plot horizontal lines for each block
+    for i in range(len(vals)):
+        ax.hlines(vals[i], edges[i], edges[i + 1], linewidth=2, color='blue')
+        ax.vlines(
+            edges[i],
+            min(vals.min(), 0),
+            max(vals.max(), vals[i]),
+            linestyles="dotted",
+            linewidth=0.8,
+            color='gray'
+        )
+    
+    # Final vertical line
+    ax.vlines(
+        edges[-1],
+        min(vals.min(), 0),
+        max(vals.max(), 0),
+        linestyles="dotted",
+        linewidth=0.8,
+        color='gray'
+    )
+    
+    ax.set_xlim(0, N)
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel("index")
+    
+    if title:
+        ax.set_title(title)
+        
+    ax.grid(True, axis="y", alpha=0.3)
+    return ax
+
+
+# Add these functions to the BBPlotter class as well for consistency
+def _add_compatibility_methods():
+    """Add backward compatibility methods to BBPlotter class."""
+    
+    def plot_time_compat(self, t_min: float, t_max: float, **kwargs) -> Axes:
+        """Compatibility method for time-based plots."""
+        return plot_blocks_time(
+            t_min=t_min, 
+            t_max=t_max, 
+            result=self.result,
+            **kwargs
+        )
+    
+    def plot_index_compat(self, N: int, **kwargs) -> Axes:
+        """Compatibility method for index-based plots.""" 
+        return plot_blocks_index(
+            N=N,
+            result=self.result,
+            **kwargs
+        )
+    
+    # Add methods to BBPlotter class
+    BBPlotter.plot_time = plot_time_compat
+    BBPlotter.plot_index = plot_index_compat
+
+
+# Call this when module is imported
+_add_compatibility_methods()
