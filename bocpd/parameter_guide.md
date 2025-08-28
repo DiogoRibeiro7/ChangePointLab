@@ -31,6 +31,8 @@ The Beta prior parameters control the initial beliefs about the Bernoulli probab
 
 ## Hazard Function Parameters
 
+> **Boundary boosts & saturation.** The boosted hazard is clipped to < 1. Overly large `boost_factor` values can saturate the hazard and blur differences among run-length states. Prefer moderate boosts to preserve contrast.
+
 ### Mean Run Length (for ConstantHazard)
 
 - **Default**: No default, must be specified

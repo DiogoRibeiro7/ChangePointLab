@@ -5,131 +5,140 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, Optional, Sequence, Set
 
 import numpy as np
 from numpy.typing import NDArray
 
+from likelihoods import BetaBernoulli, ConjugateLikelihood
+
+
+# -------------------------- Type aliases ---------------------------
 
 ArrayF = NDArray[np.floating]
 ArrayB = NDArray[np.bool_]
 
 
-# ----------------------------- Hazards ---------------------------------
+# -------------------------- Hazards API ----------------------------
 
 class Hazard:
-    """Abstract hazard: P(changepoint at t | run_length=r, t)."""
+    """Protocol-like base: any object with .prob(r: int, t: int) -> float is a hazard."""
 
-    def prob(self, r: int, t: int) -> float:
+    def prob(self, r: int, t: int) -> float:  # pragma: no cover - interface
         raise NotImplementedError
 
 
 @dataclass(frozen=True)
-class ConstantHazard(Hazard):
+class ConstantHazard:
     """
-    Constant hazard: h = 1 / mean_run_length.
-
-    Parameters
-    ----------
-    mean_run_length : float
-        Expected segment length under the prior.
-    eps : float
-        Numerical clamp for extreme values.
+    Memoryless hazard with mean run length λ: h = 1 / λ.
     """
-    mean_run_length: float
-    eps: float = 1e-12
+    mean_run_length: float = 96.0
 
     def prob(self, r: int, t: int) -> float:
+        if self.mean_run_length <= 0:
+            raise ValueError("mean_run_length must be > 0.")
         h = 1.0 / float(self.mean_run_length)
-        # clip for safety
-        return float(np.clip(h, self.eps, 1.0 - self.eps))
+        # Clamp strictly inside (0,1) to avoid degeneracy
+        return float(np.clip(h, 1e-12, 1.0 - 1e-12))
 
 
 @dataclass(frozen=True)
-class ScheduledHazard(Hazard):
+class ScheduledHazard:
     """
-    Time-of-day (or periodic) scheduled hazard.
+    Periodic hazard schedule: h_t = schedule[t % period].
 
     Parameters
     ----------
-    schedule : Sequence[float]
-        Hazard values for indices 0..N-1. Will be clipped to (eps, 1-eps).
-    period : int
-        Period used as t % period to index into schedule. Must equal len(schedule).
-    eps : float
-        Numerical clamp for extreme values.
+    schedule : 1-D array-like of length == period, entries in (0,1)
+    period   : int > 0
     """
-    schedule: Sequence[float]
+    schedule: ArrayF
     period: int
-    eps: float = 1e-12
 
     def __post_init__(self) -> None:
-        if len(self.schedule) != self.period:
-            raise ValueError("len(schedule) must equal period.")
-        if not (0 < self.eps < 0.5):
-            raise ValueError("eps must be in (0, 0.5).")
+        if self.period <= 0:
+            raise ValueError("period must be > 0")
+        # Ensure numpy array (dataclass is frozen; use object.__setattr__)
+        sched = np.asarray(self.schedule, dtype=float)
+        object.__setattr__(self, "schedule", sched)
+        if sched.ndim != 1 or sched.size != self.period:
+            raise ValueError("schedule must be 1-D with length == period")
+        if not np.all((sched > 0.0) & (sched < 1.0)):
+            raise ValueError("schedule entries must be in (0,1)")
 
     def prob(self, r: int, t: int) -> float:
-        h = float(self.schedule[t % self.period])
-        return float(np.clip(h, self.eps, 1.0 - self.eps))
+        return float(self.schedule[int(t % self.period)])
 
 
 @dataclass(frozen=True)
-class BoostedBoundaryHazard(Hazard):
+class BoostedBoundaryHazard:
     """
-    Wrapper that boosts a base hazard at specific boundary indices (e.g., t % N == 0).
+    Multiply a base hazard by `boost_factor` on chosen boundaries (t % period ∈ boundary_indices),
+    then clip to (0,1) to remain probabilistic.
 
     Parameters
     ----------
-    base : Hazard
-        Base hazard to evaluate first.
-    period : int
-        Period of boundary check (t % period).
-    boundary_indices : set[int]
-        Indices in {0..period-1} where the boost applies.
-    boost_factor : float
-        Multiplier applied to base hazard at the boundary. Final hazard is clipped to (eps, 1-eps).
-    eps : float
-        Numerical clamp.
+    base             : Hazard
+    period           : int > 0
+    boundary_indices : set of ints in {0, ..., period-1}
+    boost_factor     : float > 0 (avoid values that saturate to ~1)
     """
     base: Hazard
     period: int
-    boundary_indices: frozenset[int]
+    boundary_indices: Set[int]
     boost_factor: float = 10.0
-    eps: float = 1e-12
+
+    def __post_init__(self) -> None:
+        if self.period <= 0:
+            raise ValueError("period must be > 0")
+        if self.boost_factor <= 0:
+            raise ValueError("boost_factor must be > 0")
+        # Defensive: ensure indices are valid
+        bad = [i for i in self.boundary_indices if not (0 <= int(i) < self.period)]
+        if bad:
+            raise ValueError(f"boundary_indices out of range for period={self.period}: {bad}")
 
     def prob(self, r: int, t: int) -> float:
-        h = self.base.prob(r, t)
+        h = float(self.base.prob(r, t))
         if (t % self.period) in self.boundary_indices:
-            h = h * self.boost_factor
-        return float(np.clip(h, self.eps, 1.0 - self.eps))
+            h *= self.boost_factor
+        return float(np.clip(h, 1e-12, 1.0 - 1e-12))
 
 
-# ----------------------------- BOCPD core ------------------------------
+# ----------------------- Config & result types ----------------------
 
 @dataclass(frozen=True)
 class BOCPDConfig:
     """
-    Configuration for Beta–Bernoulli BOCPD.
+    Configuration for the BOCPD solver.
 
     Attributes
     ----------
     alpha0, beta0 : float
-        Beta prior hyperparameters (alpha > 0, beta > 0).
+        Beta prior hyperparameters for the Bernoulli likelihood.
     max_run_length : int
-        Truncation for the run-length support r ∈ {0,...,max_run_length}.
-        Complexity is O(T * max_run_length).
+        Maximum run length tracked (posterior vector size is R = max_run_length + 1).
     store_run_length_posterior : bool
-        If True, we store the full run-length posterior over time (for heatmaps).
+        If True, store per-step run-length posterior (for heatmaps).
+    prune_epsilon : float
+        Threshold for tail-pruning tiny probabilities after each update.
+        If prune_relative is True, effective threshold is eps * max(R_next).
+    prune_relative : bool
+        If True, use relative pruning; else use absolute pruning.
+    stabilizer : float
+        Small positive floor used to detect underflow during normalization.
+    top_k : Optional[int]
+        If set, keep only the K largest run-length states (plus r=0) each step.
     """
     alpha0: float = 1.0
     beta0: float = 1.0
     max_run_length: int = 512
     store_run_length_posterior: bool = True
-    # Numerical robustness knobs
     prune_epsilon: float = 1e-6
     prune_relative: bool = True
     stabilizer: float = 1e-300
+    top_k: Optional[int] = None
 
 
 @dataclass
@@ -141,23 +150,25 @@ class BOCPDResult:
     ----------
     cp_prob : ArrayF, shape (T,)
         P(r_t = 0 | x_{1:t}) at each time.
-    map_run_length : NDArray[np.int64], shape (T,)
+    map_run_length : NDArray[np.int_], shape (T,)
         Argmax run-length at each time t.
     pred_mean : ArrayF, shape (T,)
         One-step-ahead predictive mean P(x_t=1 | x_{1:t-1}) before seeing x_t.
-    run_length_posterior : Optional[ArrayF], shape (T, R+1)
+    run_length_posterior : Optional[ArrayF], shape (T, R)
         Posterior over run-length if requested.
     """
     cp_prob: ArrayF
-    map_run_length: NDArray[np.int64]
+    map_run_length: NDArray[np.int_]
     pred_mean: ArrayF
     run_length_posterior: Optional[ArrayF]
 
 
+# ------------------------------ Model ---------------------------------
+
 class BOCPD:
     """
     Bayesian Online Changepoint Detection (Adams & MacKay, 2007) for Bernoulli {0,1} data
-    with Beta(alpha0, beta0) prior (conjugate updates).
+    with a pluggable conjugate likelihood (here: Beta–Bernoulli).
 
     Hazard H(r, t) controls the prior CP probability; use ConstantHazard(λ) for the classic model.
     """
@@ -170,93 +181,31 @@ class BOCPD:
         self.hazard = hazard
         self.cfg = cfg
 
-        # Internal state (set in reset())
-        self.R_prev: ArrayF  # run-length posterior at t-1
-        self.alpha: ArrayF   # Beta alpha for each run-length state (after t-1)
-        self.beta: ArrayF    # Beta beta for each run-length state (after t-1)
-        self.t: int          # time index (processed points)
-        self.normalization_issues_: int = 0  # count of underflow rescales/fallbacks
+        # Number of run-length states (R = max_run_length + 1)
+        self.R: int = int(cfg.max_run_length) + 1
 
-        self.reset()
+        # Run-length posterior at previous step
+        self.R_prev: ArrayF = np.zeros(self.R, dtype=float)
+        self.R_prev[0] = 1.0
+
+        # Conjugate likelihood (Beta–Bernoulli)
+        self.lik: ConjugateLikelihood = BetaBernoulli(cfg.alpha0, cfg.beta0)
+        self.lik.init_stats(self.R)
+
+        # Bookkeeping
+        self.t: int = 0
+        self.normalization_issues_: int = 0  # count of rescale/fallback events
+
+    # ----------------------- Public API -----------------------
 
     def reset(self) -> None:
         """Reset the filter to its prior state."""
-        R = self.cfg.max_run_length
-        self.R_prev = np.zeros(R + 1, dtype=float)
-        self.R_prev[0] = 1.0  # At t=0, run-length=0 with prob 1
-        self.alpha = np.full(R + 1, self.cfg.alpha0, dtype=float)
-        self.beta = np.full(R + 1, self.cfg.beta0, dtype=float)
+        self.R_prev.fill(0.0)
+        self.R_prev[0] = 1.0
+        self.lik = BetaBernoulli(self.cfg.alpha0, self.cfg.beta0)
+        self.lik.init_stats(self.R)
         self.t = 0
         self.normalization_issues_ = 0
-
-    # ---- predictive helpers ----
-
-    def _predictive_mass(self, x_t: int) -> ArrayF:
-        """
-        Predictive likelihood p(x_t | state r) for all run-length states r at time t,
-        using the Beta posterior parameters from t-1.
-        """
-        a = self.alpha
-        b = self.beta
-        # Bernoulli predictive: P(1) = a/(a+b), P(0) = b/(a+b)
-        denom = a + b
-        with np.errstate(divide="ignore", invalid="ignore"):
-            if x_t == 1:
-                pred = a / denom
-            else:
-                pred = b / denom
-        pred = np.nan_to_num(pred, nan=0.5)  # in case of degenerate (shouldn't happen with a,b>0)
-        return pred
-
-    def _mixture_predictive_mean(self) -> float:
-        """
-        One-step predictive mean P(x_t=1 | x_{1:t-1}),
-        mixing over run-length states with R_prev.
-        """
-        a = self.alpha
-        b = self.beta
-        p1 = a / (a + b)
-        return float(np.dot(self.R_prev, p1))
-    
-    def _prune_and_normalize(self, R_next: ArrayF) -> None:
-        """In-place stabilization: rescale if needed, prune tiny mass, and renormalize.
-
-        Protects against underflow when hazards are very small over long stretches.
-        Mirrors tail pruning (Adams & MacKay, 2007, Sec. 2.4) without changing the API.
-        """
-        eps = float(self.cfg.stabilizer)
-        total = float(R_next.sum())
-        if not np.isfinite(total) or total <= eps:
-            # Max-rescale (soft log-sum-exp trick)
-            m = float(R_next.max(initial=0.0))
-            if np.isfinite(m) and m > eps:
-                R_next /= m
-                total = float(R_next.sum())
-            else:
-                # Catastrophic underflow: keep r=0 to avoid spurious CP spikes
-                R_next.fill(0.0)
-                R_next[0] = 1.0
-                self.normalization_issues_ += 1
-                return
-
-        # Normalize onto probability scale before pruning
-        R_next /= total
-
-        # Tail pruning (relative by default)
-        pe = float(self.cfg.prune_epsilon)
-        if pe > 0.0:
-            thr = pe * float(R_next.max()) if self.cfg.prune_relative else pe
-            if thr > 0.0:
-                R_next[R_next < thr] = 0.0
-                total2 = float(R_next.sum())
-                if total2 <= eps:
-                    imax = int(np.argmax(R_next))
-                    R_next.fill(0.0)
-                    R_next[imax] = 1.0
-                    self.normalization_issues_ += 1
-                else:
-                    R_next /= total2
-
 
     def update(self, x_t: int | bool) -> Dict[str, float]:
         """
@@ -270,56 +219,47 @@ class BOCPD:
         Returns
         -------
         dict with keys:
-            "cp_prob" : P(r_t=0 | x_{1:t})
-            "map_run_length" : argmax run-length at time t
-            "pred_mean" : P(x_t=1 | x_{1:t-1})
+            "cp_prob"      : P(r_t=0 | x_{1:t})
+            "map_run_length": argmax run-length at time t
+            "pred_mean"    : P(x_t=1 | x_{1:t-1}) (mixture, before consuming x_t)
         """
-        xt = int(bool(x_t))  # normalize to {0,1}
-        R = self.cfg.max_run_length
+        xi = bool(x_t)
 
-        # Predictive mixture before seeing x_t
-        pred_mean = self._mixture_predictive_mean()
+        # (1) One-step-ahead predictive mean BEFORE consuming x_t
+        state_means: ArrayF = self.lik.predictive_mean()        # shape (R,)
+        pred_mean = float(np.dot(self.R_prev, state_means))     # mixture
 
-        # Predictive by state
-        pred = self._predictive_mass(xt)
+        # (2) Per-state predictive probability for the realized x_t
+        pred: ArrayF = self.lik.predictive_prob(xi)             # shape (R,)
 
-        # Hazard per state at time t
-        H = np.fromiter((self.hazard.prob(r, self.t) for r in range(R + 1)), count=R + 1, dtype=float)
+        # (3) Hazard per state at time t
+        H = np.fromiter((self.hazard.prob(r, self.t) for r in range(self.R)),
+                        count=self.R, dtype=float)
         one_m_H = 1.0 - H
 
-        # Growth: r -> r+1
-        growth = self.R_prev[:-1] * one_m_H[:-1] * pred[:-1]
+        # (4) BOCPD recursion (unnormalized): growth and changepoint mass
+        R_next = np.zeros_like(self.R_prev)
+        if self.R > 1:
+            R_next[1:] = self.R_prev[:-1] * one_m_H[:-1] * pred[:-1]  # growth: r-1 -> r (r>=1)
+        R_next[0] = float(np.sum(self.R_prev * H * pred))             # CP: aggregate to r=0
 
-        # Changepoint: r -> 0
-        cp_mass = np.sum(self.R_prev * H * pred)
-        R_new = np.empty_like(self.R_prev)
-        R_new[0] = cp_mass
-        R_new[1:] = growth
+        # (5) Normalize robustly (underflow guard, tail pruning, optional top-k)
+        self._prune_and_normalize(R_next)
 
-        # Robust normalization with tail pruning
-        self._prune_and_normalize(R_new)
+        # (6) Update sufficient statistics for the likelihood
+        #     Order matters: grow old segments first, then reset r=0.
+        self.lik.update_growth(xi)   # shift r -> r+1 and add x_t
+        self.lik.update_cp(xi)       # set r=0 with prior + x_t
 
-        # Update Beta parameters for next step
-        alpha_new = np.empty_like(self.alpha)
-        beta_new = np.empty_like(self.beta)
-        # Run-length 0: new segment starts with prior then observe x_t
-        alpha_new[0] = self.cfg.alpha0 + xt
-        beta_new[0] = self.cfg.beta0 + (1 - xt)
-        # Growth: r -> r+1 (carry sufficient stats and update with x_t)
-        alpha_new[1:] = self.alpha[:-1] + xt
-        beta_new[1:] = self.beta[:-1] + (1 - xt)
-
-        # Commit
-        self.R_prev = R_new
-        self.alpha = alpha_new
-        self.beta = beta_new
+        # (7) Commit
+        self.R_prev = R_next
         self.t += 1
 
-        # Diagnostics
-        cp_prob = float(R_new[0])
-        map_r = int(np.argmax(R_new))
-
-        return {"cp_prob": cp_prob, "map_run_length": map_r, "pred_mean": pred_mean}
+        return {
+            "cp_prob": float(R_next[0]),
+            "map_run_length": int(np.argmax(R_next)),
+            "pred_mean": pred_mean,
+        }
 
     def run(self, x: Sequence[int | bool]) -> BOCPDResult:
         """
@@ -331,23 +271,84 @@ class BOCPD:
         """
         self.reset()
         T = len(x)
-        R = self.cfg.max_run_length
+
         cp_probs = np.empty(T, dtype=float)
-        map_r = np.empty(T, dtype=np.int64)
+        map_r = np.empty(T, dtype=np.int_)
         pred_means = np.empty(T, dtype=float)
-        R_store = np.empty((T, R + 1), dtype=float) if self.cfg.store_run_length_posterior else None
+        rl_store = np.empty((T, self.R), dtype=float) if self.cfg.store_run_length_posterior else None
 
         for t, val in enumerate(x):
-            res = self.update(val)
-            cp_probs[t] = res["cp_prob"]
-            map_r[t] = res["map_run_length"]
-            pred_means[t] = res["pred_mean"]
-            if R_store is not None:
-                R_store[t, :] = self.R_prev
+            out = self.update(val)
+            cp_probs[t] = out["cp_prob"]
+            map_r[t] = out["map_run_length"]
+            pred_means[t] = out["pred_mean"]
+            if rl_store is not None:
+                rl_store[t, :] = self.R_prev
 
         return BOCPDResult(
             cp_prob=cp_probs,
             map_run_length=map_r,
             pred_mean=pred_means,
-            run_length_posterior=R_store,
+            run_length_posterior=rl_store,
         )
+
+    # ------------------- Numerics & pruning -------------------
+
+    def _prune_and_normalize(self, R_next: ArrayF) -> None:
+        """
+        In-place stabilization: rescale if needed, prune tiny mass, optional top-K,
+        and renormalize. Protects against underflow in long, low-hazard stretches.
+        """
+        eps = float(self.cfg.stabilizer)
+
+        # Rescale if sum underflows
+        total = float(R_next.sum())
+        if not np.isfinite(total) or total <= eps:
+            m = float(R_next.max(initial=0.0))
+            if np.isfinite(m) and m > eps:
+                R_next /= m
+                total = float(R_next.sum())
+            else:
+                # Catastrophic underflow: keep mass at r=0 to avoid spurious spikes
+                R_next.fill(0.0)
+                R_next[0] = 1.0
+                self.normalization_issues_ += 1
+                return
+
+        # First normalize to probability scale
+        R_next /= total
+
+        # Tail pruning (relative to max by default)
+        pe = float(self.cfg.prune_epsilon)
+        if pe > 0.0:
+            thr = pe * float(R_next.max()) if self.cfg.prune_relative else pe
+            if thr > 0.0:
+                R_next[R_next < thr] = 0.0
+                s = float(R_next.sum())
+                if s <= eps:
+                    # If everything got pruned, keep the argmax
+                    i = int(np.argmax(R_next))
+                    R_next.fill(0.0)
+                    R_next[i] = 1.0
+                    self.normalization_issues_ += 1
+                else:
+                    R_next /= s
+
+        # Optional top-K pruning (keep the K largest states + r=0)
+        if self.cfg.top_k is not None:
+            k = int(self.cfg.top_k)
+            if 0 < k < R_next.size:
+                keep = np.argpartition(R_next, -k)[-k:]
+                mask = np.zeros_like(R_next, dtype=bool)
+                mask[keep] = True
+                mask[0] = True  # always preserve r=0
+                R_next[~mask] = 0.0
+                s = float(R_next.sum())
+                if s > eps and np.isfinite(s):
+                    R_next /= s
+                else:
+                    # Degenerate after pruning → keep MAP state
+                    i = int(np.argmax(R_next))
+                    R_next.fill(0.0)
+                    R_next[i] = 1.0
+                    self.normalization_issues_ += 1

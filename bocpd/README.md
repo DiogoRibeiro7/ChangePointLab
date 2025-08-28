@@ -8,9 +8,11 @@ A Python implementation of Bayesian Online Changepoint Detection (BOCPD) specifi
 
 - **Online processing**: Process data points one at a time with constant memory usage
 - **Flexible hazard functions**: Customize how changepoint probability varies over time:
+
   - Constant hazard (classic BOCPD)
   - Time-dependent scheduled hazard (e.g., time-of-day patterns)
   - Boundary-boosted hazard (enhance detection at specific points)
+
 - **Full posterior**: Access the complete run-length posterior distribution
 - **Command-line interface**: Process data from CSV files using the CLI
 - **Visualization tools**: Plot run-length posterior heatmaps and changepoint probabilities
@@ -53,30 +55,38 @@ print(f"Predictive mean at t=30: {result.pred_mean[30]:.4f}")
 
 ## Usage Scenarios
 
-### 1. Event Stream Monitoring
+### DST-safe binning
+
+Use `--timezone Europe/Lisbon` (or your IANA zone). Naive timestamps are tz-localized with `nonexistent='shift_forward'` and `ambiguous='NaT'` (dropped). Bin edges are aligned to local "wall clock" days via `start_hour`. We use left-closed intervals and `include_lowest=True`.
+
+### 1\. Event Stream Monitoring
 
 Detect changes in binary event streams, such as:
+
 - User behavior changes (clicks, conversions)
 - System state transitions (online/offline)
 - Anomaly detection in IoT sensor data (active/inactive)
 
-### 2. Time-of-Day Analysis
+### 2\. Time-of-Day Analysis
 
 Use scheduled hazards to detect changes in diurnal patterns:
+
 - Daily routine changes
 - Shift changes in industrial settings
 - Website traffic pattern shifts
 
-### 3. Online Processing
+### 3\. Online Processing
 
 Process data as it arrives for real-time detection:
+
 - Network traffic monitoring
 - User activity tracking
 - Process control systems
 
-### 4. Offline Analysis
+### 4\. Offline Analysis
 
 Analyze historical data for pattern discovery:
+
 - Post-hoc detection of behavioral changes
 - Identification of seasonal boundaries
 - Research on historical binary time series
@@ -90,6 +100,7 @@ python bocpd_cli.py --csv events.csv --bin-minutes 15 --mean-rl 96 --cp-threshol
 ```
 
 Key parameters:
+
 - `--csv`: Path to CSV file with timestamped events
 - `--bin-minutes`: Minutes per bin for aggregating events
 - `--mean-rl`: Mean run length for constant hazard
@@ -108,6 +119,7 @@ python bocpd_cli.py --demo --days 14 --period 96
 ### Beta-Bernoulli Model
 
 The BOCPD algorithm uses a Beta-Bernoulli model for binary data:
+
 - Prior distribution: Beta(α₀, β₀)
 - Likelihood: Bernoulli(p)
 - Posterior: Beta(α₀ + Σx, β₀ + Σ(1-x))
@@ -115,13 +127,25 @@ The BOCPD algorithm uses a Beta-Bernoulli model for binary data:
 
 ### Hazard Function
 
+## Parameter priors (α₀, β₀)
+
+- **Uniform:** α₀=β₀=1 (default). Balanced shrinkage toward p=0.5.
+- **Jeffreys-like:** α₀=β₀=0.5\. Less shrinkage in the tails; slightly sharper change detection.
+- **Informative:** set α₀,β₀ so that α₀/(α₀+β₀)≈ baseline event rate. Example: baseline 10% → α₀=1, β₀=9.
+
+## Hazard scaling (boundary boost)
+
+`BoostedBoundaryHazard` multiplies a base hazard by `boost_factor` on chosen boundaries, then clips to < 1 to stay probabilistic. If `boost_factor` is too large, values saturate at 1 and you lose contrast across run-lengths. Pick a `boost_factor` that keeps boosted hazards well below 1\. _(Alternative design: add a fixed probability mass before clipping.)_
+
 The hazard function H(r, t) controls the prior probability of a changepoint:
+
 - H(r, t) = P(changepoint at t | run_length = r, t)
 - Classic BOCPD uses constant hazard: H(r, t) = 1/λ
 
 ### Run-Length Distribution
 
 The algorithm maintains a distribution over the current run length:
+
 - r_t = 0: A changepoint just occurred
 - r_t > 0: Time since the last changepoint
 
@@ -138,6 +162,7 @@ model = BOCPD(hazard, cfg=BOCPDConfig())
 ```
 
 Methods:
+
 - `update(x_t)`: Process a single observation
 - `run(x)`: Process a sequence of observations
 - `reset()`: Reset the model to initial state
@@ -164,6 +189,7 @@ result = model.run(x)
 ```
 
 Attributes:
+
 - `cp_prob`: Changepoint probability at each time
 - `map_run_length`: Maximum a posteriori run length
 - `pred_mean`: One-step-ahead predictive mean
@@ -211,6 +237,7 @@ hazard = BoostedBoundaryHazard(
 ## Examples
 
 See the `example_usage.py` file for detailed examples, including:
+
 1. Basic usage with synthetic data
 2. Online processing (streaming data)
 3. Custom hazard functions
