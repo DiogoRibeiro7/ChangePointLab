@@ -23,7 +23,7 @@ from bayesian_blocks import (
 )
 
 # Import utilities with correct module name
-from bb_utils import (
+from advanced_utils import (
     bootstrap_confidence_intervals,
     cross_validate_parameters,
     StreamingBayesianBlocks,
