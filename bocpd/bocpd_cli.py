@@ -43,6 +43,12 @@ def main() -> None:
     ap.add_argument("--beta0", type=float, default=1.0, help="Beta prior beta0.")
     ap.add_argument("--Rmax", type=int, default=512, help="Max run-length support.")
 
+    # Numerical robustness
+    ap.add_argument("--prune-eps", type=float, default=1e-6,
+                    help="Tail-pruning threshold; if not --abs-prune, used relatively (eps * max).")
+    ap.add_argument("--abs-prune", action="store_true",
+                    help="Use absolute pruning (R[r] < eps -> 0) instead of relative.")
+
     # Hazard
     ap.add_argument("--mean-rl", type=float, default=96.0, help="Mean run length for ConstantHazard.")
     ap.add_argument("--schedule", type=str, default=None,

@@ -126,6 +126,10 @@ class BOCPDConfig:
     beta0: float = 1.0
     max_run_length: int = 512
     store_run_length_posterior: bool = True
+    # Numerical robustness knobs
+    prune_epsilon: float = 1e-6
+    prune_relative: bool = True
+    stabilizer: float = 1e-300
 
 
 @dataclass
@@ -171,6 +175,7 @@ class BOCPD:
         self.alpha: ArrayF   # Beta alpha for each run-length state (after t-1)
         self.beta: ArrayF    # Beta beta for each run-length state (after t-1)
         self.t: int          # time index (processed points)
+        self.normalization_issues_: int = 0  # count of underflow rescales/fallbacks
 
         self.reset()
 
@@ -182,6 +187,7 @@ class BOCPD:
         self.alpha = np.full(R + 1, self.cfg.alpha0, dtype=float)
         self.beta = np.full(R + 1, self.cfg.beta0, dtype=float)
         self.t = 0
+        self.normalization_issues_ = 0
 
     # ---- predictive helpers ----
 
@@ -211,6 +217,46 @@ class BOCPD:
         b = self.beta
         p1 = a / (a + b)
         return float(np.dot(self.R_prev, p1))
+    
+    def _prune_and_normalize(self, R_next: ArrayF) -> None:
+        """In-place stabilization: rescale if needed, prune tiny mass, and renormalize.
+
+        Protects against underflow when hazards are very small over long stretches.
+        Mirrors tail pruning (Adams & MacKay, 2007, Sec. 2.4) without changing the API.
+        """
+        eps = float(self.cfg.stabilizer)
+        total = float(R_next.sum())
+        if not np.isfinite(total) or total <= eps:
+            # Max-rescale (soft log-sum-exp trick)
+            m = float(R_next.max(initial=0.0))
+            if np.isfinite(m) and m > eps:
+                R_next /= m
+                total = float(R_next.sum())
+            else:
+                # Catastrophic underflow: keep r=0 to avoid spurious CP spikes
+                R_next.fill(0.0)
+                R_next[0] = 1.0
+                self.normalization_issues_ += 1
+                return
+
+        # Normalize onto probability scale before pruning
+        R_next /= total
+
+        # Tail pruning (relative by default)
+        pe = float(self.cfg.prune_epsilon)
+        if pe > 0.0:
+            thr = pe * float(R_next.max()) if self.cfg.prune_relative else pe
+            if thr > 0.0:
+                R_next[R_next < thr] = 0.0
+                total2 = float(R_next.sum())
+                if total2 <= eps:
+                    imax = int(np.argmax(R_next))
+                    R_next.fill(0.0)
+                    R_next[imax] = 1.0
+                    self.normalization_issues_ += 1
+                else:
+                    R_next /= total2
+
 
     def update(self, x_t: int | bool) -> Dict[str, float]:
         """
@@ -250,14 +296,8 @@ class BOCPD:
         R_new[0] = cp_mass
         R_new[1:] = growth
 
-        # Normalize
-        Z = float(R_new.sum())
-        if Z <= 0.0:
-            # numerical fallback: reset to prior mass at r=0
-            R_new[:] = 0.0
-            R_new[0] = 1.0
-            Z = 1.0
-        R_new /= Z
+        # Robust normalization with tail pruning
+        self._prune_and_normalize(R_new)
 
         # Update Beta parameters for next step
         alpha_new = np.empty_like(self.alpha)
