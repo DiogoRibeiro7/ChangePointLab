@@ -6,14 +6,13 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Optional, Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 from bocpd import BOCPD, BOCPDConfig, ConstantHazard, ScheduledHazard, BoostedBoundaryHazard
 from bocpd_plotting import plot_run_length_heatmap, plot_cp_probability
-from data_loader import load_binary_from_csv  # from your earlier module
+from data_loader import load_binary_from_csv
 
 
 def _build_synth(N: int, days: int, seed: int) -> np.ndarray:
