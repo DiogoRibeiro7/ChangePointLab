@@ -155,7 +155,7 @@ def load_binary_from_csv(
     # Assign each event to a bin (left-closed, right-open)
     binned = pd.cut(
         df[timestamp_col],
-        bins=time_bins,
+        bins=time_bins.to_list(),
         right=False,
         labels=False,
         include_lowest=True,  # include the very first boundary cleanly
