@@ -10,7 +10,7 @@ from typing import Dict, Optional, Sequence, Set
 import numpy as np
 from numpy.typing import NDArray
 
-from likelihoods import BetaBernoulli, ConjugateLikelihood
+from .likelihoods import BetaBernoulli, ConjugateLikelihood
 
 
 # -------------------------- Type aliases ---------------------------

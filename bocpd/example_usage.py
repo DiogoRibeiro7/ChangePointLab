@@ -13,9 +13,15 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import pandas as pd
 
-from bocpd import BOCPD, BOCPDConfig, ConstantHazard, ScheduledHazard, BoostedBoundaryHazard
-from bocpd_plotting import plot_run_length_heatmap, plot_cp_probability
-from data_loader import load_binary_from_csv, parse_binary_string
+from .bocpd import (
+    BOCPD,
+    BOCPDConfig,
+    ConstantHazard,
+    ScheduledHazard,
+    BoostedBoundaryHazard,
+)
+from .bocpd_plotting import plot_run_length_heatmap, plot_cp_probability
+from common.io.data_loader import load_binary_from_csv, parse_binary_string
 
 
 def example_1_basic_usage():

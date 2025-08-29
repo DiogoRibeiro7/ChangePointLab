@@ -5,7 +5,8 @@ Run this after implementing the fixes to ensure everything integrates properly.
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
+import pytest
+plt = pytest.importorskip("matplotlib.pyplot")
 from typing import List
 
 
@@ -115,7 +116,11 @@ def test_plotting_integration():
 
     try:
         from bayesian_blocks import bayesian_blocks_counts, bayesian_blocks_events
-        from bb_plotting import plot_blocks_time, plot_blocks_index, BBPlotter
+        from bayesian_blocks.bb_plotting import (
+            plot_blocks_time,
+            plot_blocks_index,
+            BBPlotter,
+        )
 
         print("✅ Successfully imported plotting functions")
     except ImportError as e:

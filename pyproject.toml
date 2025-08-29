@@ -38,6 +38,9 @@ dev = [
   "types-setuptools"
 ]
 
+[project.scripts]
+cpd = "toolkit.cpd_cli:main"
+
 [project.urls]
 Homepage = "https://example.com/"
 Repository = "https://example.com/repo"
@@ -45,22 +48,16 @@ Issues = "https://example.com/repo/issues"
 
 # ---- setuptools config -------------------------------------------------------
 [tool.setuptools]
-# This project is laid out as a collection of single-file modules at the repo root.
-# If you later move code into a package directory, switch to `packages = ["yourpkg"]`.
-py-modules = [
-  "bayesian_blocks",
-  "bb_plotting",
-  "bb_utils",
-  "edivisive",
-  "edivisive_plotting",
-  "kcp",
-  "kcp_plotting",
-  "kcp_rff",
-  "sdhmm",
-  "sdhmm_mix_vi",
-  "hsmm",
-  "gaussian_diag",
+packages = [
+    "bayesian_blocks",
+    "bocpd",
+    "common",
+    "kcp",
+    "hsmm",
+    "toolkit",
+    "within_period",
 ]
+py-modules = ["kcp_rff"]
 include-package-data = true
 
 # ---- tooling (optional but handy) -------------------------------------------
@@ -83,3 +80,4 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 addopts = "-q"
 python_files = ["test_*.py", "*_test.py"]
+pythonpath = ["."]

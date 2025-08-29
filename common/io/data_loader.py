@@ -132,6 +132,20 @@ def empirical_per_bin_mean(x: NDArray[np.bool_], N: int) -> NDArray[np.floating]
     return mat.mean(axis=0)
 
 
+def parse_binary_string(binary_str: str) -> NDArray[np.bool_]:
+    """Parse a string of 0s and 1s into a boolean array.
+
+    Whitespace characters are ignored. Any character other than ``0`` or ``1``
+    raises a :class:`ValueError`.
+    """
+    clean = "".join(ch for ch in binary_str if ch in "01")
+    if not clean:
+        return np.array([], dtype=bool)
+    if set(clean) - {"0", "1"}:
+        raise ValueError("Input must contain only 0s and 1s")
+    return np.frombuffer(clean.encode(), dtype="S1") == b"1"
+
+
 # from data_loader import load_binary_from_csv, empirical_per_bin_mean
 # x, N = load_binary_from_csv("events.csv", timestamp_col="ts", bin_minutes=15, start_hour=0)
 # # Fit model with prior.N == N

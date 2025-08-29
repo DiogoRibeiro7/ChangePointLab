@@ -17,7 +17,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 # Import shared types
-from types import ChangePointResult, Tau, Array1D, Array1DFloat, ArrayBool
+from common.types.types import ChangePointResult, Tau, Array1D, Array1DFloat, ArrayBool
 
 # Import algorithm modules
 try:
@@ -25,7 +25,7 @@ try:
     import edivisive
     import kcp
     import kcp_rff
-    import within_period_cpd
+    import within_period.within_period_cpd as within_period_cpd
     import hsmm
     import sdhmm
 
@@ -605,11 +605,11 @@ class AlgorithmRegistry:
 
             rff_config = RFFConfig(n_features=n_features, seed=42)
         elif rff_type == "orthogonal":
-            from rff_variants import OrthogonalRFFConfig, orthogonal_rff_map as rbf_rff_map
+            from kcp.rff_variants import OrthogonalRFFConfig, orthogonal_rff_map as rbf_rff_map
 
             rff_config = OrthogonalRFFConfig(n_features=n_features, seed=42)
         elif rff_type == "quasi_mc":
-            from rff_variants import QuasiMCRFFConfig, quasi_mc_rff_map as rbf_rff_map
+            from kcp.rff_variants import QuasiMCRFFConfig, quasi_mc_rff_map as rbf_rff_map
 
             rff_config = QuasiMCRFFConfig(n_features=n_features, seed=42)
         else:
@@ -686,11 +686,11 @@ class AlgorithmRegistry:
 
             rff_config = RFFConfig(n_features=n_features, seed=42)
         elif rff_type == "orthogonal":
-            from rff_variants import OrthogonalRFFConfig, orthogonal_rff_map as rbf_rff_map
+            from kcp.rff_variants import OrthogonalRFFConfig, orthogonal_rff_map as rbf_rff_map
 
             rff_config = OrthogonalRFFConfig(n_features=n_features, seed=42)
         elif rff_type == "quasi_mc":
-            from rff_variants import QuasiMCRFFConfig, quasi_mc_rff_map as rbf_rff_map
+            from kcp.rff_variants import QuasiMCRFFConfig, quasi_mc_rff_map as rbf_rff_map
 
             rff_config = QuasiMCRFFConfig(n_features=n_features, seed=42)
         else:
@@ -787,7 +787,7 @@ class AlgorithmRegistry:
 
         else:
             # Use parallel tempering
-            from tempering import PTConfig, parallel_tempering_fit
+            from within_period.samplers.tempering import PTConfig, parallel_tempering_fit
 
             ptcfg = PTConfig(iters=iters, burn=burn, thin=thin, swap_every=50, T_hot=3.0, seed=seed)
             result = parallel_tempering_fit(model, data, ptcfg)
@@ -880,14 +880,14 @@ class AlgorithmRegistry:
             loglik = gaussian_diag_loglik(data, em)
 
         elif emission_type == "gaussian_full":
-            from gaussian_full import GaussianFullEmissions
+            from hsmm.gaussian_full import GaussianFullEmissions
 
             em = GaussianFullEmissions(n_states)
             em.initialize_kmeans(data, n_init=5, seed=42)
             loglik = em.compute_loglik(data)
 
         elif emission_type == "ar":
-            from ar_emissions import AREmissions
+            from hsmm.ar_emissions import AREmissions
 
             em = AREmissions(n_states, order=1)
             em.initialize(data, method="kmeans", seed=42)

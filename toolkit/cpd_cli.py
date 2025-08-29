@@ -223,7 +223,7 @@ def run_kcp(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
     # Build kernel matrix
     if args.kernel == "rbf":
         if args.bandwidth_cv:
-            from bandwidth_cv import select_rbf_bandwidth_cv  # Will implement below
+            from kcp.bandwidth_cv import select_rbf_bandwidth_cv  # Will implement below
 
             gamma = select_rbf_bandwidth_cv(data, cv_folds=args.cv_folds)
             K, _ = gram_rbf(data, gamma=gamma)
@@ -264,7 +264,7 @@ def run_kcp(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 def run_rff_kcp(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
     """Run RFF Kernel Change-Point Detection."""
     from kcp_rff import rbf_rff_map, build_feature_prefix, rff_kcp_penalized
-    from rff_variants import OrthogonalRFFConfig, QuasiMCRFFConfig  # Will implement below
+    from kcp.rff_variants import OrthogonalRFFConfig, QuasiMCRFFConfig  # Will implement below
 
     data, columns, _ = load_csv_data(args.input, columns=args.columns)
 
@@ -282,7 +282,7 @@ def run_rff_kcp(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 
     # Build RFF mapping
     if args.bandwidth_cv:
-        from bandwidth_cv import select_rbf_bandwidth_cv
+        from kcp.bandwidth_cv import select_rbf_bandwidth_cv
 
         sigma = select_rbf_bandwidth_cv(data, cv_folds=args.cv_folds)
         rff = rbf_rff_map(data, rff_config, sigma=sigma)
@@ -326,8 +326,8 @@ def run_rff_kcp(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 def run_hsmm(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
     """Run Hidden Semi-Markov Model."""
     from hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
-    from gaussian_full import GaussianFullEmissions  # Will implement below
-    from ar_emissions import AREmissions  # Will implement below
+    from hsmm.gaussian_full import GaussianFullEmissions  # Will implement below
+    from hsmm.ar_emissions import AREmissions  # Will implement below
 
     data, columns, _ = load_csv_data(args.input, columns=args.columns)
 
@@ -400,9 +400,9 @@ def run_hsmm(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 
 def run_within_period(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
     """Run Within-Period Change-Point Detection."""
-    from within_period_cpd import WithinPeriodCPD, ModelPrior, RJConfig
-    from data_loader import load_binary_from_csv, empirical_per_bin_mean
-    from plotting_helpers import plot_changepoint_posterior_mass, plot_pointwise_bands
+    from within_period.within_period_cpd import WithinPeriodCPD, ModelPrior, RJConfig
+    from common.io.data_loader import load_binary_from_csv, empirical_per_bin_mean
+    from common.plotting.plotting_helpers import plot_changepoint_posterior_mass, plot_pointwise_bands
 
     # Load binary time series
     x, N = load_binary_from_csv(
