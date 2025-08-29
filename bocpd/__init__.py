@@ -1,4 +1,4 @@
-from .bocpd import (
+from bocpd.bocpd import (
     Hazard,
     ConstantHazard,
     ScheduledHazard,
@@ -7,7 +7,7 @@ from .bocpd import (
     BOCPDResult,
     BOCPD,
 )
-from .bocpd_plotting import plot_run_length_heatmap, plot_cp_probability
+from bocpd.bocpd_plotting import plot_run_length_heatmap, plot_cp_probability
 
 __all__ = [
     "Hazard",

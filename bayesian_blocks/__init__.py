@@ -1,4 +1,4 @@
-from .bayesian_blocks import (
+from bayesian_blocks.bayesian_blocks import (
     bayesian_blocks,
     bayesian_blocks_events,
     bayesian_blocks_counts,
