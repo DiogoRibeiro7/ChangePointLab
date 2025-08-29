@@ -1,0 +1,48 @@
+{
+  "@context": "https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld",
+  "@type": "SoftwareSourceCode",
+  "name": "BOCPD",
+  "identifier": "bocpd",
+  "description": "Bayesian Online Changepoint Detection for Binary Data with flexible hazard functions",
+  "version": "0.1.0",
+  "license": "https://spdx.org/licenses/MIT",
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "Diogo",
+      "familyName": "Ribeiro",
+      "@id": "https://orcid.org/0000-0000-0000-0000"
+    }
+  ],
+  "programmingLanguage": [
+    {
+      "@type": "ComputerLanguage",
+      "name": "Python",
+      "url": "https://www.python.org/"
+    }
+  ],
+  "keywords": [
+    "Bayesian inference",
+    "changepoint detection",
+    "time series analysis",
+    "online learning",
+    "binary data"
+  ],
+  "operatingSystem": [
+    "Windows",
+    "Linux",
+    "macOS"
+  ],
+  "softwareRequirements": [
+    "numpy >= 1.20.0",
+    "matplotlib >= 3.5.0",
+    "pandas >= 1.3.0"
+  ],
+  "codeRepository": "https://github.com/username/bocpd",
+  "dateCreated": "2025-08-29",
+  "developmentStatus": "Active",
+  "isPartOf": null,
+  "issueTracker": "https://github.com/username/bocpd/issues",
+  "referencePublication": "https://doi.org/10.21105/joss.00000",
+  "funder": {}
+}
