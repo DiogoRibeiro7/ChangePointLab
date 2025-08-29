@@ -322,7 +322,7 @@ def estimate_ar_from_labels(
             full_design
             @ np.column_stack(
                 [np.concatenate([[intercepts[k, d]], coeffs[k, :, d, :].ravel()]) for d in range(D)]
-            ).T
+            )
         )  # (N_total, D)
 
         residuals = full_response - pred_response

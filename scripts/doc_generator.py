@@ -370,8 +370,8 @@ print(f"Detected change points: {result.change_points}")
 """,
             "within_period_cpd": """
 import numpy as np
-from within_period_cpd import WithinPeriodCPD, ModelPrior, RJConfig
-from data_loader import load_binary_from_csv
+from within_period.within_period_cpd import WithinPeriodCPD, ModelPrior, RJConfig
+from common.io.data_loader import load_binary_from_csv
 
 # Either load binary data from CSV timestamps
 x, N = load_binary_from_csv("events.csv", 
@@ -398,7 +398,7 @@ pw = model.pointwise_posterior_summary_from_samples(
     result.samples_tau, draws_per_sample=2, credible=0.95)
 
 # Plot results
-from plotting_helpers import plot_changepoint_posterior_mass, plot_pointwise_bands
+from common.plotting.plotting_helpers import plot_changepoint_posterior_mass, plot_pointwise_bands
 plot_changepoint_posterior_mass(
     cp_hist=result.changepoint_hist,
     num_samples=len(result.samples_tau),
@@ -475,7 +475,7 @@ updated_params = estimate_from_responsibilities(X, resp)
 """,
             "gaussian_full": """
 import numpy as np
-from gaussian_full import (
+from hsmm.gaussian_full import (
     GaussianFullParams, gaussian_full_loglik,
     estimate_gaussian_full_from_labels,
     estimate_gaussian_full_from_responsibilities,
@@ -506,7 +506,7 @@ emissions.update_from_responsibilities(X, responsibilities)
 """,
             "ar_emissions": """
 import numpy as np
-from ar_emissions import (
+from hsmm.ar_emissions import (
     ARParams, ar_loglik, estimate_ar_from_labels,
     estimate_ar_from_responsibilities, simulate_ar_process,
     AREmissions
@@ -541,7 +541,7 @@ emissions.update_from_responsibilities(X, responsibilities)
             # Advanced
             "rff_variants": """
 import numpy as np
-from rff_variants import (
+from kcp.rff_variants import (
     OrthogonalRFFConfig, QuasiMCRFFConfig, CompactRFFConfig,
     orthogonal_rff_map, quasi_mc_rff_map, compact_support_rff_map,
     compare_rff_variants, adaptive_rff_map
@@ -574,7 +574,7 @@ for variant, metrics in comparison.items():
 """,
             "bandwidth_cv": """
 import numpy as np
-from bandwidth_cv import (
+from kcp.bandwidth_cv import (
     select_rbf_bandwidth_cv, select_rbf_bandwidth_information_criterion,
     select_rbf_bandwidth_multiscale, bandwidth_stability_analysis,
     BandwidthCVConfig
@@ -612,8 +612,8 @@ print(f"Bandwidth stability: {stability['coefficient_of_variation']:.3f}")
 """,
             "tempering": """
 import numpy as np
-from tempering import PTConfig, parallel_tempering_fit
-from within_period_cpd import WithinPeriodCPD, ModelPrior
+from within_period.samplers.tempering import PTConfig, parallel_tempering_fit
+from within_period.within_period_cpd import WithinPeriodCPD, ModelPrior
 
 # Set up model (using within-period CPD as an example)
 N = 96  # 15-minute bins over 24 hours
@@ -647,7 +647,7 @@ log_posts = ptres.log_posts_cold
             # Utilities
             "utils": """
 import numpy as np
-from utils import (
+from common.utils.utils import (
     log_beta, safe_normalize, softmax, logsumexp,
     ensure_psd, stable_logdet_inv, mahalanobis_distance,
     build_prefix_sum_1d, range_sum_1d,
@@ -685,7 +685,7 @@ centers = kmeanspp_init(X_data, k=5, random_state=42)
 bandwidth = median_heuristic(X_data)
 """,
             "types": """
-from types import (
+from common.types.types import (
     Array1D, Array1DFloat, ArrayBool, Tau,
     RJConfig, PTConfig, MCMCResult, PTResult, ChangePointResult
 )
@@ -727,10 +727,10 @@ result = ChangePointResult(
 """,
             "io_utils": """
 import numpy as np
-from io_utils import save_result_npz, load_result_npz
+from common.io.io_utils import save_result_npz, load_result_npz
 
 # Assuming we have MCMC results from within_period_cpd
-from within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
+from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
 
 # Example result components
 samples_tau = [(25, 75), (26, 74), (25, 76)]  # List of Tau tuples
@@ -763,7 +763,7 @@ print(f"MAP changepoints: {loaded['mode_tau']}")
 """,
             "data_loader": """
 import numpy as np
-from data_loader import load_binary_from_csv, empirical_per_bin_mean
+from common.io.data_loader import load_binary_from_csv, empirical_per_bin_mean
 
 # Load binary events from timestamps in a CSV file
 x, N = load_binary_from_csv(
@@ -785,7 +785,7 @@ print(f"Average activity rates: min={empirical_probs.min():.3f}, max={empirical_
 """,
             "diagnostics": """
 import numpy as np
-from diagnostics import (
+from common.diagnostics.diagnostics import (
     PosteriorM, posterior_num_segments,
     autocorr_1d, ess_geyer, ess_for_cp_indicator
 )

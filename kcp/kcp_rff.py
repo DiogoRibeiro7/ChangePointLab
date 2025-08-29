@@ -81,6 +81,8 @@ class RFFMap:
 def rbf_rff_map(
     X: ArrayF | Sequence[float],
     cfg: RFFConfig = RFFConfig(),
+    sigma: float | None = None,
+    gamma: float | None = None,
 ) -> RFFMap:
     """
     Build the Random Fourier Features embedding for an RBF kernel.
@@ -98,7 +100,11 @@ def rbf_rff_map(
     rng = np.random.default_rng(cfg.seed)
 
     # Resolve gamma
-    if cfg.gamma is not None:
+    if gamma is not None:
+        gamma = float(gamma)
+    elif sigma is not None:
+        gamma = 1.0 / (2.0 * float(sigma) ** 2)
+    elif cfg.gamma is not None:
         gamma = float(cfg.gamma)
     elif cfg.sigma is not None:
         gamma = 1.0 / (2.0 * float(cfg.sigma) ** 2)

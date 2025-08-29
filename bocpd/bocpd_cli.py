@@ -11,9 +11,16 @@ from typing import Optional
 import numpy as np
 import matplotlib.pyplot as plt
 
-from bocpd import BOCPD, BOCPDConfig, ConstantHazard, ScheduledHazard, BoostedBoundaryHazard, Hazard
-from bocpd_plotting import plot_run_length_heatmap, plot_cp_probability
-from data_loader import load_binary_from_csv
+from .bocpd import (
+    BOCPD,
+    BOCPDConfig,
+    ConstantHazard,
+    ScheduledHazard,
+    BoostedBoundaryHazard,
+    Hazard,
+)
+from .bocpd_plotting import plot_run_length_heatmap, plot_cp_probability
+from common.io.data_loader import load_binary_from_csv
 
 
 def _parse_schedule(s: Optional[str]) -> Optional[np.ndarray]:

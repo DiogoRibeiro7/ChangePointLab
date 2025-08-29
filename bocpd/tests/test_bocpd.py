@@ -15,7 +15,7 @@ from bocpd import (
     BoostedBoundaryHazard,
     Hazard,
 )
-from data_loader import parse_binary_string
+from common.io.data_loader import parse_binary_string
 
 
 class TestHazards(unittest.TestCase):

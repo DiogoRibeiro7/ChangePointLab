@@ -12,7 +12,7 @@ Implements multiple strategies:
 """
 
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -46,19 +46,25 @@ class CVResult:
 
 
 def _median_heuristic(X: NDArray[np.floating], subsample: int = 1000) -> float:
-    """Compute median heuristic bandwidth."""
-    n = X.shape[0]
-    if n <= subsample:
-        pairwise_dists = np.linalg.norm(X[:, None, :] - X[None, :, :], axis=2)
-        nonzero_dists = pairwise_dists[pairwise_dists > 0]
-    else:
-        # Subsample for efficiency
-        idx = np.random.choice(n, size=subsample, replace=False)
-        X_sub = X[idx]
-        pairwise_dists = np.linalg.norm(X_sub[:, None, :] - X_sub[None, :, :], axis=2)
-        nonzero_dists = pairwise_dists[pairwise_dists > 0]
+    """Compute median heuristic bandwidth.
 
-    return np.median(nonzero_dists) if len(nonzero_dists) > 0 else 1.0
+    Uses a vectorized pairwise distance computation and optional subsampling to
+    avoid the \(O(n^2)\) memory blow-up on large datasets.
+    """
+    def _pairwise_distances(Y: NDArray[np.floating]) -> NDArray[np.floating]:
+        sq = np.sum(Y**2, axis=1, keepdims=True)
+        sq_dists = sq + sq.T - 2.0 * (Y @ Y.T)
+        np.fill_diagonal(sq_dists, 0.0)
+        return np.sqrt(np.maximum(sq_dists, 0.0))
+
+    n = X.shape[0]
+    if n > subsample:
+        idx = np.random.choice(n, size=subsample, replace=False)
+        X = X[idx]
+
+    pairwise_dists = _pairwise_distances(X)
+    nonzero_dists = pairwise_dists[pairwise_dists > 0]
+    return np.median(nonzero_dists) if nonzero_dists.size else 1.0
 
 
 def _generate_candidate_sigmas(
@@ -263,6 +269,7 @@ def select_rbf_bandwidth_cv(
     X: NDArray[np.floating],
     config: Optional[BandwidthCVConfig] = None,
     scoring_func: Optional[Callable] = None,
+    **config_kwargs,
 ) -> float:
     """
     Select RBF bandwidth using cross-validation.
@@ -282,7 +289,9 @@ def select_rbf_bandwidth_cv(
         Optimal bandwidth parameter
     """
     if config is None:
-        config = BandwidthCVConfig()
+        config = BandwidthCVConfig(**config_kwargs)
+    elif config_kwargs:
+        config = replace(config, **config_kwargs)
 
     n, d = X.shape
 

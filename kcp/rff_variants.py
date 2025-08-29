@@ -414,7 +414,6 @@ def quasi_mc_rff_map(
 
     # Transform uniform points to Gaussian frequencies using inverse CDF
     # For multivariate Gaussian: first transform to standard normal, then scale
-    from scipy.stats import norm  # Would need NumPy-only version
 
     # NumPy-only Box-Muller approximation for normal inverse CDF
     def normal_ppf(u):
