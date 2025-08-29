@@ -1,1 +1,1 @@
-from .kcp import *
+from kcp.kcp import *

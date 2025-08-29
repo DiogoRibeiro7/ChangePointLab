@@ -11,7 +11,7 @@ from typing import Optional
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .bocpd import (
+from bocpd.bocpd import (
     BOCPD,
     BOCPDConfig,
     ConstantHazard,
@@ -19,7 +19,7 @@ from .bocpd import (
     BoostedBoundaryHazard,
     Hazard,
 )
-from .bocpd_plotting import plot_run_length_heatmap, plot_cp_probability
+from bocpd.bocpd_plotting import plot_run_length_heatmap, plot_cp_probability
 from common.io.data_loader import load_binary_from_csv
 
 

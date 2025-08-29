@@ -1,1 +1,1 @@
-from .tempering import PTConfig, parallel_tempering_fit
+from within_period.samplers.tempering import PTConfig, parallel_tempering_fit

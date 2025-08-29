@@ -1,1 +1,1 @@
-from .hsmm import *
+from hsmm.hsmm import *

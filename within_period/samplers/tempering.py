@@ -47,7 +47,7 @@ def _mh_step_with_temperature(model, tau: Tau, T: float) -> tuple[Tau, float]:
 
     def is_valid(t: Tau) -> bool:
         # Reuse internal validator
-        from ..within_period_cpd import _is_valid_tau  # local import to avoid circulars when not needed elsewhere
+        from within_period.within_period_cpd import _is_valid_tau  # local import to avoid circulars when not needed elsewhere
         return _is_valid_tau(t, N, l)
 
     m = 1 if len(tau) == 0 else len(tau) + 1
