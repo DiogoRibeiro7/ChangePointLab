@@ -583,3 +583,4 @@ plt.title('Binary Data with Multiple Changepoints')
 plt.ylabel('Value')
 
 # Plot CP probabilities
+
