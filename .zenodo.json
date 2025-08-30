@@ -1,0 +1,80 @@
+{
+  "title": "Change-Point Detection Toolkit",
+  "description": "Comprehensive Python toolkit providing multiple change-point detection algorithms including Bayesian Online Change-Point Detection (BOCPD), Pruned Exact Linear Time (PELT), E-Divisive energy-based detection, Hidden Markov Models (HMM), Hidden Semi-Markov Models (HSMM), Scaled-Dirichlet HMM (SD-HMM), and within-period methods.",
+  "creators": [
+    {
+      "name": "Ribeiro, Diogo",
+      "affiliation": "ESMAD - Instituto Polit\u00e9cnico do Porto",
+      "orcid": "0009-0001-2022-7072"
+    }
+  ],
+  "upload_type": "software",
+  "license": "MIT",
+  "keywords": [
+    "changepoint detection",
+    "BOCPD",
+    "PELT",
+    "E-Divisive",
+    "HMM",
+    "HSMM",
+    "SD-HMM",
+    "within-period"
+  ],
+  "communities": [
+    {
+      "identifier": "joss"
+    }
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/DiogoRibeiro7/articles_future",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "10.48550/arXiv.0710.3742",
+      "relation": "cites",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.1080/01621459.2013.849605",
+      "relation": "cites",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.1080/01621459.2012.737745",
+      "relation": "cites",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.1109/5.18626",
+      "relation": "cites",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.1016/j.artint.2009.11.011",
+      "relation": "cites",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.1111/rssc.12464",
+      "relation": "cites",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "https://jmlr.org/papers/v14/johnson13a.html",
+      "relation": "cites",
+      "scheme": "url"
+    }
+  ],
+  "subjects": [
+    {
+      "term": "Statistics",
+      "identifier": "stat"
+    },
+    {
+      "term": "Machine Learning",
+      "identifier": "cs.LG"
+    }
+  ]
+}
