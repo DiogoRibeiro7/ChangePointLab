@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+message: "If you use this toolkit, please cite the JOSS paper."
+title: "Change-Point Detection Toolkit"
+version: "0.1.0"
+doi: 10.5281/zenodo.0000000
+date-released: 2025-08-30
+authors:
+  - family-names: Ribeiro
+    given-names: Diogo
+    affiliation: ESMAD - Instituto Politécnico do Porto
+    email: dfr@esmad.ipp.pt
+    orcid: https://orcid.org/0009-0001-2022-7072
+license: MIT
+repository-code: https://github.com/DiogoRibeiro7/articles_future
+url: https://github.com/DiogoRibeiro7/articles_future
+abstract: |
+  Comprehensive Python toolkit providing multiple change-point detection algorithms,
+  including BOCPD, PELT, E-Divisive, HMM/HSMM, SD-HMM, and within-period methods.
+keywords:
+  - changepoint detection
+  - BOCPD
+  - PELT
+  - E-Divisive
+  - HMM
+  - HSMM
+  - SD-HMM
+  - within-period
+  - Python
+preferred-citation:
+  type: article
+  title: "Change-Point Detection Toolkit"
+  journal: Journal of Open Source Software
+  year: 2025
+  doi: 10.21105/joss.00000
+  authors:
+    - family-names: Ribeiro
+      given-names: Diogo
+      orcid: https://orcid.org/0009-0001-2022-7072

@@ -607,23 +607,27 @@ class WithinPeriodCPD:
                         q_bwd = q_fwd
                     else:
                         m_prop = len(tau_prop) + 1
-                        seg_idx_prop = random.randrange(
-                            m_prop
-                        )  # any segment could be selected; but proposal enumerates uniformly
-                        birth_cands_prop = self._uniform_birth_targets(
-                            tau_prop, seg_idx_prop
-                        )
-                        # We don't know which seg was actually used to get back exactly 'tau'; use a conservative bound by summing?
-                        # For a valid MH step we need a single path probability; we approximate by averaging over segments.
-                        # To avoid bias, we instead compute total number of birth targets across segments and assume uniform segment draw.
-                        total_birth = 0
-                        for sidx in range(m_prop):
-                            total_birth += len(
-                                self._uniform_birth_targets(tau_prop, sidx)
+                        if len(tau_prop) == 0:
+                            birth_cands_prop = self._uniform_birth_targets_m1()
+                            q_bwd = birth_prob * (1.0 / len(birth_cands_prop))
+                        else:
+                            seg_idx_prop = random.randrange(
+                                m_prop
+                            )  # any segment could be selected; but proposal enumerates uniformly
+                            birth_cands_prop = self._uniform_birth_targets(
+                                tau_prop, seg_idx_prop
                             )
-                        q_bwd = (
-                            birth_prob * (1.0 / m_prop) * (1.0 / (total_birth / m_prop))
-                        )  # = birth_prob / total_birth
+                            # We don't know which seg was actually used to get back exactly 'tau'; use a conservative bound by summing?
+                            # For a valid MH step we need a single path probability; we approximate by averaging over segments.
+                            # To avoid bias, we instead compute total number of birth targets across segments and assume uniform segment draw.
+                            total_birth = 0
+                            for sidx in range(m_prop):
+                                total_birth += len(
+                                    self._uniform_birth_targets(tau_prop, sidx)
+                                )
+                            q_bwd = (
+                                birth_prob * (1.0 / m_prop) * (1.0 / (total_birth / m_prop))
+                            )  # = birth_prob / total_birth
 
             # MH ratio
             log_prop = self._log_posterior_tau(tau_prop)
