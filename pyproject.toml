@@ -81,3 +81,7 @@ ignore_missing_imports = true
 addopts = "-q"
 python_files = ["test_*.py", "*_test.py"]
 pythonpath = ["."]
+markers = [
+    "integration: integration tests requiring external resources",
+    "slow: long-running tests"
+]
