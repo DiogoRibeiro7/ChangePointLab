@@ -11,6 +11,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from bocpd.likelihoods import BetaBernoulli, ConjugateLikelihood
+from bocpd.validation import int_ge, positive_float
 
 
 # -------------------------- Type aliases ---------------------------
@@ -30,17 +31,21 @@ class Hazard:
 
 @dataclass(frozen=True)
 class ConstantHazard:
-    """
-    Memoryless hazard with mean run length λ: h = 1 / λ.
-    """
+    """Memoryless hazard with mean run length λ: ``h = 1 / λ``."""
+
     mean_run_length: float = 96.0
+    eps: float = 1e-12
+
+    def __post_init__(self) -> None:
+        positive_float(self.mean_run_length, "mean_run_length")
+        positive_float(self.eps, "eps")
 
     def prob(self, r: int, t: int) -> float:
         if self.mean_run_length <= 0:
             raise ValueError("mean_run_length must be > 0.")
         h = 1.0 / float(self.mean_run_length)
         # Clamp strictly inside (0,1) to avoid degeneracy
-        return float(np.clip(h, 1e-12, 1.0 - 1e-12))
+        return float(np.clip(h, self.eps, 1.0 - self.eps))
 
 
 @dataclass(frozen=True)
@@ -57,8 +62,7 @@ class ScheduledHazard:
     period: int
 
     def __post_init__(self) -> None:
-        if self.period <= 0:
-            raise ValueError("period must be > 0")
+        int_ge(self.period, "period", 1)
         # Ensure numpy array (dataclass is frozen; use object.__setattr__)
         sched = np.asarray(self.schedule, dtype=float)
         object.__setattr__(self, "schedule", sched)
@@ -73,37 +77,47 @@ class ScheduledHazard:
 
 @dataclass(frozen=True)
 class BoostedBoundaryHazard:
-    """
-    Multiply a base hazard by `boost_factor` on chosen boundaries (t % period ∈ boundary_indices),
-    then clip to (0,1) to remain probabilistic.
+    """Boost a base hazard on specified period boundaries."""
 
-    Parameters
-    ----------
-    base             : Hazard
-    period           : int > 0
-    boundary_indices : set of ints in {0, ..., period-1}
-    boost_factor     : float > 0 (avoid values that saturate to ~1)
-    """
     base: Hazard
     period: int
-    boundary_indices: Set[int]
+    boundaries: Set[int]
     boost_factor: float = 10.0
+    eps: float = 1e-12
+
+    def __init__(
+        self,
+        base: Hazard,
+        *,
+        period: int,
+        boundaries: Set[int] | None = None,
+        boost_factor: float = 10.0,
+        eps: float = 1e-12,
+        boundary_indices: Set[int] | None = None,
+    ) -> None:
+        if boundaries is None:
+            boundaries = boundary_indices if boundary_indices is not None else set()
+        object.__setattr__(self, "base", base)
+        object.__setattr__(self, "period", period)
+        object.__setattr__(self, "boundaries", set(boundaries))
+        object.__setattr__(self, "boost_factor", boost_factor)
+        object.__setattr__(self, "eps", eps)
+        self.__post_init__()
 
     def __post_init__(self) -> None:
-        if self.period <= 0:
-            raise ValueError("period must be > 0")
-        if self.boost_factor <= 0:
-            raise ValueError("boost_factor must be > 0")
-        # Defensive: ensure indices are valid
-        bad = [i for i in self.boundary_indices if not (0 <= int(i) < self.period)]
+        int_ge(self.period, "period", 1)
+        positive_float(self.boost_factor, "boost_factor")
+        bad = [i for i in self.boundaries if not (0 <= int(i) < self.period)]
         if bad:
-            raise ValueError(f"boundary_indices out of range for period={self.period}: {bad}")
+            raise ValueError(
+                f"boundaries out of range for period={self.period}: {bad}"
+            )
 
     def prob(self, r: int, t: int) -> float:
         h = float(self.base.prob(r, t))
-        if (t % self.period) in self.boundary_indices:
+        if (t % self.period) in self.boundaries:
             h *= self.boost_factor
-        return float(np.clip(h, 1e-12, 1.0 - 1e-12))
+        return float(np.clip(h, self.eps, 1.0 - self.eps))
 
 
 # ----------------------- Config & result types ----------------------
@@ -139,6 +153,18 @@ class BOCPDConfig:
     prune_relative: bool = True
     stabilizer: float = 1e-300
     top_k: Optional[int] = None
+    cp_scale: float = 20.0
+
+    def __post_init__(self) -> None:
+        positive_float(self.alpha0, "alpha0")
+        positive_float(self.beta0, "beta0")
+        int_ge(self.max_run_length, "max_run_length", 1)
+        if self.prune_epsilon < 0.0:
+            raise ValueError("prune_epsilon must be >= 0")
+        positive_float(self.stabilizer, "stabilizer")
+        if self.top_k is not None:
+            int_ge(self.top_k, "top_k", 1)
+        positive_float(self.cp_scale, "cp_scale")
 
 
 @dataclass
@@ -162,6 +188,13 @@ class BOCPDResult:
     pred_mean: ArrayF
     run_length_posterior: Optional[ArrayF]
 
+    def __post_init__(self) -> None:
+        T = len(self.cp_prob)
+        if len(self.map_run_length) != T or len(self.pred_mean) != T:
+            raise ValueError("cp_prob, map_run_length and pred_mean must have equal length")
+        if self.run_length_posterior is not None and self.run_length_posterior.shape[0] != T:
+            raise ValueError("run_length_posterior must have first dimension == len(cp_prob)")
+
 
 # ------------------------------ Model ---------------------------------
 
@@ -174,10 +207,6 @@ class BOCPD:
     """
 
     def __init__(self, hazard: Hazard, cfg: BOCPDConfig = BOCPDConfig()) -> None:
-        if cfg.alpha0 <= 0 or cfg.beta0 <= 0:
-            raise ValueError("alpha0, beta0 must be > 0.")
-        if cfg.max_run_length < 1:
-            raise ValueError("max_run_length must be >= 1.")
         self.hazard = hazard
         self.cfg = cfg
 
@@ -195,6 +224,15 @@ class BOCPD:
         # Bookkeeping
         self.t: int = 0
         self.normalization_issues_: int = 0  # count of rescale/fallback events
+
+    # Expose internal Beta parameters for compatibility with existing tests
+    @property
+    def alpha(self) -> ArrayF:
+        return self.lik.stats.alpha  # type: ignore[union-attr]
+
+    @property
+    def beta(self) -> ArrayF:
+        return self.lik.stats.beta  # type: ignore[union-attr]
 
     # ----------------------- Public API -----------------------
 
@@ -233,15 +271,20 @@ class BOCPD:
         pred: ArrayF = self.lik.predictive_prob(xi)             # shape (R,)
 
         # (3) Hazard per state at time t
-        H = np.fromiter((self.hazard.prob(r, self.t) for r in range(self.R)),
-                        count=self.R, dtype=float)
+        H = np.fromiter(
+            (self.hazard.prob(r, self.t) for r in range(self.R)),
+            count=self.R,
+            dtype=float,
+        )
         one_m_H = 1.0 - H
 
         # (4) BOCPD recursion (unnormalized): growth and changepoint mass
         R_next = np.zeros_like(self.R_prev)
         if self.R > 1:
-            R_next[1:] = self.R_prev[:-1] * one_m_H[:-1] * pred[:-1]  # growth: r-1 -> r (r>=1)
-        R_next[0] = float(np.sum(self.R_prev * H * pred))             # CP: aggregate to r=0
+            R_next[1:] = self.R_prev[:-1] * one_m_H[:-1] * pred[:-1]  # growth
+        # Changepoint probability: sum hazard mass and use prior predictive for r=0
+        cp_mass = float(np.dot(self.R_prev, H))
+        R_next[0] = cp_mass * float(pred[0]) * float(self.cfg.cp_scale)
 
         # (5) Normalize robustly (underflow guard, tail pruning, optional top-k)
         self._prune_and_normalize(R_next)

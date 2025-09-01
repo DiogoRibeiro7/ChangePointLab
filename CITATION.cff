@@ -14,18 +14,44 @@ license: MIT
 repository-code: https://github.com/DiogoRibeiro7/articles_future
 url: https://github.com/DiogoRibeiro7/articles_future
 abstract: |
-  Comprehensive Python toolkit providing multiple change-point detection algorithms,
-  including BOCPD, PELT, E-Divisive, HMM/HSMM, SD-HMM, and within-period methods.
+  ChangePointLab is an open-source Python library that unifies classical and modern
+  approaches to changepoint detection. It implements Bayesian Online Change Point
+  Detection, Pruned Exact Linear Time segmentation, energy-distance divisive algorithms,
+  Hidden Markov and semi-Markov models, state-dependent HMMs for compositional data,
+  and within-period detectors for seasonal signals. A consistent API, lightweight
+  NumPy dependency, and extensive validation utilities allow researchers to
+  prototype, compare, and combine methods across binary, continuous, multivariate,
+  periodic, and compositional time series. The toolkit ships with synthetic data
+  generators, evaluation metrics, visualization helpers, and a command-line
+  interface, promoting reproducible experimentation and cross-method insight.
+  Detailed parameter guides, interoperability examples, and comprehensive tests
+  support both research and teaching. By consolidating disparate paradigms and
+  encouraging hybrid workflows, ChangePointLab lowers the barrier to rigorous
+  changepoint analysis and accelerates methodological innovation. Released under the
+  permissive MIT license, it welcomes community contributions and is suitable for
+  academic publication and long-term research use.
 keywords:
   - changepoint detection
-  - BOCPD
+  - time series analysis
+  - Bayesian online changepoint detection
   - PELT
-  - E-Divisive
-  - HMM
-  - HSMM
+  - energy statistics
+  - hidden Markov model
+  - hidden semi-Markov model
   - SD-HMM
-  - within-period
+  - within-period detection
+  - anomaly detection
+  - state-space models
+  - online algorithms
+  - offline algorithms
   - Python
+  - open source
+  - regime shift
+  - compositional data
+  - periodic signals
+  - reproducible research
+funding:
+  - name: "ESMAD - Instituto Politécnico do Porto internal research funds"
 preferred-citation:
   type: article
   title: "Change-Point Detection Toolkit"

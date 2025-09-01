@@ -10,6 +10,19 @@ from bocpd.bocpd import (
 )
 
 
+class MinSegmentHazard:
+    """Hazard that suppresses changepoints until a minimum segment length."""
+
+    def __init__(self, min_seg_len: int, base: ConstantHazard | None = None) -> None:
+        self.min_seg_len = min_seg_len
+        self.base = base or ConstantHazard()
+
+    def prob(self, r: int, t: int) -> float:
+        if r < self.min_seg_len - 1:
+            return 0.0
+        return self.base.prob(r, t)
+
+
 @pytest.fixture
 def default_model():
     """Return a BOCPD instance with default configuration."""
@@ -39,6 +52,17 @@ def test_sequence_equal_to_max_run_length():
     res = model.run(data)
     assert res.map_run_length[-1] == cfg.max_run_length
     assert res.run_length_posterior.shape == (cfg.max_run_length, cfg.max_run_length + 1)
+
+
+def test_data_exactly_min_segment_length():
+    min_len = 4
+    h = MinSegmentHazard(min_seg_len=min_len, base=ConstantHazard(mean_run_length=100))
+    model = BOCPD(h, BOCPDConfig())
+    data = np.zeros(min_len, dtype=int)
+    res = model.run(data)
+    assert np.allclose(res.cp_prob[: min_len - 1], 0.0)
+    assert res.cp_prob[-1] > 0.0
+    assert res.map_run_length[-1] == min_len
 
 
 def test_long_sequence_handles_gracefully():
@@ -117,3 +141,15 @@ def test_invalid_parameters_raise():
         BoostedBoundaryHazard(
             base=ConstantHazard(), period=5, boundary_indices={5}
         )
+
+
+def test_none_input_raises(default_model):
+    with pytest.raises(TypeError):
+        default_model.run(None)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("values", [[-1, 2], [0.5, -0.3]])
+def test_non_binary_inputs_coerced(values, default_model):
+    res = default_model.run(values)
+    assert res.cp_prob.shape == (len(values),)
+    assert np.isfinite(res.cp_prob).all()

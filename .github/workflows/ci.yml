@@ -41,11 +41,11 @@ jobs:
           pip install -e .[dev]
           pip install coverage pdoc pytest-cov
       - name: Unit tests
-        run: coverage run -m pytest tests/unit
+        run: coverage run -m pytest -m "not slow" tests/unit
       - name: Integration tests
         run: |
           if [ -d tests/integration ]; then
-            coverage run -a -m pytest tests/integration
+            coverage run -a -m pytest -m integration tests/integration
           fi
       - name: Benchmarks
         run: |

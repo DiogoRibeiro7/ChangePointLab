@@ -137,6 +137,19 @@ print(result.mode_tau)
 - **SD-HMM**: select state count and iteration limits; data must be non-negative and will be normalized.
 - **Within-period**: period `N` and minimum segment length `l` should match the cycle of interest.
 
+## Experimental features
+
+The toolkit still contains a few components that are under active development and
+should be considered experimental:
+
+- **CLI wrappers** for running algorithms from the command line.  Interfaces may
+  change and error handling is minimal.
+- **Advanced emission models** for BOCPD and HMM/HSMM modules (e.g. Gaussian and
+  Poisson alternatives) are prototypes and have not yet received the same level
+  of testing as the core Beta–Bernoulli implementations.
+
+Feedback and pull requests are welcome to help stabilise these features.
+
 ## Documentation
 
 Detailed documentation and additional examples are available in the
