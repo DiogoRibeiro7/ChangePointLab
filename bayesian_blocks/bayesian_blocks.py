@@ -42,11 +42,17 @@ class BBConfig:
             raise ValueError(f"p0 must be in (0,1), got {self.p0}")
         if self.min_block_size < 1:
             raise ValueError(f"min_block_size must be >= 1, got {self.min_block_size}")
-        if self.penalty is not None:
-            if self.gamma is not None and self.gamma != self.penalty:
-                raise ValueError("Specify either penalty or gamma, not both.")
-            self.gamma = self.penalty
-        self.penalty = self.gamma
+        if self.penalty is not None and self.gamma is not None:
+            raise ValueError("Specify either penalty or gamma, not both.")
+        if self.gamma is not None:
+            warnings.warn(
+                "gamma is deprecated and will be removed in a future release; "
+                "use penalty instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.penalty = self.gamma
+        self.gamma = self.penalty
 
 
 @dataclass
@@ -181,11 +187,7 @@ def _dp_solve(
         num = stat_num[j] - stat_num[:j]  # shape (j,)
         den = stat_den[j] - stat_den[:j]  # shape (j,)
         # Fitness for each candidate block [i, j)
-        fit = np.fromiter(
-            (fitness_per_block(nu, de) for nu, de in zip(num, den)),
-            count=j,
-            dtype=float,
-        )
+        fit = np.asarray(fitness_per_block(num, den), dtype=float)
         # Total objective if last change at i: opt[i] + fit(i->j) - gamma
         total = opt[:j] + fit - gamma
         i_star = int(np.argmax(total))
@@ -212,39 +214,30 @@ def _dp_solve(
 # ---------------------------------------------------------------------
 
 
-def _fit_poisson(num: float, den: float) -> float:
-    """
-    Poisson process / counts:
-      num = total counts in block (k),
-      den = total exposure/width in block (T),
-      fitness = k * (log k - log T), with convention 0*log(0/T) := 0.
-    """
-    if den <= 0:
-        return -np.inf
-    if num <= 0:
-        return 0.0
-    return num * (math.log(num) - math.log(den))
+def _fit_poisson(num: Union[ArrayF, float], den: Union[ArrayF, float]) -> Union[ArrayF, float]:
+    """Poisson process / counts fitness supporting array inputs."""
+    num_arr = np.asarray(num, dtype=float)
+    den_arr = np.asarray(den, dtype=float)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        res = np.where(
+            den_arr > 0,
+            np.where(num_arr > 0, num_arr * (np.log(num_arr) - np.log(den_arr)), 0.0),
+            -np.inf,
+        )
+    return res if np.ndim(res) > 0 else float(res)
 
 
-def _fit_bernoulli(success: float, trials: float) -> float:
-    """
-    Bernoulli/Binomial:
-      success = # successes in block (s),
-      trials  = # trials in block (n >= s),
-      fitness = s*log(s/n) + (n-s)*log(1 - s/n), with 0*log 0 := 0.
-
-    Note: we omit the binomial coefficient log C(n, s) since it's constant w.r.t the
-    parameter and standard in Bayesian Blocks to drop parameter-independent terms.
-    """
-    if trials <= 0:
-        return -np.inf
-    s = success
-    n = trials
-    if s <= 0 or s >= n:
-        # handle edge cases; use symmetric limit → 0 fitness contribution
-        return 0.0
-    p = s / n
-    return s * math.log(p) + (n - s) * math.log(1.0 - p)
+def _fit_bernoulli(
+    success: Union[ArrayF, float], trials: Union[ArrayF, float]
+) -> Union[ArrayF, float]:
+    """Bernoulli/Binomial fitness supporting array inputs."""
+    s = np.asarray(success, dtype=float)
+    n = np.asarray(trials, dtype=float)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        p = np.where(n > 0, s / n, 0.0)
+        res = s * np.log(p) + (n - s) * np.log(1.0 - p)
+        res = np.where((n <= 0), -np.inf, np.where((s <= 0) | (s >= n), 0.0, res))
+    return res if np.ndim(res) > 0 else float(res)
 
 
 # ---------------------------------------------------------------------
@@ -521,8 +514,8 @@ def _detect_data_type(data) -> DataType:
         # Single array - need to distinguish between events, counts, and binary
         arr = np.asarray(data)
 
-        # If all 0s and 1s, likely binary
-        if np.all(np.isin(arr, [0, 1])):
+        # If all 0s and 1s (with tolerance), likely binary
+        if np.all(np.isclose(arr, 0) | np.isclose(arr, 1)):
             return DataType.BERNOULLI
         # If all non-negative integers, likely counts
         elif np.all(arr >= 0) and np.all(arr == arr.astype(int)):
