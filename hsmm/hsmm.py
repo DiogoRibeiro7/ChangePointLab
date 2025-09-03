@@ -344,17 +344,14 @@ class HSMM:
 
         for t in range(1, T + 1):
             dmax_t = min(Dcap, t)
-            d_range = np.arange(1, dmax_t + 1)
-            u = t - d_range
-            for j in range(K):
-                seg_ll = cum[t, j] - cum[u, j]
-                trans = np.where(u == 0, log_pi[j], logphi[u, j])
-                mask = (u > 0) & (logphi[u, j] <= LOGZERO / 2)
-                if np.any(mask):
-                    logphi[u[mask], j] = logsumexp(log_alpha[u[mask], :] + logA[:, j], axis=1)
-                    trans[mask] = logphi[u[mask], j]
-                terms = trans + log_dur[j, :dmax_t] + seg_ll
-                log_alpha[t, j] = _as_scalar(logsumexp(terms)) if terms.size else LOGZERO
+            u = t - np.arange(1, dmax_t + 1)
+            needed = u[(u > 0) & (logphi[u, 0] <= LOGZERO / 2)]
+            for uu in np.unique(needed):
+                logphi[uu, :] = logsumexp(log_alpha[uu, :, None] + logA, axis=0)
+            seg_ll = cum[t, :, None] - cum[u, :].T  # (K, dmax_t)
+            trans = np.where(u == 0, log_pi[:, None], logphi[u, :].T)
+            terms = trans + log_dur[:, :dmax_t] + seg_ll
+            log_alpha[t, :] = logsumexp(terms, axis=1)
 
         logZ = _as_scalar(logsumexp(log_alpha[T, :]))  # sequence log-likelihood
 
@@ -368,29 +365,24 @@ class HSMM:
 
         for t in range(T - 1, -1, -1):
             dmax_t = min(Dcap, T - t)
-            d_range = np.arange(1, dmax_t + 1)
-            u = t + d_range
-            for m in range(K):
-                seg_ll = cum[u, m] - cum[t, m]
-                terms = log_dur[m, :dmax_t] + seg_ll + log_beta[u, m]
-                g[t, m] = _as_scalar(logsumexp(terms)) if terms.size else LOGZERO
+            u = t + np.arange(1, dmax_t + 1)
+            seg_ll = cum[u, :].T - cum[t, :][:, None]  # (K, dmax_t)
+            terms = log_dur[:, :dmax_t] + seg_ll + log_beta[u, :].T
+            g[t, :] = logsumexp(terms, axis=1)
             log_beta[t, :] = logsumexp(logA + g[t, :], axis=1)
 
         # Posterior over segment ends: eta[t, j, d]
-        eta = np.zeros((T + 1, K, Dcap), dtype=float)  # we'll ignore t=0 row later
+        eta = np.zeros((T + 1, K, Dcap), dtype=float)
         for t in range(1, T + 1):
             dmax_t = min(Dcap, t)
-            d_range = np.arange(1, dmax_t + 1)
-            u = t - d_range
-            for j in range(K):
-                seg_ll = cum[t, j] - cum[u, j]
-                trans = np.where(u == 0, log_pi[j], logphi[u, j])
-                mask = (u > 0) & (logphi[u, j] <= LOGZERO / 2)
-                if np.any(mask):
-                    logphi[u[mask], j] = logsumexp(log_alpha[u[mask], :] + logA[:, j], axis=1)
-                    trans[mask] = logphi[u[mask], j]
-                num = trans + log_dur[j, :dmax_t] + seg_ll + log_beta[t, j]
-                eta[t, j, :dmax_t] = np.exp(num - logZ)
+            u = t - np.arange(1, dmax_t + 1)
+            needed = u[(u > 0) & (logphi[u, 0] <= LOGZERO / 2)]
+            for uu in np.unique(needed):
+                logphi[uu, :] = logsumexp(log_alpha[uu, :, None] + logA, axis=0)
+            seg_ll = cum[t, :, None] - cum[u, :].T
+            trans = np.where(u == 0, log_pi[:, None], logphi[u, :].T)
+            num = trans + log_dur[:, :dmax_t] + seg_ll + log_beta[t, :][:, None]
+            eta[t, :, :dmax_t] = np.exp(num - logZ)
 
         # Aggregate sufficient stats
         seg_count = eta[1:].sum(axis=(0, 2))                            # (K,)
@@ -400,40 +392,37 @@ class HSMM:
 
         # Initial segment counts (t == d)
         pi_counts = np.zeros(K, dtype=float)
-        for t in range(1, T + 1):
-            dmax_t = min(Dcap, t)
-            # indices where u = t-d == 0  -> d = t
-            if t <= Dcap:
-                pi_counts += eta[t, :, t - 1]
+        for t in range(1, min(T, Dcap) + 1):
+            pi_counts += eta[t, :, t - 1]
 
         # Transition counts
         xi_counts = np.zeros((K, K), dtype=float)
         for t in range(1, T + 1):
             dmax_t = min(Dcap, t)
-            for j in range(K):
-                mass = eta[t, j, :dmax_t].sum()
-                if mass <= 0:
-                    continue
-                # previous ends at u = t-d; only those with u>0 contribute a transition
-                # weight over i: proportional to alpha[u,i] + log A[i,j]
-                for d in range(1, dmax_t + 1):
-                    u = t - d
-                    if u == 0:
-                        continue
-                    w = log_alpha[u, :] + logA[:, j]
-                    w = np.exp(w - _as_scalar(logsumexp(w)))
-                    xi_counts[:, j] += eta[t, j, d - 1] * w
+            u = t - np.arange(1, dmax_t + 1)
+            valid = u > 0
+            if not np.any(valid):
+                continue
+            idx = np.arange(dmax_t)[valid]
+            for k_idx, u_k in zip(idx, u[valid]):
+                w = log_alpha[u_k, :, None] + logA  # (K,K)
+                w = np.exp(w - logsumexp(w, axis=0)[None, :])
+                xi_counts += w * eta[t, :, k_idx][None, :]
 
         # Occupancy γ_t(j): accumulate eta coverage with a difference trick
         gamma = np.zeros((T, K), dtype=float)
+        durations = np.arange(1, Dcap + 1)
         for j in range(K):
             diff = np.zeros(T + 1, dtype=float)
-            for t in range(1, T + 1):
-                dmax_t = min(Dcap, t)
-                for d in range(1, dmax_t + 1):
-                    s = t - d  # start index
-                    diff[s] += eta[t, j, d - 1]
-                    diff[t] -= eta[t, j, d - 1]
+            w = eta[1:, j, :]
+            t_idx = np.arange(1, T + 1)[:, None]
+            u = t_idx - durations[None, :]
+            mask = u >= 0
+            starts = u[mask].astype(int)
+            ends = np.broadcast_to(t_idx, u.shape)[mask].astype(int)
+            weights = w[mask]
+            np.add.at(diff, starts, weights)
+            np.add.at(diff, ends, -weights)
             gamma[:, j] = np.cumsum(diff[:-1])
 
         return HSMMSufficient(
