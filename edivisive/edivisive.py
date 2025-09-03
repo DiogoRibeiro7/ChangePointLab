@@ -65,9 +65,15 @@ def _resample_block_permutation(m: int, b: int, rng: np.random.Generator) -> Arr
     Produces a true permutation (no repeats, no omissions).
     """
     starts = np.arange(0, m, b)
-    order = rng.permutation(len(starts))
-    blocks = [np.arange(starts[k], min(starts[k] + b, m)) for k in order]
-    return np.concatenate(blocks).astype(int)
+    order = rng.permutation(starts)
+    out = np.empty(m, dtype=int)
+    pos = 0
+    for s in order:
+        e = min(s + b, m)
+        k = e - s
+        out[pos:pos + k] = np.arange(s, e)
+        pos += k
+    return out
 
 
 def _resample_circular_block_bootstrap(m: int, b: int, rng: np.random.Generator) -> ArrayI:
