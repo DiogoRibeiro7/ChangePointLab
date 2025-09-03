@@ -14,7 +14,14 @@ from numpy.typing import NDArray
 
 ArrayF = NDArray[np.floating]
 ArrayI = NDArray[np.integer]
-LOGZERO = -1e300  # safe -inf surrogate
+LOGZERO = float("-inf")
+
+
+def _as_scalar(x: ArrayF | float) -> float:
+    """Return a Python float from a NumPy scalar or array."""
+    if isinstance(x, np.ndarray):
+        return x.item()
+    return float(x)
 
 
 # ----------------------------- small math helpers -----------------------------
@@ -75,8 +82,8 @@ def _poisson_dlogZ_terms(lam: float, Dmax: int) -> Tuple[float, float]:
     logf = -lam + ds * math.log(lam) - _log_factorial(ds)
     w = np.exp(logf - logsumexp(logf))  # normalized weights
     t1 = ds / lam - 1.0
-    z1 = float(np.dot(w, t1))
-    z2 = float(np.dot(w, (t1 * t1) - (ds / (lam * lam))))
+    z1 = _as_scalar(np.dot(w, t1))
+    z2 = _as_scalar(np.dot(w, (t1 * t1) - (ds / (lam * lam))))
     return z1, z2
 
 
@@ -249,6 +256,10 @@ class HSMM:
         Build a (K, D) table of log duration pmfs over d∈[1..Dcap],
         where Dcap = min(Dmax, T) and enforcing min_duration by masking.
         """
+        if T < self.cfg.min_duration:
+            raise ValueError(
+                f"T={T} is smaller than min_duration={self.cfg.min_duration}"
+            )
         K = self.cfg.K
         Dcap = min(self.cfg.Dmax, T)
         d_vals = np.arange(1, Dcap + 1, dtype=int)
@@ -258,11 +269,16 @@ class HSMM:
         if kind == "poisson":
             pd: PoissonDur = obj  # type: ignore[assignment]
             for j in range(K):
-                logp[j] = _poisson_logpmf_trunc(d_vals, float(pd.lam[j]), Dcap)
+                logp[j] = _poisson_logpmf_trunc(d_vals, _as_scalar(pd.lam[j]), Dcap)
         else:
             nb: NegBinDur = obj  # type: ignore[assignment]
             for j in range(K):
-                logp[j] = _negbin_logpmf_trunc(d_vals, float(nb.r[j]), float(nb.p[j]), Dcap)
+                logp[j] = _negbin_logpmf_trunc(
+                    d_vals,
+                    _as_scalar(nb.r[j]),
+                    _as_scalar(nb.p[j]),
+                    Dcap,
+                )
 
         # mask durations < min_duration
         if self.cfg.min_duration > 1:
@@ -314,18 +330,18 @@ class HSMM:
                 dmax_t = min(Dcap, t)
                 for d in range(1, dmax_t + 1):
                     u = t - d  # previous segment ended at u
-                    seg_ll = float(cum[t, j] - cum[u, j])  # sum loglik on [t-d+1..t]
+                    seg_ll = _as_scalar(cum[t, j] - cum[u, j])
                     if u == 0:
-                        trans = float(log_pi[j])
+                        trans = _as_scalar(log_pi[j])
                     else:
                         # ensure logphi[u, j] is computed
                         if logphi[u, j] <= LOGZERO / 2:
-                            logphi[u, j] = logsumexp(log_alpha[u, :] + logA[:, j])
-                        trans = float(logphi[u, j])
-                    terms.append(trans + float(log_dur[j, d - 1]) + seg_ll)
-                log_alpha[t, j] = float(logsumexp(np.array(terms, dtype=float))) if terms else LOGZERO
+                            logphi[u, j] = _as_scalar(logsumexp(log_alpha[u, :] + logA[:, j]))
+                        trans = _as_scalar(logphi[u, j])
+                    terms.append(trans + _as_scalar(log_dur[j, d - 1]) + seg_ll)
+                log_alpha[t, j] = _as_scalar(logsumexp(np.array(terms, dtype=float))) if terms else LOGZERO
 
-        logZ = float(logsumexp(log_alpha[T, :]))  # sequence log-likelihood
+        logZ = _as_scalar(logsumexp(log_alpha[T, :]))  # sequence log-likelihood
 
         # Backward β[t, j] = log p(y_{t+1..T} | last ended at t, and was j)
         log_beta = np.full((T + 1, K), LOGZERO, dtype=float)
@@ -341,12 +357,16 @@ class HSMM:
                 dmax_t = min(Dcap, T - t)
                 for d in range(1, dmax_t + 1):
                     u = t + d
-                    seg_ll = float(cum[u, m] - cum[t, m])  # loglik on (t..u]
-                    terms.append(float(log_dur[m, d - 1]) + seg_ll + float(log_beta[u, m]))
-                g[t, m] = float(logsumexp(np.array(terms, dtype=float))) if terms else LOGZERO
+                    seg_ll = _as_scalar(cum[u, m] - cum[t, m])  # loglik on (t..u]
+                    terms.append(
+                        _as_scalar(log_dur[m, d - 1]) + seg_ll + _as_scalar(log_beta[u, m])
+                    )
+                g[t, m] = (
+                    _as_scalar(logsumexp(np.array(terms, dtype=float))) if terms else LOGZERO
+                )
             # combine with transitions
             for j in range(K):
-                log_beta[t, j] = float(logsumexp(logA[j, :] + g[t, :]))
+                log_beta[t, j] = _as_scalar(logsumexp(logA[j, :] + g[t, :]))
 
         # Posterior over segment ends: eta[t, j, d]
         eta = np.zeros((T + 1, K, Dcap), dtype=float)  # we'll ignore t=0 row later
@@ -356,12 +376,19 @@ class HSMM:
                 num = np.full(dmax_t, LOGZERO, dtype=float)
                 for d in range(1, dmax_t + 1):
                     u = t - d
-                    seg_ll = float(cum[t, j] - cum[u, j])
-                    trans = float(log_pi[j]) if u == 0 else float(
-                        (logphi[u, j] if logphi[u, j] > LOGZERO / 2 else logsumexp(log_alpha[u, :] + logA[:, j]))
+                    seg_ll = _as_scalar(cum[t, j] - cum[u, j])
+                    trans = _as_scalar(log_pi[j]) if u == 0 else _as_scalar(
+                        logphi[u, j]
+                        if logphi[u, j] > LOGZERO / 2
+                        else logsumexp(log_alpha[u, :] + logA[:, j])
                     )
-                    num[d - 1] = trans + float(log_dur[j, d - 1]) + seg_ll + float(log_beta[t, j])
-                denom = float(logZ)
+                    num[d - 1] = (
+                        trans
+                        + _as_scalar(log_dur[j, d - 1])
+                        + seg_ll
+                        + _as_scalar(log_beta[t, j])
+                    )
+                denom = _as_scalar(logZ)
                 prob = np.exp(num - denom)
                 eta[t, j, :dmax_t] = prob
 
@@ -394,7 +421,7 @@ class HSMM:
                     if u == 0:
                         continue
                     w = log_alpha[u, :] + logA[:, j]
-                    w = np.exp(w - float(logsumexp(w)))
+                    w = np.exp(w - _as_scalar(logsumexp(w)))
                     xi_counts[:, j] += eta[t, j, d - 1] * w
 
         # Occupancy γ_t(j): accumulate eta coverage with a difference trick
@@ -433,20 +460,20 @@ class HSMM:
             new_lam = pd.lam.copy()
             for j in range(K):
                 counts = N_d[:, j, :].sum(axis=0)  # expected counts per duration (1..Dcap)
-                lam = float(pd.lam[j])
+                lam = _as_scalar(pd.lam[j])
                 lam = max(lam, 1e-3)
-                Ntot = float(counts.sum())
+                Ntot = _as_scalar(counts.sum())
                 if Ntot <= 0:
                     continue
                 # Newton on truncated Poisson likelihood
                 for _ in range(30):
                     # gradient: sum_d N_d (d/λ - 1) - Ntot * Z'/Z
                     d_vals = np.arange(1, Dcap + 1, dtype=float)
-                    g_emp = float(np.dot(counts, (d_vals / lam) - 1.0))
+                    g_emp = _as_scalar(np.dot(counts, (d_vals / lam) - 1.0))
                     z1, z2 = _poisson_dlogZ_terms(lam, Dcap)
                     grad = g_emp - Ntot * z1
                     # Hessian (negative definite): -sum N_d * d/λ^2 - Ntot * (Z''/Z - (Z'/Z)^2)
-                    h_emp = float(-np.dot(counts, d_vals / (lam * lam)))
+                    h_emp = _as_scalar(-np.dot(counts, d_vals / (lam * lam)))
                     h = h_emp - Ntot * (z2 - z1 * z1)
                     if not np.isfinite(grad) or not np.isfinite(h) or h >= 0.0:
                         break
@@ -466,21 +493,21 @@ class HSMM:
             r_new = nb.r.copy()
             p_new = nb.p.copy()
             for j in range(K):
-                Nseg = float(S.seg_count[j])
+                Nseg = _as_scalar(S.seg_count[j])
                 if Nseg <= 0:
                     continue
-                mu = float(S.seg_total_dur[j] / max(Nseg, 1e-12))
-                var = float(S.seg_total_d2[j] / max(Nseg, 1e-12) - mu * mu)
+                mu = _as_scalar(S.seg_total_dur[j] / max(Nseg, 1e-12))
+                var = _as_scalar(S.seg_total_d2[j] / max(Nseg, 1e-12) - mu * mu)
                 var = max(var, 1e-8)
                 # NB2 MoM (ignores upper truncation; robust and fast):
                 # Var = mu + mu^2 / r  => r = mu^2 / (var - mu)  (clip to min)
                 if var > mu + 1e-6:
                     r = mu * mu / (var - mu)
-                    r = float(np.clip(r, 1e-3, 1e6))
+                    r = _as_scalar(np.clip(r, 1e-3, 1e6))
                 else:
                     r = 1e6  # approx Poisson when overdispersion tiny
                 p = mu / (mu + r)  # in (0,1)
-                p = float(np.clip(p, 1e-6, 1 - 1e-6))
+                p = _as_scalar(np.clip(p, 1e-6, 1 - 1e-6))
                 r_new[j] = r
                 p_new[j] = p
             self.params.duration = ("negbin", NegBinDur(r=r_new, p=p_new))
@@ -524,14 +551,14 @@ class HSMM:
                 dmax_t = min(Dcap, t)
                 for d in range(1, dmax_t + 1):
                     u = t - d
-                    seg_ll = float(cum[t, j] - cum[u, j])
+                    seg_ll = _as_scalar(cum[t, j] - cum[u, j])
                     if u == 0:
-                        cand = float(log_pi[j]) + float(log_dur[j, d - 1]) + seg_ll
+                        cand = _as_scalar(log_pi[j]) + _as_scalar(log_dur[j, d - 1]) + seg_ll
                         prev_i = -1
                     else:
                         prev_scores = V[u, :] + logA[:, j]
                         i = int(np.argmax(prev_scores))
-                        cand = float(prev_scores[i]) + float(log_dur[j, d - 1]) + seg_ll
+                        cand = _as_scalar(prev_scores[i]) + _as_scalar(log_dur[j, d - 1]) + seg_ll
                         prev_i = i
                     if cand > best:
                         best = cand

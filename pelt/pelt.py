@@ -31,6 +31,8 @@ class SegmentCost(Protocol):
     -----
     * PELT assumes the pruning condition (Eq. (4) in the paper) holds for some constant K.
       For negative log-likelihood costs, K=0 is standard. :contentReference[oaicite:1]{index=1}
+    * Implementations maintain internal cumulative sums and are **not** thread-safe;
+      use separate instances per concurrent execution.
     """
 
     def precompute(self, y: ArrayF) -> None: ...

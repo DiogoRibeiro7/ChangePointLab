@@ -155,6 +155,11 @@ Feedback and pull requests are welcome to help stabilise these features.
 Detailed documentation and additional examples are available in the
 [`docs/`](docs/) folder and in the [`examples/`](examples/) directory.
 
+For planned features and long-term enhancements across modules, consult the
+roadmap in [`bayesian_blocks/FUTURE_WORKS.md`](bayesian_blocks/FUTURE_WORKS.md),
+which also highlights cross-module efforts like JIT acceleration and API
+harmonization.
+
 ## Citation
 
 If you use this toolkit in your research, please cite:

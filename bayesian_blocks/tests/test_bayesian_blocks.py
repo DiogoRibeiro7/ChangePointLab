@@ -92,11 +92,11 @@ class TestBasicFunctionality:
 
         assert len(result_small_p0.block_value) > len(result_large_p0.block_value)
 
-        # Direct gamma testing
-        result_small_gamma = bayesian_blocks_counts(data, gamma=0.1)
-        result_large_gamma = bayesian_blocks_counts(data, gamma=100.0)
+        # Direct penalty testing
+        result_small_pen = bayesian_blocks_counts(data, penalty=0.1)
+        result_large_pen = bayesian_blocks_counts(data, penalty=100.0)
 
-        assert len(result_small_gamma.block_value) > len(result_large_gamma.block_value)
+        assert len(result_small_pen.block_value) > len(result_large_pen.block_value)
 
     def test_invalid_inputs(self):
         """Test various invalid inputs."""
@@ -312,7 +312,7 @@ class TestStatisticalProperties:
 
         events = np.sort(np.concatenate([t1, t2]))
 
-        result = bayesian_blocks_events(events, t_start=0.0, t_stop=t_end, p0=0.05)
+        result = bayesian_blocks_events(events, t_start=0.0, t_stop=t_end, penalty=0.5)
 
         # Should detect rate change
         assert len(result.block_value) >= 2

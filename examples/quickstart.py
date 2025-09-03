@@ -56,9 +56,9 @@ def run_kcp():
     X = np.concatenate(
         [rng.normal(0, 1, 60), rng.normal(3, 1, 60)]
     )[:, None]
-    K, gamma = gram_rbf(X)
+    K, _ = gram_rbf(X)
     pref = build_kernel_prefix(K)
-    res = kcp_penalized(pref, gamma=np.log(X.shape[0]), min_size=10, method="pelt")
+    res = kcp_penalized(pref, penalty=np.log(X.shape[0]), min_size=10, method="pelt")
     print("KCP change points:", res.change_points.tolist())
 
 

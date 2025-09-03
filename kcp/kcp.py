@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import math
 import numpy as np
@@ -175,14 +175,15 @@ def _labels_from_cps(n: int, cps: ArrayI) -> ArrayI:
 
 def kcp_penalized(
     pref: KernelPrefix,
+    penalty: Optional[float] = None,
     *,
-    gamma: float,
+    gamma: Optional[float] = None,
     min_size: int = 1,
     method: str = "pelt",   # "pelt" | "op"
     grid_jump: int = 1,     # consider only ends t multiple of grid_jump (approximate speedup)
 ) -> KCPResult:
     """
-    Penalized kernel CPD: minimize sum C(segments) + gamma * m (m = #changepoints).
+    Penalized kernel CPD: minimize sum C(segments) + penalty * m (m = #changepoints).
     - method="pelt": Parallel pruning (expected linear-time under mild conditions).
     - method="op":  Classic O(n^2) optimal partitioning (no pruning).
     - grid_jump>1: evaluate only endpoints t in {grid_jump, 2*grid_jump, ... , n}; always ensure n is included.
@@ -198,23 +199,28 @@ def kcp_penalized(
                          edges=np.array([0], dtype=np.int64), costs_per_segment=np.array([], dtype=float))
     if min_size < 1 or min_size > n:
         raise ValueError("min_size must be in [1, n].")
-    if gamma < 0 or not np.isfinite(gamma):
-        raise ValueError("gamma must be a non-negative finite number.")
+    if penalty is None:
+        penalty = gamma
+    if penalty is None:
+        raise ValueError("penalty must be provided.")
+    if penalty < 0 or not np.isfinite(penalty):
+        raise ValueError("penalty must be a non-negative finite number.")
     if method not in {"pelt", "op"}:
         raise ValueError("method must be 'pelt' or 'op'.")
 
     # Restrict candidate endpoints if grid_jump>1
     grid = np.arange(grid_jump, n, grid_jump, dtype=int).tolist()
-    if grid[-1] != n:
+    if not grid or grid[-1] != n:
         grid = [t for t in grid if t < n] + [n]
 
     # DP arrays
     F = np.full(n + 1, float("inf"))
     prev = np.full(n + 1, -1, dtype=int)
     seg_cost = np.full(n + 1, float("inf"))
+    cost_cache: Dict[Tuple[int, int], float] = {}
 
     # base
-    F[0] = -gamma
+    F[0] = -penalty
     prev[0] = -1
 
     if method == "op":
@@ -226,8 +232,12 @@ def kcp_penalized(
             if i_max < 0:
                 continue
             idx = np.arange(i_min, i_max + 1, dtype=int)
-            costs = np.fromiter((kernel_segment_cost(pref, i, t) for i in idx), count=idx.size, dtype=float)
-            vals = F[idx] + costs + gamma
+            costs = np.fromiter(
+                (cost_cache.setdefault((i, t), kernel_segment_cost(pref, i, t)) for i in idx),
+                count=idx.size,
+                dtype=float,
+            )
+            vals = F[idx] + costs + penalty
             k = int(np.argmin(vals))
             F[t] = float(vals[k])
             prev[t] = int(idx[k])
@@ -241,8 +251,12 @@ def kcp_penalized(
             Rt = [i for i in R if t - i >= min_size]
             if not Rt:
                 continue
-            costs = np.fromiter((kernel_segment_cost(pref, i, t) for i in Rt), count=len(Rt), dtype=float)
-            vals = F[np.array(Rt)] + costs + gamma
+            costs = np.fromiter(
+                (cost_cache.setdefault((i, t), kernel_segment_cost(pref, i, t)) for i in Rt),
+                count=len(Rt),
+                dtype=float,
+            )
+            vals = F[np.array(Rt)] + costs + penalty
             k = int(np.argmin(vals))
             F[t] = float(vals[k])
             prev[t] = int(Rt[k])
@@ -253,7 +267,8 @@ def kcp_penalized(
             Rt_plus = Rt + [t - min_size]  # newly admissible start for next step
             R = []
             for i in Rt_plus:
-                if F[i] + kernel_segment_cost(pref, i, t) <= F[t] + 1e-12:
+                c = cost_cache.setdefault((i, t), kernel_segment_cost(pref, i, t))
+                if F[i] + c + penalty <= F[t] + 1e-12:
                     R.append(i)
 
     # Backtrack
@@ -272,14 +287,19 @@ def kcp_penalized(
     while t > 0:
         i = int(prev[t])
         cps.append(t)
-        costs_list.append(kernel_segment_cost(pref, i, t))
+        costs_list.append(cost_cache.setdefault((i, t), kernel_segment_cost(pref, i, t)))
         t = i
     cps = list(reversed(cps[:-1]))  # drop the terminal n
     edges = np.array([0, *cps, n], dtype=np.int64)
     labels = _labels_from_cps(n, np.asarray(cps, dtype=np.int64))
-    return KCPResult(n=n, change_points=np.asarray(cps, dtype=np.int64),
-                     labels=labels, total_cost=float(F[n]), edges=edges,
-                     costs_per_segment=np.asarray(costs_list[::-1], dtype=float))
+    return KCPResult(
+        n=n,
+        change_points=np.asarray(cps, dtype=np.int64),
+        labels=labels,
+        total_cost=float(F[n]),
+        edges=edges,
+        costs_per_segment=np.asarray(costs_list[::-1], dtype=float),
+    )
 
 
 # ---------------------------------------------------------------------
