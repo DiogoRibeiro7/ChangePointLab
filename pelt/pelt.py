@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections import deque
 from typing import Callable, List, Optional, Protocol, Sequence, Tuple
 
 import math
@@ -13,6 +14,7 @@ from numpy.typing import NDArray
 
 
 ArrayF = NDArray[np.floating]
+ArrayI = NDArray[np.int_]
 
 
 # =========================
@@ -32,7 +34,8 @@ class SegmentCost(Protocol):
     * PELT assumes the pruning condition (Eq. (4) in the paper) holds for some constant K.
       For negative log-likelihood costs, K=0 is standard. :contentReference[oaicite:1]{index=1}
     * Implementations maintain internal cumulative sums and are **not** thread-safe;
-      use separate instances per concurrent execution.
+      create a separate instance per thread (e.g., via ``copy.deepcopy``) or redesign
+      to be stateless.
     """
 
     def precompute(self, y: ArrayF) -> None: ...
@@ -172,11 +175,17 @@ class PELTResult:
         DP values F[t] for t=0..n (F[0] = -β).
     prev : NDArray[np.int64]
         Backpointers: prev[t] = last change location before t (argmin at t).
+    labels : ArrayI
+        Segment labels 0..m for each index of the data.
+    costs_per_segment : ArrayF
+        Cost of each segment in the optimal partition.
     """
     change_points: List[int]
     total_cost: float
     F: ArrayF
     prev: NDArray[np.int64]
+    labels: ArrayI
+    costs_per_segment: ArrayF
 
 
 # =========================
@@ -217,8 +226,14 @@ def pelt(
     y_arr = np.asarray(y, dtype=float)
     n = int(y_arr.size)
     if n == 0:
-        return PELTResult(change_points=[], total_cost=0.0,
-                          F=np.array([0.0]), prev=np.array([-1], dtype=np.int64))
+        return PELTResult(
+            change_points=[],
+            total_cost=0.0,
+            F=np.array([0.0]),
+            prev=np.array([-1], dtype=np.int64),
+            labels=np.array([], dtype=int),
+            costs_per_segment=np.array([], dtype=float),
+        )
     if min_seg_len < 1 or min_seg_len > n:
         raise ValueError("min_seg_len must be in [1, n].")
     if not np.isfinite(penalty) or penalty < 0:
@@ -233,18 +248,21 @@ def pelt(
     F[0] = -penalty  # as in OP/PELT to make total penalty = m*β. :contentReference[oaicite:6]{index=6}
 
     # Candidate set R_t (possible last-change positions)
-    R: List[int] = [0]
+    R = deque([0])
 
     # Main loop
     for t in range(min_seg_len, n + 1):  # t is end index (exclusive), segment is [τ, t)
-        # Eligible candidates (respect min_seg_len)
-        Rt = [τ for τ in R if (t - τ) >= min_seg_len]
-
-        # Evaluate DP objective for each candidate τ
+        cost_cache = {}
+        eligible: List[int] = []
         best_val = float("inf")
         best_tau = -1
-        for τ in Rt:
-            val = F[τ] + cost_fn.cost(τ, t) + penalty
+        for τ in R:
+            if t - τ < min_seg_len:
+                continue
+            c = cost_fn.cost(τ, t)
+            cost_cache[τ] = c
+            eligible.append(τ)
+            val = F[τ] + c + penalty
             if val < best_val:
                 best_val = val
                 best_tau = τ
@@ -252,20 +270,19 @@ def pelt(
         F[t] = best_val
         prev[t] = best_tau
 
-        # Update candidate set for t+1:
-        # add the latest index that *can* be a last-change at t+1: τ_new = t+1 - min_seg_len
         τ_new = t + 1 - min_seg_len
+        prune_candidates = eligible.copy()
         if 0 <= τ_new <= n:
-            Rt_plus = Rt + [τ_new]
-        else:
-            Rt_plus = Rt
+            c_new = cost_fn.cost(τ_new, t)
+            cost_cache[τ_new] = c_new
+            prune_candidates.append(τ_new)
 
-        # Prune (Thm. 3.1): keep τ with F[τ] + C(τ, t) + K <= F[t]
-        R = []
-        for τ in Rt_plus:
-            lhs = F[τ] + cost_fn.cost(τ, t) + K
+        new_R = deque()
+        for τ in prune_candidates:
+            lhs = F[τ] + cost_cache[τ] + K
             if lhs <= F[t] + 1e-12:  # tiny slack for floating error
-                R.append(τ)
+                new_R.append(τ)
+        R = new_R
 
     # Backtrack from t=n to recover changepoints
     cps: List[int] = []
@@ -279,8 +296,20 @@ def pelt(
             cps.append(τ)
         t = τ
     cps.reverse()
-
-    return PELTResult(change_points=cps, total_cost=F[n], F=F, prev=prev)
+    edges = [0] + cps + [n]
+    labels = np.empty(n, dtype=int)
+    costs = []
+    for k, (a, b) in enumerate(zip(edges[:-1], edges[1:])):
+        labels[a:b] = k
+        costs.append(cost_fn.cost(a, b))
+    return PELTResult(
+        change_points=cps,
+        total_cost=F[n],
+        F=F,
+        prev=prev,
+        labels=labels,
+        costs_per_segment=np.asarray(costs, dtype=float),
+    )
 
 
 # =========================
