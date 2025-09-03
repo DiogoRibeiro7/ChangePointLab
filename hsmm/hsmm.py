@@ -1,3 +1,12 @@
+"""
+Hidden semi-Markov models with explicit duration.
+
+References
+----------
+.. [1] S.-Z. Yu (2010). "Hidden semi-Markov models." *Artificial Intelligence* 174(2):215-243.
+.. [2] M. J. Johnson et al. (2015). "Composing graphical models with neural networks for structured representations and fast inference." *Advances in Neural Information Processing Systems*.
+"""
+
 # hsmm.py
 # MIT License
 # (c) 2025
@@ -162,10 +171,15 @@ class HSMMParams:
 
 class HSMM:
     """
-    Explicit-Duration HSMM (Yu 2010; Johnson 2013 flavour), log-space implementation.
+    Explicit-duration HSMM in log space following Yu (2010) and Johnson et al. (2015).
 
     You pass a (T, K) matrix of per-time per-state log-likelihoods, L[t, j] = log p(y_t | state=j).
     Emissions are not learned here; we focus on durations + transitions.
+
+    References
+    ----------
+    .. [1] S.-Z. Yu (2010). "Hidden semi-Markov models." *Artificial Intelligence* 174(2):215-243.
+    .. [2] M. J. Johnson et al. (2015). "Composing graphical models with neural networks for structured representations and fast inference." *Advances in Neural Information Processing Systems*.
     """
 
     def __init__(self, cfg: HSMMConfig, params: HSMMParams) -> None:
@@ -173,6 +187,7 @@ class HSMM:
         self.params = params
         self.rng = np.random.default_rng(cfg.seed)
         self._validate_and_prepare()
+        self._dur_cache: Dict[int, ArrayF] = {}
 
     # -------------------- public API --------------------
 
@@ -260,34 +275,40 @@ class HSMM:
             raise ValueError(
                 f"T={T} is smaller than min_duration={self.cfg.min_duration}"
             )
+        if T in self._dur_cache:
+            return self._dur_cache[T]
         K = self.cfg.K
         Dcap = min(self.cfg.Dmax, T)
-        d_vals = np.arange(1, Dcap + 1, dtype=int)
-        logp = np.full((K, Dcap), LOGZERO, dtype=float)
+        d_vals = np.arange(1, Dcap + 1, dtype=float)
 
         kind, obj = self.params.duration
         if kind == "poisson":
             pd: PoissonDur = obj  # type: ignore[assignment]
-            for j in range(K):
-                logp[j] = _poisson_logpmf_trunc(d_vals, _as_scalar(pd.lam[j]), Dcap)
+            lam = pd.lam[:, None]
+            base = -lam + d_vals * np.log(lam) - _log_factorial(d_vals.astype(int))[None, :]
+            logp = base - logsumexp(base, axis=1)[:, None]
         else:
             nb: NegBinDur = obj  # type: ignore[assignment]
-            for j in range(K):
-                logp[j] = _negbin_logpmf_trunc(
-                    d_vals,
-                    _as_scalar(nb.r[j]),
-                    _as_scalar(nb.p[j]),
-                    Dcap,
-                )
+            r = nb.r[:, None]
+            p = nb.p[:, None]
+            ds = d_vals[None, :]
+            log_all = (
+                np.vectorize(math.lgamma)(ds + r)
+                - np.vectorize(math.lgamma)(r)
+                - _log_factorial(ds.astype(int))
+                + ds * np.log(p)
+                + r * np.log(1.0 - p)
+            )
+            logp = log_all - logsumexp(log_all, axis=1)[:, None]
 
         # mask durations < min_duration
         if self.cfg.min_duration > 1:
             mask = d_vals < self.cfg.min_duration
             logp[:, mask] = LOGZERO
-            # renormalize each state's truncated pmf
             norm = logsumexp(logp, axis=1)
             logp = logp - norm[:, None]
 
+        self._dur_cache[T] = logp
         return logp  # shape (K, Dcap)
 
     # ----------- segment emission log-likelihoods via cumulative sums -----------
@@ -322,24 +343,18 @@ class HSMM:
         logA = safe_log(self.params.A)
 
         for t in range(1, T + 1):
-            # precompute prev mixing from time u = t-d
-            # We'll fill when needed; but to accelerate, update logphi once per u
+            dmax_t = min(Dcap, t)
+            d_range = np.arange(1, dmax_t + 1)
+            u = t - d_range
             for j in range(K):
-                terms: List[float] = []
-                # loop durations d
-                dmax_t = min(Dcap, t)
-                for d in range(1, dmax_t + 1):
-                    u = t - d  # previous segment ended at u
-                    seg_ll = _as_scalar(cum[t, j] - cum[u, j])
-                    if u == 0:
-                        trans = _as_scalar(log_pi[j])
-                    else:
-                        # ensure logphi[u, j] is computed
-                        if logphi[u, j] <= LOGZERO / 2:
-                            logphi[u, j] = _as_scalar(logsumexp(log_alpha[u, :] + logA[:, j]))
-                        trans = _as_scalar(logphi[u, j])
-                    terms.append(trans + _as_scalar(log_dur[j, d - 1]) + seg_ll)
-                log_alpha[t, j] = _as_scalar(logsumexp(np.array(terms, dtype=float))) if terms else LOGZERO
+                seg_ll = cum[t, j] - cum[u, j]
+                trans = np.where(u == 0, log_pi[j], logphi[u, j])
+                mask = (u > 0) & (logphi[u, j] <= LOGZERO / 2)
+                if np.any(mask):
+                    logphi[u[mask], j] = logsumexp(log_alpha[u[mask], :] + logA[:, j], axis=1)
+                    trans[mask] = logphi[u[mask], j]
+                terms = trans + log_dur[j, :dmax_t] + seg_ll
+                log_alpha[t, j] = _as_scalar(logsumexp(terms)) if terms.size else LOGZERO
 
         logZ = _as_scalar(logsumexp(log_alpha[T, :]))  # sequence log-likelihood
 
@@ -352,45 +367,30 @@ class HSMM:
         g[T, :] = LOGZERO  # no segment can start after T
 
         for t in range(T - 1, -1, -1):
+            dmax_t = min(Dcap, T - t)
+            d_range = np.arange(1, dmax_t + 1)
+            u = t + d_range
             for m in range(K):
-                terms: List[float] = []
-                dmax_t = min(Dcap, T - t)
-                for d in range(1, dmax_t + 1):
-                    u = t + d
-                    seg_ll = _as_scalar(cum[u, m] - cum[t, m])  # loglik on (t..u]
-                    terms.append(
-                        _as_scalar(log_dur[m, d - 1]) + seg_ll + _as_scalar(log_beta[u, m])
-                    )
-                g[t, m] = (
-                    _as_scalar(logsumexp(np.array(terms, dtype=float))) if terms else LOGZERO
-                )
-            # combine with transitions
-            for j in range(K):
-                log_beta[t, j] = _as_scalar(logsumexp(logA[j, :] + g[t, :]))
+                seg_ll = cum[u, m] - cum[t, m]
+                terms = log_dur[m, :dmax_t] + seg_ll + log_beta[u, m]
+                g[t, m] = _as_scalar(logsumexp(terms)) if terms.size else LOGZERO
+            log_beta[t, :] = logsumexp(logA + g[t, :], axis=1)
 
         # Posterior over segment ends: eta[t, j, d]
         eta = np.zeros((T + 1, K, Dcap), dtype=float)  # we'll ignore t=0 row later
         for t in range(1, T + 1):
+            dmax_t = min(Dcap, t)
+            d_range = np.arange(1, dmax_t + 1)
+            u = t - d_range
             for j in range(K):
-                dmax_t = min(Dcap, t)
-                num = np.full(dmax_t, LOGZERO, dtype=float)
-                for d in range(1, dmax_t + 1):
-                    u = t - d
-                    seg_ll = _as_scalar(cum[t, j] - cum[u, j])
-                    trans = _as_scalar(log_pi[j]) if u == 0 else _as_scalar(
-                        logphi[u, j]
-                        if logphi[u, j] > LOGZERO / 2
-                        else logsumexp(log_alpha[u, :] + logA[:, j])
-                    )
-                    num[d - 1] = (
-                        trans
-                        + _as_scalar(log_dur[j, d - 1])
-                        + seg_ll
-                        + _as_scalar(log_beta[t, j])
-                    )
-                denom = _as_scalar(logZ)
-                prob = np.exp(num - denom)
-                eta[t, j, :dmax_t] = prob
+                seg_ll = cum[t, j] - cum[u, j]
+                trans = np.where(u == 0, log_pi[j], logphi[u, j])
+                mask = (u > 0) & (logphi[u, j] <= LOGZERO / 2)
+                if np.any(mask):
+                    logphi[u[mask], j] = logsumexp(log_alpha[u[mask], :] + logA[:, j], axis=1)
+                    trans[mask] = logphi[u[mask], j]
+                num = trans + log_dur[j, :dmax_t] + seg_ll + log_beta[t, j]
+                eta[t, j, :dmax_t] = np.exp(num - logZ)
 
         # Aggregate sufficient stats
         seg_count = eta[1:].sum(axis=(0, 2))                            # (K,)
@@ -511,6 +511,9 @@ class HSMM:
                 r_new[j] = r
                 p_new[j] = p
             self.params.duration = ("negbin", NegBinDur(r=r_new, p=p_new))
+
+        # updated duration parameters invalidate cached tables
+        self._dur_cache.clear()
 
     def _m_step_transitions(self, S: HSMMSufficient) -> None:
         # initial
