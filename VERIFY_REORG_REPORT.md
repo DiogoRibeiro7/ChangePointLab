@@ -1,9 +1,8 @@
 # Verification Report: ChangePointLab Reorganization
 
 ## Directory Structure & Required Files
-- ❌ `changepoint_lab` package directory missing; top-level contains `algorithms/`, `bocpd/`, `pelt/`, etc. Root layout does not match proposed tree【6949cd†L1-L40】
-- ❌ `py.typed` marker not found under `changepoint_lab/`【34e149†L1-L3】
-- ❌ Required subdirectories/files under `changepoint_lab/` absent (`algorithms/bayesian`, `_compat.py`, etc.)【906c94†L1-L9】
+- ✅ `changepoint_lab/` package present with `_compat.py`, `core/`, `common/`, `algorithms/`, and `py.typed` marker【2f1c27†L1-L30】【5bf4f1†L1-L2】
+- ⚠️ Legacy algorithm directories (`bocpd/`, `pelt/`, `kcp/`, etc.) remain at repository root for backward compatibility【2f1c27†L1-L30】
 
 ## Public API Exposure & Compatibility
 - ✅ Top-level API exposes `PELT`, `BOCPD`, `EDivisive`, `HSMM`, `KernelCPD` and legacy imports raise `DeprecationWarning` (manual tests)【6ff898†L1-L2】
@@ -15,7 +14,7 @@
 - ✅ No cross-algorithm imports detected; only core/common referenced【7166b1†L1-L3】
 
 ## Tests & Coverage
-- ❌ `pytest -q` fails to collect tests due to missing symbols like `BoostedBoundaryHazard` and `PoissonDur`【bdcc6d†L3-L37】
+- ❌ `pytest -q` fails: legacy `bocpd` tests reference removed `common` module【b99393†L1-L40】
 - ❌ Coverage check unsupported (`pytest-cov` plugin not installed)【1a3f88†L1-L5】
 
 ## Typing, Linting, Docstrings
@@ -37,7 +36,7 @@
 **Status:** Fixes required.
 
 ### Priority Fixes
-1. Align package layout with `changepoint_lab/` directory and relocate modules accordingly.
+1. Remove or relocate legacy algorithm directories to fully match the unified package layout.
 2. Resolve missing symbols in BOCPD/HSMM to restore test suite.
 3. Install and configure developer tools (`pytest-cov`, `mypy`, `ruff`, `pydocstyle`, `sphinx`, `build`) and address lint/typing issues.
 4. Provide CHANGELOG with deprecation timeline and update tutorials to use top-level classes.
