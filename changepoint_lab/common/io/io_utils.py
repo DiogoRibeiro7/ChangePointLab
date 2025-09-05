@@ -9,7 +9,7 @@ from typing import Iterable, List, Sequence, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-# local types (import from within_period_cpd in your code)
+# Local types shared with within-period CPD modules
 Tau = Tuple[int, ...]
 
 

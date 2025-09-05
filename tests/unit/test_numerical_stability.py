@@ -20,7 +20,7 @@ from changepoint_lab.algorithms.state_space.hsmm import (
     PoissonDur,
 )
 
-from sdhmm.sdhmm import SDHMM, SDHMMConfig
+from changepoint_lab.algorithms.state_space.sdhmm import SDHMM, SDHMMConfig
 
 # ------------------------- BOCPD ---------------------------------
 
@@ -152,7 +152,8 @@ def test_sdhmm_compositional_boundary(seed):
         em_steps=1,
     )
     model = SDHMM(cfg)
-    res = model.fit(X)
+    model.fit(X)
+    res = model.result_
     assert np.allclose(res.gamma.sum(axis=1), 1.0, rtol=1e-6)
     assert np.isfinite(res.loglik)
     for p in res.params:

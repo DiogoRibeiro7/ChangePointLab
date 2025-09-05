@@ -1,5 +1,5 @@
 import numpy as np
-import kcp
+from changepoint_lab.algorithms.kernel import kcp_core as kcp
 
 
 def test_kcp_respects_max_seg_len():

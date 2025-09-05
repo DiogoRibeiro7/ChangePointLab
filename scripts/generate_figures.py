@@ -12,13 +12,28 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-from bocpd.bocpd import BOCPD, ConstantHazard, BOCPDConfig
-from edivisive.edivisive import edivisive
-from hsmm.gaussian_diag import estimate_by_kmeanspp, gaussian_diag_loglik
-from hsmm.hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
-from pelt.pelt import BetaBinomialCost, pelt, bic_penalty
-from sdhmm.sdhmm import SDHMM, SDHMMConfig
-from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
+from changepoint_lab.algorithms.bayesian.bocpd import (
+    BOCPD,
+    BOCPDConfig,
+    ConstantHazard,
+)
+from changepoint_lab import edivisive
+from changepoint_lab import HSMM, HSMMConfig, HSMMParams, PoissonDur
+from changepoint_lab.algorithms.state_space.emissions import (
+    estimate_by_kmeanspp,
+    gaussian_diag_loglik,
+)
+from changepoint_lab.algorithms.optimization.pelt import (
+    BetaBinomialCost,
+    bic_penalty,
+    pelt,
+)
+from changepoint_lab.algorithms.state_space.sdhmm import SDHMM, SDHMMConfig
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    RJConfig,
+    WithinPeriodCPD,
+)
 
 FIG_DIR = Path(__file__).resolve().parent.parent / "paper" / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)

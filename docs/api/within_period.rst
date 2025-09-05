@@ -1,7 +1,7 @@
-Within-Period BOCPD
-===================
+Within-Period CPD
+=================
 
-.. autoclass:: changepoint_lab.algorithms.bayesian.within_period.WithinPeriodBOCPD
+.. autoclass:: changepoint_lab.algorithms.bayesian.within_period.WithinPeriodCPD
    :members:
 
 .. autoclass:: changepoint_lab.algorithms.bayesian.within_period.ModelPrior

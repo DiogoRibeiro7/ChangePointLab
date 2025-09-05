@@ -6,7 +6,7 @@ changepoint detection on small synthetic data sets.
 
 import numpy as np
 
-from changepoint_lab import BOCPD, WithinPeriodBOCPD, KernelCPD
+from changepoint_lab import BOCPD, KernelCPD, WithinPeriodCPD
 from changepoint_lab.algorithms.bayesian.bocpd import BOCPDConfig, ConstantHazard
 from changepoint_lab.algorithms.bayesian.within_period import ModelPrior, RJConfig
 
@@ -36,7 +36,7 @@ def run_within_period():
         idx = d * N + 8
         x[idx : idx + 4] = rng.binomial(1, 0.8, 4).astype(bool)
     prior = ModelPrior(N=N, l=4)
-    model = WithinPeriodBOCPD(prior, RJConfig(iters=1000, burn=200, thin=5, seed=42))
+    model = WithinPeriodCPD(prior, RJConfig(iters=1000, burn=200, thin=5, seed=42))
     result = model.fit(x).predict()
     print("Within-Period CPD MAP changepoints:", result.indices.tolist())
 

@@ -29,7 +29,7 @@ E-Divisive detects changepoints via energy statistics without distributional ass
 
 ## Example: Permutation Count vs. Runtime
 ```python
-from edivisive import edivisive
+from changepoint_lab import edivisive
 import numpy as np, time
 x = np.concatenate([np.random.normal(0,1,100), np.random.normal(1,1,100)])
 for perms in [100, 500, 1000]:

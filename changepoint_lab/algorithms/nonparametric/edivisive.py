@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from edivisive.edivisive import EDivisiveResult
-from edivisive.edivisive import edivisive as _edivisive
+from .edivisive_core import EDivisiveResult
+from .edivisive_core import edivisive as _edivisive
 
 from ...core.datatypes import ChangePointResult
 from .._base import BaseDetector

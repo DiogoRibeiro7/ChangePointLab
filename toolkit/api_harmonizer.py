@@ -21,13 +21,12 @@ from common.types.types import ChangePointResult, Tau, Array1D, Array1DFloat, Ar
 
 # Import algorithm modules
 try:
-    import bayesian_blocks
-    import edivisive
-    import kcp
-    import kcp_rff
-    import within_period.within_period_cpd as within_period_cpd
-    import hsmm
-    import sdhmm
+    from changepoint_lab import edivisive
+    from changepoint_lab.algorithms.kernel import kcp_core as kcp
+    from changepoint_lab.algorithms.kernel import kcp_rff
+    from changepoint_lab.algorithms.kernel import rff_variants
+    import changepoint_lab.algorithms.bayesian.within_period.within_period_cpd as within_period_cpd
+    from changepoint_lab.algorithms.state_space import hsmm
 
     MODULES_AVAILABLE = True
 except ImportError:
@@ -51,7 +50,6 @@ class AlgorithmRegistry:
     def _register_algorithms(self):
         """Register all available algorithms with standardized interfaces."""
         # Register change-point detection algorithms
-        self._register_bayesian_blocks()
         self._register_edivisive()
         self._register_kcp()
         self._register_kcp_rff()
@@ -61,46 +59,6 @@ class AlgorithmRegistry:
         self._register_hsmm()
         self._register_sdhmm()
 
-    def _register_bayesian_blocks(self):
-        """Register Bayesian Blocks algorithms."""
-        self.categories["bayesian_blocks"] = "change_point"
-
-        # Events mode
-        self.algorithms["bayesian_blocks_events"] = {
-            "function": self.bayesian_blocks_events_adapter,
-            "description": "Bayesian Blocks for event data (unbinned Poisson)",
-            "params": {
-                "data": "Event times",
-                "t_start": "Start time (optional)",
-                "t_stop": "End time (optional)",
-                "p0": "False positive rate prior",
-            },
-            "returns": "ChangePointResult with block edges and values",
-        }
-
-        # Counts mode
-        self.algorithms["bayesian_blocks_counts"] = {
-            "function": self.bayesian_blocks_counts_adapter,
-            "description": "Bayesian Blocks for binned count data",
-            "params": {
-                "data": "Count data array",
-                "widths": "Bin widths (optional)",
-                "p0": "False positive rate prior",
-            },
-            "returns": "ChangePointResult with block edges and values",
-        }
-
-        # Bernoulli mode
-        self.algorithms["bayesian_blocks_bernoulli"] = {
-            "function": self.bayesian_blocks_bernoulli_adapter,
-            "description": "Bayesian Blocks for Bernoulli/binary data",
-            "params": {
-                "data": "Binary success/fail data",
-                "trials": "Number of trials (optional)",
-                "p0": "False positive rate prior",
-            },
-            "returns": "ChangePointResult with block edges and values",
-        }
 
     def _register_edivisive(self):
         """Register E-Divisive algorithm."""
@@ -243,134 +201,6 @@ class AlgorithmRegistry:
 
     # ========== Adapter Functions ==========
 
-    def bayesian_blocks_events_adapter(
-        self,
-        data: NDArray,
-        t_start: Optional[float] = None,
-        t_stop: Optional[float] = None,
-        p0: float = 0.05,
-    ) -> ChangePointResult:
-        """
-        Adapter for Bayesian Blocks events method.
-
-        Parameters
-        ----------
-        data : NDArray
-            Event times
-        t_start : Optional[float]
-            Start time
-        t_stop : Optional[float]
-            End time
-        p0 : float
-            False positive rate prior
-
-        Returns
-        -------
-        ChangePointResult
-            Standardized result
-        """
-        if not MODULES_AVAILABLE:
-            raise ImportError("bayesian_blocks module not available")
-
-        # Call original function
-        result = bayesian_blocks.bayesian_blocks_events(data, t_start, t_stop, p0)
-
-        # Convert to standard result
-        change_points = list(result.edges[1:-1])  # Exclude boundaries
-        segments = []
-        for i in range(len(result.edges) - 1):
-            segments.append((result.edges[i], result.edges[i + 1]))
-
-        return ChangePointResult(
-            change_points=change_points,
-            segments=segments,
-            scores=None,
-            cost=0.0,
-            model_name="bayesian_blocks_events",
-            parameters={"p0": p0},
-        )
-
-    def bayesian_blocks_counts_adapter(
-        self, data: NDArray, widths: Optional[NDArray] = None, p0: float = 0.05
-    ) -> ChangePointResult:
-        """
-        Adapter for Bayesian Blocks counts method.
-
-        Parameters
-        ----------
-        data : NDArray
-            Count data
-        widths : Optional[NDArray]
-            Bin widths
-        p0 : float
-            False positive rate prior
-
-        Returns
-        -------
-        ChangePointResult
-            Standardized result
-        """
-        if not MODULES_AVAILABLE:
-            raise ImportError("bayesian_blocks module not available")
-
-        # Call original function
-        result = bayesian_blocks.bayesian_blocks_counts(data, widths, p0)
-
-        # Convert to standard result
-        change_points = list(result.edges[1:-1])  # Exclude boundaries
-        segments = []
-        for i in range(len(result.edges) - 1):
-            segments.append((result.edges[i], result.edges[i + 1]))
-
-        return ChangePointResult(
-            change_points=change_points,
-            segments=segments,
-            scores=None,
-            cost=0.0,
-            model_name="bayesian_blocks_counts",
-            parameters={"p0": p0},
-        )
-
-    def bayesian_blocks_bernoulli_adapter(
-        self, data: NDArray, trials: Optional[NDArray] = None, p0: float = 0.05
-    ) -> ChangePointResult:
-        """
-        Adapter for Bayesian Blocks Bernoulli method.
-
-        Parameters
-        ----------
-        data : NDArray
-            Binary success/fail data
-        trials : Optional[NDArray]
-            Number of trials
-        p0 : float
-            False positive rate prior
-
-        Returns
-        -------
-        ChangePointResult
-            Standardized result
-        """
-        if not MODULES_AVAILABLE:
-            raise ImportError("bayesian_blocks module not available")
-
-        # Call original function
-        result = bayesian_blocks.bayesian_blocks_bernoulli(data, trials, p0)
-
-        # Convert to standard result
-        change_points = list(result.edges[1:-1])  # Exclude boundaries
-        segments = []
-        for i in range(len(result.edges) - 1):
-            segments.append((result.edges[i], result.edges[i + 1]))
-
-        return ChangePointResult(
-            change_points=change_points,
-            segments=segments,
-            scores=None,
-            cost=0.0,
-            model_name="bayesian_blocks_bernoulli",
-            parameters={"p0": p0},
-        )
 
     def edivisive_adapter(
         self,
@@ -414,7 +244,7 @@ class AlgorithmRegistry:
             raise ImportError("edivisive module not available")
 
         # Call original function
-        result = edivisive.edivisive(
+        result = edivisive(
             data, alpha, min_size, R, significance, resample, block_size, seed
         )
 
@@ -601,15 +431,21 @@ class AlgorithmRegistry:
 
         # Import the appropriate RFF variant
         if rff_type == "standard":
-            from kcp_rff import RFFConfig, rbf_rff_map
+            from changepoint_lab.algorithms.kernel.kcp_rff import RFFConfig, rbf_rff_map
 
             rff_config = RFFConfig(n_features=n_features, seed=42)
         elif rff_type == "orthogonal":
-            from kcp.rff_variants import OrthogonalRFFConfig, orthogonal_rff_map as rbf_rff_map
+            from changepoint_lab.algorithms.kernel.rff_variants import (
+                OrthogonalRFFConfig,
+                orthogonal_rff_map as rbf_rff_map,
+            )
 
             rff_config = OrthogonalRFFConfig(n_features=n_features, seed=42)
         elif rff_type == "quasi_mc":
-            from kcp.rff_variants import QuasiMCRFFConfig, quasi_mc_rff_map as rbf_rff_map
+            from changepoint_lab.algorithms.kernel.rff_variants import (
+                QuasiMCRFFConfig,
+                quasi_mc_rff_map as rbf_rff_map,
+            )
 
             rff_config = QuasiMCRFFConfig(n_features=n_features, seed=42)
         else:
@@ -619,7 +455,10 @@ class AlgorithmRegistry:
         rff = rbf_rff_map(data, rff_config, gamma=gamma)
 
         # Build prefix sums
-        from kcp_rff import build_feature_prefix, rff_kcp_penalized
+        from changepoint_lab.algorithms.kernel.kcp_rff import (
+            build_feature_prefix,
+            rff_kcp_penalized,
+        )
 
         prefix = build_feature_prefix(rff.Z)
 
@@ -682,15 +521,21 @@ class AlgorithmRegistry:
 
         # Import the appropriate RFF variant
         if rff_type == "standard":
-            from kcp_rff import RFFConfig, rbf_rff_map
+            from changepoint_lab.algorithms.kernel.kcp_rff import RFFConfig, rbf_rff_map
 
             rff_config = RFFConfig(n_features=n_features, seed=42)
         elif rff_type == "orthogonal":
-            from kcp.rff_variants import OrthogonalRFFConfig, orthogonal_rff_map as rbf_rff_map
+            from changepoint_lab.algorithms.kernel.rff_variants import (
+                OrthogonalRFFConfig,
+                orthogonal_rff_map as rbf_rff_map,
+            )
 
             rff_config = OrthogonalRFFConfig(n_features=n_features, seed=42)
         elif rff_type == "quasi_mc":
-            from kcp.rff_variants import QuasiMCRFFConfig, quasi_mc_rff_map as rbf_rff_map
+            from changepoint_lab.algorithms.kernel.rff_variants import (
+                QuasiMCRFFConfig,
+                quasi_mc_rff_map as rbf_rff_map,
+            )
 
             rff_config = QuasiMCRFFConfig(n_features=n_features, seed=42)
         else:
@@ -700,7 +545,10 @@ class AlgorithmRegistry:
         rff = rbf_rff_map(data, rff_config)
 
         # Build prefix sums
-        from kcp_rff import build_feature_prefix, rff_kcp_fixed_m
+        from changepoint_lab.algorithms.kernel.kcp_rff import (
+            build_feature_prefix,
+            rff_kcp_fixed_m,
+        )
 
         prefix = build_feature_prefix(rff.Z)
 
@@ -787,7 +635,10 @@ class AlgorithmRegistry:
 
         else:
             # Use parallel tempering
-            from within_period.samplers.tempering import PTConfig, parallel_tempering_fit
+            from changepoint_lab.algorithms.bayesian.within_period.samplers import (
+                PTConfig,
+                parallel_tempering_fit,
+            )
 
             ptcfg = PTConfig(iters=iters, burn=burn, thin=thin, swap_every=50, T_hot=3.0, seed=seed)
             result = parallel_tempering_fit(model, data, ptcfg)
@@ -874,20 +725,27 @@ class AlgorithmRegistry:
 
         # Initialize emission model
         if emission_type == "gaussian_diag":
-            from gaussian_diag import estimate_by_kmeanspp, gaussian_diag_loglik
+            from changepoint_lab.algorithms.state_space.emissions import (
+                estimate_by_kmeanspp,
+                gaussian_diag_loglik,
+            )
 
             em = estimate_by_kmeanspp(data, n_states, n_init=5, allow_nan=False)
             loglik = gaussian_diag_loglik(data, em)
 
         elif emission_type == "gaussian_full":
-            from hsmm.gaussian_full import GaussianFullEmissions
+            from changepoint_lab.algorithms.state_space.emissions.gaussian_full import (
+                GaussianFullEmissions,
+            )
 
             em = GaussianFullEmissions(n_states)
             em.initialize_kmeans(data, n_init=5, seed=42)
             loglik = em.compute_loglik(data)
 
         elif emission_type == "ar":
-            from hsmm.ar_emissions import AREmissions
+            from changepoint_lab.algorithms.state_space.emissions.ar_emissions import (
+                AREmissions,
+            )
 
             em = AREmissions(n_states, order=1)
             em.initialize(data, method="kmeans", seed=42)
@@ -903,12 +761,12 @@ class AlgorithmRegistry:
 
         # Set up duration distribution
         if duration_type == "poisson":
-            from hsmm import PoissonDur
+            from changepoint_lab.algorithms.state_space.hsmm import PoissonDur
 
             mean_durations = np.full(n_states, max_duration / 2)
             duration_dist = ("poisson", PoissonDur(lam=mean_durations))
         elif duration_type == "negbin":
-            from hsmm import NegBinDur
+            from changepoint_lab.algorithms.state_space.hsmm import NegBinDur
 
             mean_durations = np.full(n_states, max_duration / 2)
             # r=5 for moderate overdispersion
@@ -972,39 +830,36 @@ class AlgorithmRegistry:
             raise ImportError("sdhmm module not available")
 
         if n_components == 1:
-            # Single component per state
-            from sdhmm import SDHMM, SDHMMConfig
-
-            config = SDHMMConfig(K=n_states, D=data.shape[1], max_iter=max_iter)
-            model = SDHMM(config)
-            results = model.fit(data)
-
-            # Decode states
-            states = model.viterbi(data)
-
-        else:
-            # Multiple components per state
-            from sdhmm_mix_vi import SDHMMMixVI, SDHMMMixVIConfig
-
-            config = SDHMMMixVIConfig(
-                K=n_states, J=n_components, D=data.shape[1], max_iter=max_iter
+            from changepoint_lab.algorithms.state_space.sdhmm import (
+                SDHMM,
+                SDHMMConfig,
             )
-            model = SDHMMMixVI(config)
-            results = model.fit(data)
 
-            # Decode states and components
-            states, components = model.viterbi(data)
+            config = SDHMMConfig(K=n_states, max_iter=max_iter)
+            model = SDHMM(config)
+            model.fit(data)
+            states = model.viterbi(data)
+            components = None
+        else:
+            from changepoint_lab.algorithms.state_space.sdhmm_mix_vi import (
+                SDHMMMixVI,
+                SDHMMMixVIConfig,
+            )
+
+            config = SDHMMMixVIConfig(K=n_states, M=n_components, max_iter=max_iter)
+            model = SDHMMMixVI(config)
+            model.fit(data)
+            states = model.viterbi_states(data)
+            components = model.most_likely_components(data)
 
         # Return results
         return {
             "states": states.tolist() if isinstance(states, np.ndarray) else states,
             "components": (
                 components.tolist() if isinstance(components, np.ndarray) else components
-            )
-            if n_components > 1
-            else None,
+            ),
             "model": model,
-            "log_likelihood": float(results["ll"][-1]) if results and "ll" in results else 0.0,
+            "log_likelihood": 0.0,
             "model_name": "sdhmm_mix" if n_components > 1 else "sdhmm",
         }
 

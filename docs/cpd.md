@@ -2,8 +2,8 @@
 
 The former `cpd` package has been split into dedicated modules:
 
-- `within_period` – within-period change-point detection
-- `kcp` – kernel change-point detection and RFF helpers
+- `WithinPeriodCPD` – within-period change-point detection
+- `algorithms.kernel` – kernel change-point detection and RFF helpers
 - `hsmm` – state-space emissions
 - `toolkit` – shared CLI and API glue
 - `common` – utilities, I/O, plotting, and diagnostics
@@ -14,11 +14,14 @@ This file exists for historical context only.
 
 ### Random Fourier feature variants
 
-The `kcp.rff_variants` module provides orthogonal, quasi–Monte Carlo, and
+The `changepoint_lab.algorithms.kernel.rff_variants` module provides orthogonal, quasi–Monte Carlo, and
 compact-support RFF mappings.  A minimal usage example:
 
 ```python
-from kcp.rff_variants import orthogonal_rff_map, OrthogonalRFFConfig
+from changepoint_lab.algorithms.kernel.rff_variants import (
+    orthogonal_rff_map,
+    OrthogonalRFFConfig,
+)
 
 Z = orthogonal_rff_map(X, OrthogonalRFFConfig(n_features=512)).Z
 ```
@@ -29,12 +32,12 @@ runtime.
 ### Parallel tempering sampler
 
 Within-period change-point models can leverage parallel tempering via
-`within_period.samplers.tempering`.  Each additional temperature requires an
+`changepoint_lab.algorithms.bayesian.within_period.samplers.tempering`.  Each additional temperature requires an
 extra Markov chain, so the method scales roughly linearly with the number of
 temperatures.
 
 ```python
-from within_period.samplers.tempering import tempering_sampler
+from changepoint_lab.algorithms.bayesian.within_period.samplers.tempering import tempering_sampler
 
 for state in tempering_sampler(model, n_temps=4):
     ...  # consume samples

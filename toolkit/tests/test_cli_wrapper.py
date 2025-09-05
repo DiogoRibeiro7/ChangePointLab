@@ -19,6 +19,7 @@ from pathlib import Path
 import tempfile
 import subprocess
 import sys
+import datetime
 
 
 def create_test_datasets():
@@ -54,26 +55,6 @@ def create_test_datasets():
 
     datasets["univariate"] = pd.DataFrame({"value": univariate_data, "time": t})
 
-    # 3. Event data for Bayesian Blocks
-    event_times = []
-    current_time = 0
-    rates = [0.5, 2.0, 0.8, 3.0]  # Different Poisson rates
-    durations = [100, 50, 75, 75]
-
-    for rate, duration in zip(rates, durations):
-        segment_events = np.random.exponential(1 / rate, size=int(rate * duration * 1.5))
-        segment_times = current_time + np.cumsum(segment_events)
-        segment_times = segment_times[segment_times < current_time + duration]
-        event_times.extend(segment_times)
-        current_time += duration
-
-    # Convert to timestamps
-    import datetime
-
-    base_time = datetime.datetime(2024, 1, 1)
-    timestamps = [base_time + datetime.timedelta(seconds=t) for t in event_times]
-
-    datasets["events"] = pd.DataFrame({"timestamp": timestamps})
 
     # 4. High-dimensional data for RFF methods
     n_hd = 500
@@ -187,11 +168,6 @@ def test_cli_wrapper():
 
         # Test each CLI method
         cli_tests = [
-            {
-                "method": "bayesian-blocks",
-                "data": data_files["events"],
-                "args": ["--timestamp-col", "timestamp", "--p0", "0.01"],
-            },
             {
                 "method": "edivisive",
                 "data": data_files["multivariate"],

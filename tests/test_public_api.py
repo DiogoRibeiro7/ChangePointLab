@@ -1,5 +1,7 @@
 import warnings
 
+import pytest
+
 
 def test_top_level_exports():
     import changepoint_lab as cpl
@@ -17,8 +19,6 @@ def test_deprecated_imports_warn():
         assert any(issubclass(ww.category, DeprecationWarning) for ww in w)
 
 
-def test_legacy_module_shim_warns():
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        from changepointlab.optimization import pelt as _  # noqa: F401
-        assert any(issubclass(ww.category, DeprecationWarning) for ww in w)
+def test_legacy_module_removed():
+    with pytest.raises(ModuleNotFoundError):
+        import changepointlab  # noqa: F401

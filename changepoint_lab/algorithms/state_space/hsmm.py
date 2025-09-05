@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from hsmm.hsmm import HSMM as _HSMM
-from hsmm.hsmm import HSMMConfig, HSMMParams, PoissonDur
+from .hsmm_core import HSMM as _HSMM
+from .hsmm_core import HSMMConfig, HSMMParams, PoissonDur, NegBinDur
 
 from ...core.datatypes import ChangePointResult
 from .._base import BaseDetector
@@ -29,4 +29,4 @@ class HSMM(_HSMM, BaseDetector):
         return ChangePointResult(indices=cps, metadata=meta)
 
 
-__all__ = ["HSMM", "HSMMConfig", "HSMMParams", "PoissonDur"]
+__all__ = ["HSMM", "HSMMConfig", "HSMMParams", "PoissonDur", "NegBinDur"]

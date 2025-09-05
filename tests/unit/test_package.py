@@ -6,27 +6,21 @@ import sys
 # Verify that top-level imports expose the expected symbols
 
 def test_main_imports():
-    pkg = importlib.import_module("changepoint_toolkit")
+    pkg = importlib.import_module("changepoint_lab")
     names = [
         "BOCPD",
         "BOCPDConfig",
         "BOCPDResult",
         "ConstantHazard",
         "BoostedBoundaryHazard",
-        "WithinPeriodCPD",
-        "ModelPrior",
-        "RJConfig",
-        "gram_rbf",
-        "kcp_penalized",
-        "kcp_select_bic",
-        "edivisive",
-        "pelt",
-        "NormalMeanKnownVar",
-        "NormalMeanVarUnknown",
+        "ScheduledHazard",
+        "PELT",
+        "EDivisive",
         "HSMM",
-        "HSMMConfig",
+        "KernelCPD",
+        "WithinPeriodCPD",
         "SDHMM",
-        "SDHMMConfig",
+        "SDHMMMixVI",
     ]
     for name in names:
         assert hasattr(pkg, name)
@@ -36,22 +30,32 @@ def test_main_imports():
 
 def test_class_instantiation():
     import numpy as np
-    from changepoint_toolkit import (
+    from changepoint_lab.algorithms.bayesian.bocpd import (
         BOCPD,
         BOCPDConfig,
-        ConstantHazard,
         BoostedBoundaryHazard,
-        WithinPeriodCPD,
-        ModelPrior,
-        RJConfig,
+        ConstantHazard,
+    )
+    from changepoint_lab.algorithms.optimization.pelt import (
         NormalMeanKnownVar,
         NormalMeanVarUnknown,
+    )
+    from changepoint_lab.algorithms.state_space.hsmm import (
         HSMM,
         HSMMConfig,
-        SDHMM,
-        SDHMMConfig,
+        HSMMParams,
+        PoissonDur,
     )
-    from hsmm import HSMMParams, PoissonDur
+    from changepoint_lab.algorithms.state_space.sdhmm import SDHMM, SDHMMConfig
+    from changepoint_lab.algorithms.state_space.sdhmm_mix_vi import (
+        SDHMMMixVI,
+        SDHMMMixVIConfig,
+    )
+    from changepoint_lab.algorithms.bayesian.within_period import (
+        ModelPrior,
+        RJConfig,
+        WithinPeriodCPD,
+    )
 
     # BOCPD related classes
     hazard = ConstantHazard(mean_run_length=10)
@@ -78,14 +82,15 @@ def test_class_instantiation():
 
     # SDHMM
     SDHMM(SDHMMConfig(K=1))
+    SDHMMMixVI(SDHMMMixVIConfig(K=1, M=1))
 
 
 # Ensure CLI entry points are available as Python modules
 
 def test_cli_entry_points():
     modules = [
-        "bocpd.bocpd_cli",
-        "within_period.cli",
+        "changepoint_lab.cli.bocpd_cli",
+        "changepoint_lab.algorithms.bayesian.within_period.cli",
         "toolkit.cpd_cli",
     ]
     for mod in modules:

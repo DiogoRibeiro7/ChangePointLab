@@ -11,20 +11,27 @@ changepoint_lab/
 │   ├── bayesian/
 │   │   ├── __init__.py
 │   │   ├── bocpd.py                   # Bayesian Online CPD
-│   │   └── within_period.py           # Within-period Bayesian detector (if present)
+│   │   └── within_period/             # Within-period Bayesian detector
 │   ├── optimization/
 │   │   ├── __init__.py
 │   │   ├── pelt.py                    # PELT / optimal partitioning variants
 │   │   └── cost_functions.py          # Cost / penalty functions specific to optimization methods
 │   ├── nonparametric/
 │   │   ├── __init__.py
-│   │   └── edivisive.py               # E-Divisive
+│   │   ├── edivisive.py               # E-Divisive wrapper
+│   │   └── edivisive_core.py          # Core E-Divisive implementation
 │   ├── state_space/
 │   │   ├── __init__.py
-│   │   └── hsmm.py                    # HSMM-based CPD
+│   │   ├── hsmm.py                    # HSMM wrapper
+│   │   ├── hsmm_core.py               # Core HSMM implementation
+│   │   └── emissions/                 # Emission model helpers
 │   └── kernel/
 │       ├── __init__.py
-│       └── kcp.py                     # Kernel CPD (KCP), plus kernel utils if small
+│       ├── kcp.py                     # Kernel CPD wrapper
+│       ├── kcp_core.py                # Core KCP implementation
+│       ├── kcp_rff.py                 # RFF utilities
+│       ├── bandwidth_cv.py            # Bandwidth selection
+│       └── rff_variants.py            # Advanced RFF variants
 │
 ├── core/                              # Cross-cutting “engine” pieces shared by multiple algos
 │   ├── __init__.py

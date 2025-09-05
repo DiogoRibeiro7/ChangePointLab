@@ -5,9 +5,6 @@ Universal CLI wrapper for Change-Point & State-Space Toolkit
 Supports all methods with CSV I/O, plotting, and result export.
 
 Examples:
-    # Bayesian Blocks for events
-    python cpd_cli.py bayesian-blocks --input events.csv --timestamp-col time --output results/
-
     # E-Divisive multivariate CPD
     python cpd_cli.py edivisive --input data.csv --columns x,y,z --output results/
 
@@ -129,60 +126,15 @@ def save_results(
                     writer.writerow([i, cp])
 
 
-def run_bayesian_blocks(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
-    """Run Bayesian Blocks algorithm."""
-    from bayesian_blocks import bayesian_blocks_events, bayesian_blocks_counts
-    from bb_plotting import plot_blocks
-
-    if args.timestamp_col:
-        # Events mode
-        data, _, timestamps = load_csv_data(
-            args.input, columns=None, timestamp_col=args.timestamp_col
-        )
-        # Convert timestamps to numeric (assumes ISO format)
-        from datetime import datetime
-
-        times = []
-        for ts in timestamps:
-            try:
-                dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-                times.append(dt.timestamp())
-            except:
-                continue
-
-        times = np.array(times)
-        t_start = times.min() if args.t_start is None else args.t_start
-        t_stop = times.max() if args.t_stop is None else args.t_stop
-
-        result = bayesian_blocks_events(times, t_start=t_start, t_stop=t_stop, p0=args.p0)
-    else:
-        # Counts mode
-        data, columns, _ = load_csv_data(args.input, columns=args.columns)
-        counts = data[:, 0] if data.shape[1] > 0 else data.ravel()
-        result = bayesian_blocks_counts(counts, p0=args.p0)
-
-    # Create plots
-    fig, ax = plt.subplots(figsize=(12, 6))
-    if args.timestamp_col:
-        plot_blocks(result.edges, result.block_value, times, ax=ax, mode="events")
-    else:
-        plot_blocks(result.edges, result.block_value, counts, ax=ax, mode="counts")
-
-    results = {
-        "change_points": result.edges[1:-1],  # exclude boundaries
-        "block_values": result.block_value,
-        "edges": result.edges,
-        "method": "bayesian_blocks",
-        "p0": args.p0,
-    }
-
-    return results, {"blocks": fig}
 
 
 def run_edivisive(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
     """Run E-Divisive algorithm."""
-    from edivisive import edivisive
-    from edivisive_plotting import plot_edivisive_result
+    from changepoint_lab import edivisive
+    from changepoint_lab.common.plotting.edivisive_plotting import (
+        plot_segments_1d,
+        plot_scree_edivisive,
+    )
 
     data, columns, _ = load_csv_data(args.input, columns=args.columns)
 
@@ -199,11 +151,11 @@ def run_edivisive(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 
     # Create plots
     fig, axes = plt.subplots(2, 1, figsize=(12, 8))
-    plot_edivisive_result(data, result, columns, axes=axes)
+    plot_segments_1d(data[:, 0], result, ax=axes[0])
+    plot_scree_edivisive(result, ax=axes[1])
 
     results = {
         "change_points": np.array(result.change_points),
-        "test_statistics": np.array(result.test_statistics),
         "method": "edivisive",
         "alpha": args.alpha,
         "significance": args.significance,
@@ -215,15 +167,22 @@ def run_edivisive(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 
 def run_kcp(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
     """Run Kernel Change-Point Detection."""
-    from kcp import gram_rbf, gram_linear, build_kernel_prefix, kcp_penalized, kcp_select_bic
-    from kcp_plotting import plot_kcp_result
+    from changepoint_lab.algorithms.kernel.kcp_core import (
+        gram_rbf,
+        gram_linear,
+        build_kernel_prefix,
+        kcp_penalized,
+        kcp_select_bic,
+        kcp_fixed_m,
+    )
+    from changepoint_lab.common.plotting import plot_segments_1d, plot_model_scree
 
     data, columns, _ = load_csv_data(args.input, columns=args.columns)
 
     # Build kernel matrix
     if args.kernel == "rbf":
         if args.bandwidth_cv:
-            from kcp.bandwidth_cv import select_rbf_bandwidth_cv  # Will implement below
+            from changepoint_lab.algorithms.kernel.bandwidth_cv import select_rbf_bandwidth_cv
 
             gamma = select_rbf_bandwidth_cv(data, cv_folds=args.cv_folds)
             K, _ = gram_rbf(data, gamma=gamma)
@@ -242,13 +201,15 @@ def run_kcp(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
         result = kcp_penalized(prefix, gamma=gamma, min_size=args.min_size, method=args.method)
     else:
         # Fixed number of segments
-        from kcp import kcp_fixed_m
-
         result = kcp_fixed_m(prefix, m=args.n_segments, min_size=args.min_size)
 
     # Create plots
     fig, axes = plt.subplots(2, 1, figsize=(12, 8))
-    plot_kcp_result(data, result, columns, kernel=args.kernel, axes=axes)
+    # First axis: data with detected change points (use first dimension)
+    plot_segments_1d(data[:, 0], result.edges, ax=axes[0], title="Detected change points")
+    # Second axis: cost vs segments if model selection available
+    if hasattr(result, "model_sel"):
+        plot_model_scree(result.model_sel, ax=axes[1])
 
     results = {
         "change_points": np.array(result.change_points),
@@ -263,15 +224,22 @@ def run_kcp(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 
 def run_rff_kcp(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
     """Run RFF Kernel Change-Point Detection."""
-    from kcp_rff import rbf_rff_map, build_feature_prefix, rff_kcp_penalized
-    from kcp.rff_variants import OrthogonalRFFConfig, QuasiMCRFFConfig  # Will implement below
+    from changepoint_lab.algorithms.kernel.kcp_rff import (
+        RFFConfig,
+        rbf_rff_map,
+        build_feature_prefix,
+        rff_kcp_penalized,
+        rff_kcp_fixed_m,
+    )
+    from changepoint_lab.algorithms.kernel.rff_variants import (
+        OrthogonalRFFConfig,
+        QuasiMCRFFConfig,
+    )
 
     data, columns, _ = load_csv_data(args.input, columns=args.columns)
 
     # Select RFF variant
     if args.rff_type == "standard":
-        from kcp_rff import RFFConfig
-
         rff_config = RFFConfig(n_features=args.n_features, seed=args.seed)
     elif args.rff_type == "orthogonal":
         rff_config = OrthogonalRFFConfig(n_features=args.n_features, seed=args.seed)
@@ -282,7 +250,7 @@ def run_rff_kcp(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 
     # Build RFF mapping
     if args.bandwidth_cv:
-        from kcp.bandwidth_cv import select_rbf_bandwidth_cv
+        from changepoint_lab.algorithms.kernel.bandwidth_cv import select_rbf_bandwidth_cv
 
         sigma = select_rbf_bandwidth_cv(data, cv_folds=args.cv_folds)
         rff = rbf_rff_map(data, rff_config, sigma=sigma)
@@ -291,9 +259,12 @@ def run_rff_kcp(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 
     prefix = build_feature_prefix(rff.Z)
 
-    result = rff_kcp_penalized(
-        prefix, gamma_pen=args.penalty, min_size=args.min_size, method=args.method
-    )
+    if args.n_segments is None:
+        result = rff_kcp_penalized(
+            prefix, gamma_pen=args.penalty, min_size=args.min_size, method=args.method
+        )
+    else:
+        result = rff_kcp_fixed_m(prefix, m=args.n_segments, min_size=args.min_size)
 
     # Create plots
     fig, axes = plt.subplots(2, 1, figsize=(12, 8))
@@ -325,9 +296,13 @@ def run_rff_kcp(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 
 def run_hsmm(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
     """Run Hidden Semi-Markov Model."""
-    from hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
-    from hsmm.gaussian_full import GaussianFullEmissions  # Will implement below
-    from hsmm.ar_emissions import AREmissions  # Will implement below
+    from changepoint_lab import HSMM, HSMMConfig, HSMMParams, PoissonDur
+    from changepoint_lab.algorithms.state_space.emissions.gaussian_full import (
+        GaussianFullEmissions,
+    )  # Will implement below
+    from changepoint_lab.algorithms.state_space.emissions.ar_emissions import (
+        AREmissions,
+    )  # Will implement below
 
     data, columns, _ = load_csv_data(args.input, columns=args.columns)
 
@@ -400,7 +375,11 @@ def run_hsmm(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 
 def run_within_period(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
     """Run Within-Period Change-Point Detection."""
-    from within_period.within_period_cpd import WithinPeriodCPD, ModelPrior, RJConfig
+    from changepoint_lab.algorithms.bayesian.within_period import (
+        ModelPrior,
+        RJConfig,
+        WithinPeriodCPD,
+    )
     from changepoint_lab.common.io.data_loader import (
         load_binary_from_csv,
         empirical_per_bin_mean,
@@ -496,17 +475,6 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="method", help="CPD method to run")
     subparsers.required = True
 
-    # Bayesian Blocks
-    bb_parser = subparsers.add_parser("bayesian-blocks", help="Bayesian Blocks CPD")
-    bb_parser.add_argument(
-        "--timestamp-col", type=str, help="Column name for timestamps (events mode)"
-    )
-    bb_parser.add_argument(
-        "--columns", type=str, help="Comma-separated column names for counts mode"
-    )
-    bb_parser.add_argument("--p0", type=float, default=0.05, help="False positive rate prior")
-    bb_parser.add_argument("--t-start", type=float, help="Start time for events (optional)")
-    bb_parser.add_argument("--t-stop", type=float, help="Stop time for events (optional)")
 
     # E-Divisive
     ed_parser = subparsers.add_parser("edivisive", help="E-Divisive multivariate CPD")
@@ -627,7 +595,6 @@ def main():
 
     # Route to appropriate method
     method_map = {
-        "bayesian-blocks": run_bayesian_blocks,
         "edivisive": run_edivisive,
         "kcp": run_kcp,
         "rff-kcp": run_rff_kcp,

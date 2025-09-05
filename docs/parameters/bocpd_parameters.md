@@ -41,7 +41,7 @@ prior = dict(alpha=2, beta=8)  # baseline success rate 0.2
 ## Example: Mean Run Length Sensitivity
 ```python
 import numpy as np, matplotlib.pyplot as plt
-from bocpd import BOCPD, ConstantHazard
+from changepoint_lab.algorithms.bayesian.bocpd import BOCPD, ConstantHazard
 
 x = np.concatenate([np.zeros(50), np.ones(50)])
 for mrl in [25, 50, 100]:

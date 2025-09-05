@@ -28,7 +28,7 @@ Switching Dirichlet HMMs model compositional observations with simplex constrain
 
 ## Example: Dirichlet Concentration Effect
 ```python
-from sdhmm import SDHMM
+from changepoint_lab import SDHMM
 model = SDHMM(n_states=2, components=2, alpha=[0.2,0.2])
 model.fit(X)
 ```

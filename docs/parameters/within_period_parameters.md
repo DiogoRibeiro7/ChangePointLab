@@ -31,7 +31,7 @@ Within-period changepoint detection targets periodic data by resetting the hazar
 
 ## Example: MCMC Iterations vs. Convergence
 ```python
-from within_period import WithinPeriodCPD
+from changepoint_lab.algorithms.bayesian.within_period import WithinPeriodCPD
 wp = WithinPeriodCPD(period=24)
 wp.fit(x, iterations=2000, burn=200, thin=10)
 ```

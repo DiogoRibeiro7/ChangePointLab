@@ -9,9 +9,12 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 
-from bocpd import BOCPD, ConstantHazard
-from pelt import pelt, NormalMeanVarUnknown
-from edivisive import edivisive
+from changepoint_lab.algorithms.bayesian.bocpd import BOCPD, ConstantHazard
+from changepoint_lab.algorithms.optimization.pelt import (
+    NormalMeanVarUnknown,
+    pelt,
+)
+from changepoint_lab import edivisive
 from examples.comparison_helpers import f1_score, plot_series
 
 

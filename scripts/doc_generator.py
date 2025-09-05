@@ -75,11 +75,11 @@ class ModuleDocGenerator:
     def categorize_modules(self) -> None:
         """Categorize modules by functionality."""
         categories = {
-            "core": ["bayesian_blocks", "edivisive", "kcp", "kcp_rff", "within_period_cpd"],
+            "core": ["edivisive", "kcp_core", "kcp_rff", "within_period_cpd"],
             "state_space": ["hsmm", "sdhmm", "sdhmm_mix_vi"],
             "emissions": ["gaussian_diag", "gaussian_full", "ar_emissions"],
             "advanced": ["rff_variants", "bandwidth_cv", "tempering"],
-            "plotting": ["bb_plotting", "edivisive_plotting", "kcp_plotting", "plotting_helpers"],
+            "plotting": ["edivisive_plotting", "kcp_plotting", "plotting_helpers"],
             "utilities": ["utils", "types", "io_utils", "data_loader", "diagnostics"],
             "cli": ["cli", "cpd_cli"]
         }
@@ -284,22 +284,9 @@ class ModuleDocGenerator:
         """Generate example code for a module."""
         examples = {
             # Core algorithms
-            "bayesian_blocks": """
-# For events data (unbinned Poisson)
-from bayesian_blocks import bayesian_blocks_events
-result = bayesian_blocks_events(t, t_start=0.0, t_stop=10.0, p0=0.05)
-print(result.edges, result.block_value)
-
-# For binned counts
-from bayesian_blocks import bayesian_blocks_counts
-result = bayesian_blocks_counts(counts, widths=None, p0=0.05)
-
-# Plot the results
-from bb_plotting import plot_blocks
-plot_blocks(result.edges, result.block_value, x)
-""",
             "edivisive": """
-from edivisive import edivisive
+from changepoint_lab import edivisive
+from changepoint_lab.common.plotting.edivisive_plotting import plot_segments_1d
 import numpy as np
 
 # Generate example data
@@ -307,7 +294,7 @@ X = np.random.randn(200, 3)
 X[100:] += 2  # Add a shift at t=100
 
 # Run E-Divisive
-result = edivisive(X, 
+result = edivisive(X,
                   alpha=1.0,           # Energy statistic parameter
                   min_size=30,         # Minimum segment size
                   R=499,               # Number of permutations
@@ -318,13 +305,12 @@ result = edivisive(X,
 
 print(f"Detected change points: {result.change_points}")
 
-# Plot the results
-from edivisive_plotting import plot_edivisive_result
-plot_edivisive_result(X, result, ['X1', 'X2', 'X3'])
+# Plot the first dimension with changepoints
+plot_segments_1d(X[:, 0], result)
 """,
             "kcp": """
 import numpy as np
-from kcp import gram_rbf, build_kernel_prefix, kcp_penalized
+from changepoint_lab.algorithms.kernel.kcp_core import gram_rbf, build_kernel_prefix, kcp_penalized
 
 # Generate example data
 X = np.random.randn(200, 2)
@@ -344,12 +330,17 @@ result = kcp_penalized(pref,
 print(f"Detected change points: {result.change_points}")
 
 # Plot the results
-from kcp_plotting import plot_kcp_result
-plot_kcp_result(X, result, columns=['X1', 'X2'], kernel='rbf')
+from changepoint_lab.common.plotting.kcp_plotting import plot_segments_1d
+plot_segments_1d(X[:, 0], result.edges)
 """,
             "kcp_rff": """
 import numpy as np
-from kcp_rff import RFFConfig, rbf_rff_map, build_feature_prefix, rff_kcp_penalized
+from changepoint_lab.algorithms.kernel.kcp_rff import (
+    RFFConfig,
+    rbf_rff_map,
+    build_feature_prefix,
+    rff_kcp_penalized,
+)
 
 # Generate example data
 X = np.random.randn(500, 10)  # Higher dimension where RFF is beneficial
@@ -370,8 +361,12 @@ print(f"Detected change points: {result.change_points}")
 """,
             "within_period_cpd": """
 import numpy as np
-from within_period.within_period_cpd import WithinPeriodCPD, ModelPrior, RJConfig
-from common.io.data_loader import load_binary_from_csv
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    RJConfig,
+    WithinPeriodCPD,
+)
+from changepoint_lab.common.io.data_loader import load_binary_from_csv
 
 # Either load binary data from CSV timestamps
 x, N = load_binary_from_csv("events.csv", 
@@ -409,8 +404,11 @@ plot_changepoint_posterior_mass(
             # State-space models
             "hsmm": """
 import numpy as np
-from hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
-from gaussian_diag import estimate_by_kmeanspp, gaussian_diag_loglik
+from changepoint_lab import HSMM, HSMMConfig, HSMMParams, PoissonDur
+from changepoint_lab.algorithms.state_space.emissions import (
+    estimate_by_kmeanspp,
+    gaussian_diag_loglik,
+)
 
 # Generate or load data
 X = np.random.randn(500, 3)  # Replace with your data
@@ -475,12 +473,13 @@ updated_params = estimate_from_responsibilities(X, resp)
 """,
             "gaussian_full": """
 import numpy as np
-from hsmm.gaussian_full import (
-    GaussianFullParams, gaussian_full_loglik,
+from changepoint_lab.algorithms.state_space.emissions.gaussian_full import (
+    GaussianFullParams,
+    gaussian_full_loglik,
     estimate_gaussian_full_from_labels,
     estimate_gaussian_full_from_responsibilities,
     estimate_gaussian_full_by_kmeans,
-    GaussianFullEmissions
+    GaussianFullEmissions,
 )
 
 # Generate or load data
@@ -506,10 +505,13 @@ emissions.update_from_responsibilities(X, responsibilities)
 """,
             "ar_emissions": """
 import numpy as np
-from hsmm.ar_emissions import (
-    ARParams, ar_loglik, estimate_ar_from_labels,
-    estimate_ar_from_responsibilities, simulate_ar_process,
-    AREmissions
+from changepoint_lab.algorithms.state_space.emissions.ar_emissions import (
+    ARParams,
+    ar_loglik,
+    estimate_ar_from_labels,
+    estimate_ar_from_responsibilities,
+    simulate_ar_process,
+    AREmissions,
 )
 
 # Generate or load data
@@ -541,7 +543,7 @@ emissions.update_from_responsibilities(X, responsibilities)
             # Advanced
             "rff_variants": """
 import numpy as np
-from kcp.rff_variants import (
+from changepoint_lab.algorithms.kernel.rff_variants import (
     OrthogonalRFFConfig, QuasiMCRFFConfig, CompactRFFConfig,
     orthogonal_rff_map, quasi_mc_rff_map, compact_support_rff_map,
     compare_rff_variants, adaptive_rff_map
@@ -574,7 +576,7 @@ for variant, metrics in comparison.items():
 """,
             "bandwidth_cv": """
 import numpy as np
-from kcp.bandwidth_cv import (
+from changepoint_lab.algorithms.kernel.bandwidth_cv import (
     select_rbf_bandwidth_cv, select_rbf_bandwidth_information_criterion,
     select_rbf_bandwidth_multiscale, bandwidth_stability_analysis,
     BandwidthCVConfig
@@ -612,8 +614,14 @@ print(f"Bandwidth stability: {stability['coefficient_of_variation']:.3f}")
 """,
             "tempering": """
 import numpy as np
-from within_period.samplers.tempering import PTConfig, parallel_tempering_fit
-from within_period.within_period_cpd import WithinPeriodCPD, ModelPrior
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    WithinPeriodCPD,
+)
+from changepoint_lab.algorithms.bayesian.within_period.samplers import (
+    PTConfig,
+    parallel_tempering_fit,
+)
 
 # Set up model (using within-period CPD as an example)
 N = 96  # 15-minute bins over 24 hours
@@ -727,10 +735,14 @@ result = ChangePointResult(
 """,
             "io_utils": """
 import numpy as np
-from common.io.io_utils import save_result_npz, load_result_npz
+from changepoint_lab.common.io.io_utils import save_result_npz, load_result_npz
 
 # Assuming we have MCMC results from within_period_cpd
-from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    RJConfig,
+    WithinPeriodCPD,
+)
 
 # Example result components
 samples_tau = [(25, 75), (26, 74), (25, 76)]  # List of Tau tuples
@@ -763,7 +775,10 @@ print(f"MAP changepoints: {loaded['mode_tau']}")
 """,
             "data_loader": """
 import numpy as np
-from common.io.data_loader import load_binary_from_csv, empirical_per_bin_mean
+from changepoint_lab.common.io.data_loader import (
+    empirical_per_bin_mean,
+    load_binary_from_csv,
+)
 
 # Load binary events from timestamps in a CSV file
 x, N = load_binary_from_csv(
@@ -831,7 +846,7 @@ python -m cli --load out/run.npz --plot-only --outdir out_plots
 # Run from command line:
 
 # Bayesian Blocks for events
-python cpd_cli.py bayesian-blocks --input events.csv --timestamp-col time --output results/
+    python cpd_cli.py edivisive --input data.csv --columns x,y --output results/
 
 # E-Divisive multivariate CPD
 python cpd_cli.py edivisive --input data.csv --columns x,y,z --output results/

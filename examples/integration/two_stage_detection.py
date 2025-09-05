@@ -19,8 +19,11 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pelt import pelt, NormalMeanVarUnknown
-from bocpd import BOCPD, ConstantHazard
+from changepoint_lab.algorithms.optimization.pelt import (
+    NormalMeanVarUnknown,
+    pelt,
+)
+from changepoint_lab.algorithms.bayesian.bocpd import BOCPD, ConstantHazard
 from examples.comparison_helpers import f1_score, runtime, plot_series
 
 

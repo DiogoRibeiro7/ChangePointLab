@@ -2,22 +2,63 @@ from __future__ import annotations  # ruff: noqa: I001
 
 from ._compat import __all__ as _compat_all
 from ._compat import __getattr__  # noqa: F401
-from .algorithms.bayesian.bocpd import BOCPD
-from .algorithms.bayesian.within_period import WithinPeriodBOCPD
+from .algorithms.bayesian.bocpd import (
+    BOCPD,
+    BOCPDConfig,
+    BOCPDResult,
+    BoostedBoundaryHazard,
+    ConstantHazard,
+    Hazard,
+    ScheduledHazard,
+)
+from .algorithms.bayesian.within_period import WithinPeriodCPD
 from .algorithms.kernel.kcp import KernelCPD
+from .algorithms.kernel.kcp_core import gram_rbf, kcp_penalized, kcp_select_bic
 from .algorithms.nonparametric.edivisive import EDivisive
+from .algorithms.nonparametric.edivisive_core import (
+    edivisive,
+    EDivisiveResult,
+    EDivisiveSplit,
+)
 from .algorithms.optimization.pelt import PELT
-from .algorithms.state_space.hsmm import HSMM
+from .algorithms.state_space.hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
+from .algorithms.state_space.sdhmm import SDHMM, SDHMMConfig, SDHMMResult
+from .algorithms.state_space.sdhmm_mix_vi import (
+    SDHMMMixVI,
+    SDHMMMixVIConfig,
+    SDHMMMixVIResult,
+)
 from .core.datatypes import ChangePointResult
 
 __all__ = [
     "PELT",
     "BOCPD",
-    "WithinPeriodBOCPD",
+    "BOCPDConfig",
+    "BOCPDResult",
+    "Hazard",
+    "ConstantHazard",
+    "BoostedBoundaryHazard",
+    "ScheduledHazard",
+    "WithinPeriodCPD",
+    "edivisive",
     "EDivisive",
+    "EDivisiveResult",
+    "EDivisiveSplit",
     "HSMM",
-    "KernelCPD",
-    "ChangePointResult",
+    "HSMMConfig",
+    "HSMMParams",
+    "PoissonDur",
+    "SDHMM",
+    "SDHMMConfig",
+    "SDHMMResult",
+    "SDHMMMixVI",
+    "SDHMMMixVIConfig",
+    "SDHMMMixVIResult",
+    "KernelCPD", 
+    "gram_rbf", 
+    "kcp_penalized", 
+    "kcp_select_bic", 
+    "ChangePointResult", 
 ]
 
 # Attach compatibility layer (lazy attribute fallback + deprecations)

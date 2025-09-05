@@ -25,10 +25,20 @@ from changepoint_lab.algorithms.state_space.hsmm import (
     PoissonDur,
 )
 
-from hsmm.gaussian_diag import GaussianDiagParams, gaussian_diag_loglik
-from hsmm.gaussian_full import GaussianFullParams, gaussian_full_loglik
-from sdhmm.sdhmm import SDHMM, SDHMMConfig
-from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
+from changepoint_lab.algorithms.state_space.emissions.gaussian_diag import (
+    GaussianDiagParams,
+    gaussian_diag_loglik,
+)
+from changepoint_lab.algorithms.state_space.emissions.gaussian_full import (
+    GaussianFullParams,
+    gaussian_full_loglik,
+)
+from changepoint_lab.algorithms.state_space.sdhmm import SDHMM, SDHMMConfig
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    RJConfig,
+    WithinPeriodCPD,
+)
 
 # ---------------------------------------------------------------------------
 # Metric helpers
@@ -264,8 +274,8 @@ def run_sdhmm(K: int) -> Callable[[np.ndarray], Sequence[int]]:
 def run_within_period(period: int) -> Callable[[np.ndarray], Sequence[int]]:
     def _run(x: np.ndarray) -> Sequence[int]:
         model = WithinPeriodCPD(ModelPrior(N=period, l=3))
-        res = model.fit(x.astype(bool), RJConfig(iters=100, burn=20))
-        return res.mode_tau
+        model.fit(x.astype(bool), RJConfig(iters=100, burn=20))
+        return model.result.mode_tau
 
     return _run
 
