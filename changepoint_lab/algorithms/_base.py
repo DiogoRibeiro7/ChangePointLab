@@ -5,7 +5,7 @@ from typing import Optional
 
 import numpy as np
 
-from core.datatypes import ChangePointResult
+from ..core.datatypes import ChangePointResult
 
 ArrayLike = np.ndarray
 

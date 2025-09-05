@@ -27,7 +27,12 @@ Let's examine how COVID-19 affected the stock market by detecting changepoints i
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from changepoint_lab import bocpd, pelt
+from changepoint_lab import BOCPD, PELT, EDivisive
+from changepoint_lab.algorithms.optimization.cost_functions import (
+    NormalMeanVarUnknown,
+    bic_penalty,
+)
+from changepoint_lab.algorithms.bayesian.bocpd import ConstantHazard, BOCPDConfig
 
 # Load S&P 500 data (2019-2020)
 # In a real application, you would fetch this with yfinance or a similar library
@@ -65,20 +70,18 @@ Let's use PELT (Pruned Exact Linear Time) to detect changes in the mean and vari
 
 ```python
 # Apply PELT to detect changes in return distribution
-from changepoint_lab import pelt
-
-# Create cost function for Gaussian data with unknown mean and variance
-cost_fn = pelt.NormalMeanVarUnknown()
+cost_fn = NormalMeanVarUnknown()
 cost_fn.precompute(returns)
 
 # Apply PELT with BIC penalty
 n = len(returns)
-penalty = pelt.bic_penalty(params_per_segment=2, n=n)  # 2 parameters: mean and variance
-result_pelt = pelt.pelt(returns, cost_fn, penalty=penalty, min_seg_len=10)
+penalty = bic_penalty(params_per_segment=2, n=n)  # 2 parameters: mean and variance
+model_pelt = PELT(cost_fn=cost_fn, penalty=penalty, min_seg_len=10)
+result_pelt = model_pelt.fit_predict(returns)
 
 # Print detected changepoints
-print(f"PELT detected {len(result_pelt.change_points)} changepoints:")
-for cp in result_pelt.change_points:
+print(f"PELT detected {len(result_pelt.indices)} changepoints:")
+for cp in result_pelt.indices:
     print(f"  - {dates[cp].strftime('%Y-%m-%d')}")
 
 # Visualize the results
@@ -88,7 +91,7 @@ plt.title('Changepoints in S&P 500 Returns (PELT)')
 plt.ylabel('Return (%)')
 
 # Add vertical lines for changepoints
-for cp in result_pelt.change_points:
+for cp in result_pelt.indices:
     plt.axvline(x=dates[cp], color='r', linestyle='--', alpha=0.7)
     plt.text(dates[cp], plt.ylim()[1]*0.9, dates[cp].strftime('%Y-%m-%d'),
              rotation=90, verticalalignment='top')
@@ -103,19 +106,17 @@ plt.show()
 Now let's try Bayesian Online Changepoint Detection, which processes data sequentially:
 
 ```python
-from changepoint_lab import bocpd
-
 # Initialize BOCPD detector
-detector = bocpd.BOCPD(
-    hazard=bocpd.ConstantHazard(mean_run_length=180),  # Expected segment length ~180 days
-    config=bocpd.BOCPDConfig(max_run_length=500)
+detector = BOCPD(
+    hazard=ConstantHazard(mean_run_length=180),  # Expected segment length ~180 days
+    config=BOCPDConfig(max_run_length=500),
 )
 
 # Process returns sequentially
-result_bocpd = detector.run(returns)
+result_bocpd = detector.fit_predict(returns)
 
 # Extract changepoint probabilities
-cp_probs = result_bocpd.cp_prob
+cp_probs = result_bocpd.metadata["cp_prob"]
 
 # Visualize results
 plt.figure(figsize=(12, 8))
@@ -155,19 +156,13 @@ for idx in cp_indices:
 E-Divisive doesn't make assumptions about the data distribution:
 
 ```python
-from changepoint_lab import edivisive
-
 # Apply E-Divisive to returns
-result_ediv = edivisive.edivisive(
-    returns.reshape(-1, 1),  # E-Divisive expects 2D input
-    alpha=1.0,               # Distance exponent
-    min_size=20,             # Minimum segment size
-    R=99                     # Number of permutations for testing
-)
+model_ediv = EDivisive(alpha=1.0, min_size=20, R=99)
+result_ediv = model_ediv.fit_predict(returns.reshape(-1, 1))
 
 # Print detected changepoints
-print(f"E-Divisive detected {len(result_ediv.change_points)} changepoints:")
-for cp in result_ediv.change_points:
+print(f"E-Divisive detected {len(result_ediv.indices)} changepoints:")
+for cp in result_ediv.indices:
     print(f"  - {dates[cp+1].strftime('%Y-%m-%d')}")
 
 # Visualize results
@@ -177,7 +172,7 @@ plt.title('Changepoints in S&P 500 Returns (E-Divisive)')
 plt.ylabel('Return (%)')
 
 # Add vertical lines for changepoints
-for cp in result_ediv.change_points:
+for cp in result_ediv.indices:
     plt.axvline(x=dates[cp+1], color='g', linestyle='--', alpha=0.7)
     plt.text(dates[cp+1], plt.ylim()[1]*0.9, dates[cp+1].strftime('%Y-%m-%d'),
              rotation=90, verticalalignment='top')
@@ -193,9 +188,9 @@ Let's compare the results from all three methods:
 
 ```python
 # Convert changepoints to datetime for comparison
-pelt_dates = [dates[cp] for cp in result_pelt.change_points]
+pelt_dates = [dates[cp] for cp in result_pelt.indices]
 bocpd_dates = [dates[idx+1] for idx in cp_indices]
-ediv_dates = [dates[cp+1] for cp in result_ediv.change_points]
+ediv_dates = [dates[cp+1] for cp in result_ediv.indices]
 
 # Create a combined visualization
 plt.figure(figsize=(12, 8))

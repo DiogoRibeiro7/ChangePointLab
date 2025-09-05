@@ -7,8 +7,8 @@ from typing import Callable, List, Optional, Sequence
 import numpy as np
 from numpy.typing import NDArray
 
-from algorithms._base import BaseDetector
-from core.datatypes import ChangePointResult
+from .._base import BaseDetector
+from ...core.datatypes import ChangePointResult
 from .cost_functions import (
     SegmentCost,
     NormalMeanKnownVar,

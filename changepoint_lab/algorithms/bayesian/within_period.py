@@ -5,8 +5,8 @@ from typing import Optional
 
 import numpy as np
 
-from algorithms._base import BaseDetector
-from core.datatypes import ChangePointResult
+from .._base import BaseDetector
+from ...core.datatypes import ChangePointResult
 from within_period.within_period_cpd import (
     WithinPeriodCPD,
     ModelPrior,

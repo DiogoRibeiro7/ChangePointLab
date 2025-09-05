@@ -4,9 +4,9 @@ from typing import Optional
 
 import numpy as np
 
-from algorithms._base import BaseDetector
-from core.datatypes import ChangePointResult
-from hsmm.hsmm import HSMM as _HSMM, HSMMConfig, HSMMParams
+from .._base import BaseDetector
+from ...core.datatypes import ChangePointResult
+from hsmm.hsmm import HSMM as _HSMM, HSMMConfig, HSMMParams, PoissonDur
 
 
 class HSMM(_HSMM, BaseDetector):
@@ -29,4 +29,4 @@ class HSMM(_HSMM, BaseDetector):
         return ChangePointResult(indices=cps, metadata=meta)
 
 
-__all__ = ["HSMM", "HSMMConfig", "HSMMParams"]
+__all__ = ["HSMM", "HSMMConfig", "HSMMParams", "PoissonDur"]

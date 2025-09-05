@@ -20,7 +20,7 @@ from bocpd.bocpd import (
     Hazard,
 )
 from bocpd.bocpd_plotting import plot_run_length_heatmap, plot_cp_probability
-from common.io.data_loader import load_binary_from_csv
+from changepoint_lab.common.io.data_loader import load_binary_from_csv
 
 
 def _parse_schedule(s: Optional[str]) -> Optional[np.ndarray]:

@@ -1,10 +1,10 @@
-from algorithms.optimization.pelt import (
+from changepoint_lab.algorithms.optimization.pelt import (
     pelt,
     PELT,
     PELTResult,
     pelt_detect,
 )
-from algorithms.optimization.cost_functions import (
+from changepoint_lab.algorithms.optimization.cost_functions import (
     SegmentCost,
     NormalMeanKnownVar,
     NormalMeanVarUnknown,

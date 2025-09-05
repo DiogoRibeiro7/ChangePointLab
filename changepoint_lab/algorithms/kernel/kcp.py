@@ -5,8 +5,8 @@ from typing import Optional, Callable, Any
 
 import numpy as np
 
-from algorithms._base import BaseDetector
-from core.datatypes import ChangePointResult
+from .._base import BaseDetector
+from ...core.datatypes import ChangePointResult
 from kcp.kcp import (
     kcp_penalized,
     kcp_select_bic,

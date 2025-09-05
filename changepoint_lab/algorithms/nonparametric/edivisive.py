@@ -5,8 +5,8 @@ from typing import Optional
 
 import numpy as np
 
-from algorithms._base import BaseDetector
-from core.datatypes import ChangePointResult
+from .._base import BaseDetector
+from ...core.datatypes import ChangePointResult
 from edivisive.edivisive import edivisive as _edivisive, EDivisiveResult
 
 

@@ -4,9 +4,16 @@ from typing import Optional
 
 import numpy as np
 
-from algorithms._base import BaseDetector
-from core.datatypes import ChangePointResult
-from bocpd import BOCPD as _BOCPD, BOCPDConfig, Hazard, ConstantHazard
+from .._base import BaseDetector
+from ...core.datatypes import ChangePointResult
+from bocpd import (
+    BOCPD as _BOCPD,
+    BOCPDConfig,
+    Hazard,
+    ConstantHazard,
+    BoostedBoundaryHazard,
+    ScheduledHazard,
+)
 
 
 class BOCPD(_BOCPD, BaseDetector):
@@ -30,4 +37,11 @@ class BOCPD(_BOCPD, BaseDetector):
         return ChangePointResult(indices=cps, metadata=meta)
 
 
-__all__ = ["BOCPD", "BOCPDConfig", "Hazard", "ConstantHazard"]
+__all__ = [
+    "BOCPD",
+    "BOCPDConfig",
+    "Hazard",
+    "ConstantHazard",
+    "BoostedBoundaryHazard",
+    "ScheduledHazard",
+]
