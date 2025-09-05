@@ -63,7 +63,7 @@ print(result.indices)
 | EDivisive | Nonparametric energy statistics | `from changepoint_lab import EDivisive` |
 | HSMM | Explicit‑duration state model | `from changepoint_lab import HSMM` |
 | KernelCPD | Kernel‑based segmentation | `from changepoint_lab import KernelCPD` |
-| WithinPeriodBOCPD | Seasonal Bayesian detector | `from changepoint_lab import WithinPeriodBOCPD` |
+| WithinPeriodCPD | Seasonal Bayesian detector | `from changepoint_lab import WithinPeriodCPD` |
 
 ## Migration notes
 
@@ -71,7 +71,10 @@ Common import rewrites:
 
 ```python
 # Old
-from pelt.pelt import pelt, NormalMeanVarUnknown
+from changepoint_lab.algorithms.optimization.pelt import (
+    NormalMeanVarUnknown,
+    pelt,
+)
 from bocpd.bocpd import BOCPD
 
 # New

@@ -15,7 +15,7 @@ from changepoint_lab.algorithms.bayesian.bocpd import (
     BOCPD,
     BoostedBoundaryHazard,
 )
-from pelt import pelt, BinomialCost
+from changepoint_lab.algorithms.optimization.pelt import BinomialCost, pelt
 
 
 # ---------------------------------------------------------------------------

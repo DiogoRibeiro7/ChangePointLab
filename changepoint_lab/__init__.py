@@ -11,7 +11,7 @@ from .algorithms.bayesian.bocpd import (
     Hazard,
     ScheduledHazard,
 )
-from .algorithms.bayesian.within_period import WithinPeriodBOCPD
+from .algorithms.bayesian.within_period import WithinPeriodCPD
 from .algorithms.kernel.kcp import KernelCPD
 from .algorithms.kernel.kcp_core import gram_rbf, kcp_penalized, kcp_select_bic
 from .algorithms.nonparametric.edivisive import EDivisive
@@ -39,7 +39,7 @@ __all__ = [
     "ConstantHazard",
     "BoostedBoundaryHazard",
     "ScheduledHazard",
-    "WithinPeriodBOCPD",
+    "WithinPeriodCPD",
     "edivisive",
     "EDivisive",
     "EDivisiveResult",

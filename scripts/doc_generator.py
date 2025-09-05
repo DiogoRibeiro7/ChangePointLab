@@ -361,7 +361,11 @@ print(f"Detected change points: {result.change_points}")
 """,
             "within_period_cpd": """
 import numpy as np
-from within_period.within_period_cpd import WithinPeriodCPD, ModelPrior, RJConfig
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    RJConfig,
+    WithinPeriodCPD,
+)
 from changepoint_lab.common.io.data_loader import load_binary_from_csv
 
 # Either load binary data from CSV timestamps
@@ -610,8 +614,14 @@ print(f"Bandwidth stability: {stability['coefficient_of_variation']:.3f}")
 """,
             "tempering": """
 import numpy as np
-from within_period.samplers.tempering import PTConfig, parallel_tempering_fit
-from within_period.within_period_cpd import WithinPeriodCPD, ModelPrior
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    WithinPeriodCPD,
+)
+from changepoint_lab.algorithms.bayesian.within_period.samplers import (
+    PTConfig,
+    parallel_tempering_fit,
+)
 
 # Set up model (using within-period CPD as an example)
 N = 96  # 15-minute bins over 24 hours
@@ -728,7 +738,11 @@ import numpy as np
 from changepoint_lab.common.io.io_utils import save_result_npz, load_result_npz
 
 # Assuming we have MCMC results from within_period_cpd
-from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    RJConfig,
+    WithinPeriodCPD,
+)
 
 # Example result components
 samples_tau = [(25, 75), (26, 74), (25, 76)]  # List of Tau tuples

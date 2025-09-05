@@ -219,7 +219,7 @@ class MCMCResult:
     mode_tau: Tau
 
 
-class WithinPeriodCPD:
+class WithinPeriodCore:
     """
     Within-period changepoint detection for periodic binary data with minimum segment length constraint,
     using an RJMCMC sampler (birth/move/death) over changepoints on a circular time axis. Follows
@@ -808,7 +808,7 @@ if __name__ == "__main__":
     x = np.concatenate(X)
 
     prior = ModelPrior(N=N, l=l, gamma=1.0, pois_lambda=1.0)
-    model = WithinPeriodCPD(prior)
+    model = WithinPeriodCore(prior)
 
     cfg = RJConfig(
         iters=20_000,

@@ -23,9 +23,17 @@ from changepoint_lab.algorithms.bayesian.bocpd import (
     ConstantHazard,
 )
 from changepoint_lab.algorithms.state_space.hsmm import HSMM, HSMMConfig
-from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    RJConfig,
+    WithinPeriodCPD,
+)
 from changepoint_lab import edivisive
-from pelt import NormalMeanKnownVar, NormalMeanVarUnknown, pelt
+from changepoint_lab.algorithms.optimization.pelt import (
+    NormalMeanKnownVar,
+    NormalMeanVarUnknown,
+    pelt,
+)
 from changepoint_lab.algorithms.state_space.sdhmm import SDHMM, SDHMMConfig
 from examples.comparison_helpers import compare_detectors, print_summary
 

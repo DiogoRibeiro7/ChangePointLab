@@ -25,7 +25,7 @@ try:
     from changepoint_lab.algorithms.kernel import kcp_core as kcp
     from changepoint_lab.algorithms.kernel import kcp_rff
     from changepoint_lab.algorithms.kernel import rff_variants
-    import within_period.within_period_cpd as within_period_cpd
+    import changepoint_lab.algorithms.bayesian.within_period.within_period_cpd as within_period_cpd
     from changepoint_lab.algorithms.state_space import hsmm
 
     MODULES_AVAILABLE = True
@@ -635,7 +635,10 @@ class AlgorithmRegistry:
 
         else:
             # Use parallel tempering
-            from within_period.samplers.tempering import PTConfig, parallel_tempering_fit
+            from changepoint_lab.algorithms.bayesian.within_period.samplers import (
+                PTConfig,
+                parallel_tempering_fit,
+            )
 
             ptcfg = PTConfig(iters=iters, burn=burn, thin=thin, swap_every=50, T_hot=3.0, seed=seed)
             result = parallel_tempering_fit(model, data, ptcfg)

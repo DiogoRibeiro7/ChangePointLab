@@ -4,7 +4,11 @@ from changepoint_lab.algorithms.optimization.cost_functions import (
     NormalMeanVarUnknown,
 )
 
-from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    RJConfig,
+    WithinPeriodCPD,
+)
 
 
 def test_methods_interoperability():
@@ -22,8 +26,8 @@ def test_methods_interoperability():
     prior = ModelPrior(N=20, l=5)
     wp = WithinPeriodCPD(prior)
     cfg = RJConfig(iters=20, burn=5, thin=5, seed=0)
-    wp_res = wp.fit((data > 0).astype(int), cfg=cfg)
+    wp.fit((data > 0).astype(int), cfg=cfg)
 
     assert 40 in pelt_res.change_points
     assert 40 in ediv_res.change_points
-    assert wp_res.samples_tau is not None
+    assert wp.result.samples_tau is not None

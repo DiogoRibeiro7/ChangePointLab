@@ -10,7 +10,11 @@ periodic hazard.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from within_period.within_period_cpd import ModelPrior, WithinPeriodCPD, RJConfig
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    RJConfig,
+    WithinPeriodCPD,
+)
 from changepoint_lab.algorithms.bayesian.bocpd import (
     BOCPD,
     BoostedBoundaryHazard,

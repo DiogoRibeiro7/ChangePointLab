@@ -1,2 +1,5 @@
-# TODO: Integrate these external packages:
-# - within_period → changepoint_lab/algorithms/bayesian/within_period_core.py
+from __future__ import annotations
+
+"""Algorithm implementations for changepoint detection."""
+
+__all__: list[str] = []

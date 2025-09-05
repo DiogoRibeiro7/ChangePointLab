@@ -2,7 +2,7 @@
 
 The former `cpd` package has been split into dedicated modules:
 
-- `within_period` – within-period change-point detection
+- `WithinPeriodCPD` – within-period change-point detection
 - `algorithms.kernel` – kernel change-point detection and RFF helpers
 - `hsmm` – state-space emissions
 - `toolkit` – shared CLI and API glue
@@ -32,12 +32,12 @@ runtime.
 ### Parallel tempering sampler
 
 Within-period change-point models can leverage parallel tempering via
-`within_period.samplers.tempering`.  Each additional temperature requires an
+`changepoint_lab.algorithms.bayesian.within_period.samplers.tempering`.  Each additional temperature requires an
 extra Markov chain, so the method scales roughly linearly with the number of
 temperatures.
 
 ```python
-from within_period.samplers.tempering import tempering_sampler
+from changepoint_lab.algorithms.bayesian.within_period.samplers.tempering import tempering_sampler
 
 for state in tempering_sampler(model, n_temps=4):
     ...  # consume samples

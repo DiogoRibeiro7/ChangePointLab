@@ -14,7 +14,7 @@ setup(
     entry_points={
         "console_scripts": [
             "bocpd-cli=changepoint_lab.cli.bocpd_cli:main",
-            "within-period-cli=within_period.cli:main",
+            "within-period-cli=changepoint_lab.algorithms.bayesian.within_period.cli:main",
             "cpd-cli=toolkit.cpd_cli:main",
         ],
     },

@@ -11,7 +11,7 @@ changepoint_lab/
 │   ├── bayesian/
 │   │   ├── __init__.py
 │   │   ├── bocpd.py                   # Bayesian Online CPD
-│   │   └── within_period.py           # Within-period Bayesian detector (if present)
+│   │   └── within_period/             # Within-period Bayesian detector
 │   ├── optimization/
 │   │   ├── __init__.py
 │   │   ├── pelt.py                    # PELT / optimal partitioning variants

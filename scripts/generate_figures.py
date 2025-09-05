@@ -23,9 +23,17 @@ from changepoint_lab.algorithms.state_space.emissions import (
     estimate_by_kmeanspp,
     gaussian_diag_loglik,
 )
-from pelt.pelt import BetaBinomialCost, pelt, bic_penalty
+from changepoint_lab.algorithms.optimization.pelt import (
+    BetaBinomialCost,
+    bic_penalty,
+    pelt,
+)
 from changepoint_lab.algorithms.state_space.sdhmm import SDHMM, SDHMMConfig
-from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    RJConfig,
+    WithinPeriodCPD,
+)
 
 FIG_DIR = Path(__file__).resolve().parent.parent / "paper" / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)

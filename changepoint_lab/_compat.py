@@ -11,6 +11,7 @@ _LEGACY_ATTRS = {
     "hsmm": "changepoint_lab.algorithms.state_space.hsmm_core.HSMM",
     "sdhmm": "changepoint_lab.algorithms.state_space.sdhmm.SDHMM",
     "sdhmm_mix_vi": "changepoint_lab.algorithms.state_space.sdhmm_mix_vi.SDHMMMixVI",
+    "within_period": "changepoint_lab.algorithms.bayesian.within_period.WithinPeriodCPD",
     "kcp_penalized": "changepoint_lab.algorithms.kernel.kcp_core.kcp_penalized",
     "kcp_select_bic": "changepoint_lab.algorithms.kernel.kcp_core.kcp_select_bic",
     "gram_rbf": "changepoint_lab.algorithms.kernel.kcp_core.gram_rbf",

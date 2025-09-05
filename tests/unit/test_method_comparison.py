@@ -15,7 +15,11 @@ from changepoint_lab.algorithms.optimization.cost_functions import (
     NormalMeanVarUnknown,
 )
 
-from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
+from changepoint_lab.algorithms.bayesian.within_period import (
+    ModelPrior,
+    RJConfig,
+    WithinPeriodCPD,
+)
 
 
 def f1_score(a, b, tol):
@@ -171,8 +175,8 @@ def test_periodic_within_period_vs_bocpd(periodic_data):
     cfg = RJConfig(
         iters=100, burn=20, thin=5, seed=0, move_prob=1.0, birth_prob=0.0, death_prob=0.0
     )
-    res_wp = wp.fit(data, cfg=cfg, init=(cp,))
-    wp_cps = list(res_wp.mode_tau)
+    wp.fit(data, cfg=cfg, init=(cp,))
+    wp_cps = list(wp.result.mode_tau)
 
     wp_global = [tau + k * period for k in range(len(data) // period) for tau in wp_cps]
     fig = plot_changepoints(

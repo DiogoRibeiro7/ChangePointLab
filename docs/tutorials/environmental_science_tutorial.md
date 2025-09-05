@@ -8,7 +8,7 @@ This tutorial demonstrates changepoint detection for climate and ecological data
 - Use compositing to account for spatial heterogeneity
 
 ## Seasonal Adjustment Techniques
-- Use `within_period` detection for daily/annual cycles
+- Use `WithinPeriodCPD` for daily/annual cycles
 - De‑seasonalize with moving averages before applying PELT or BOCPD
 
 ## Detecting Anthropogenic Impacts

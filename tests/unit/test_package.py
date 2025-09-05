@@ -18,7 +18,7 @@ def test_main_imports():
         "EDivisive",
         "HSMM",
         "KernelCPD",
-        "WithinPeriodBOCPD",
+        "WithinPeriodCPD",
         "SDHMM",
         "SDHMMMixVI",
     ]
@@ -51,7 +51,7 @@ def test_class_instantiation():
         SDHMMMixVI,
         SDHMMMixVIConfig,
     )
-    from within_period.within_period_cpd import (
+    from changepoint_lab.algorithms.bayesian.within_period import (
         ModelPrior,
         RJConfig,
         WithinPeriodCPD,
@@ -90,7 +90,7 @@ def test_class_instantiation():
 def test_cli_entry_points():
     modules = [
         "changepoint_lab.cli.bocpd_cli",
-        "within_period.cli",
+        "changepoint_lab.algorithms.bayesian.within_period.cli",
         "toolkit.cpd_cli",
     ]
     for mod in modules:

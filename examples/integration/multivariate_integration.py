@@ -10,7 +10,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from changepoint_lab import edivisive
-from pelt import pelt, NormalMeanVarUnknown
+from changepoint_lab.algorithms.optimization.pelt import (
+    NormalMeanVarUnknown,
+    pelt,
+)
 from examples.comparison_helpers import plot_series
 
 

@@ -18,11 +18,11 @@ from libcst.helpers import get_full_name_for_node
 
 # Deterministic mapping from old to new module paths
 MODULE_MAP = {
-    "cpd.anchor_utils": "within_period.anchor_utils",
-    "cpd.within_period_cpd": "within_period.within_period_cpd",
-    "cpd.posterior_predictive": "within_period.posterior_predictive",
-    "cpd.cli": "within_period.cli",
-    "cpd.tempering": "within_period.samplers.tempering",
+    "cpd.anchor_utils": "changepoint_lab.algorithms.bayesian.within_period.anchor_utils",
+    "cpd.within_period_cpd": "changepoint_lab.algorithms.bayesian.within_period.within_period_cpd",
+    "cpd.posterior_predictive": "changepoint_lab.algorithms.bayesian.within_period.posterior_predictive",
+    "cpd.cli": "changepoint_lab.algorithms.bayesian.within_period.cli",
+    "cpd.tempering": "changepoint_lab.algorithms.bayesian.within_period.samplers.tempering",
     "cpd.rff_variants": "changepoint_lab.algorithms.kernel.rff_variants",
     "cpd.bandwidth_cv": "changepoint_lab.algorithms.kernel.bandwidth_cv",
     "cpd.ar_emissions": "changepoint_lab.algorithms.state_space.emissions.ar_emissions",
@@ -36,10 +36,10 @@ MODULE_MAP = {
     "cpd.types": "common.types.types",
     "cpd.utils": "common.utils.utils",
     # Bare names that previously relied on being in the same folder
-    "anchor_utils": "within_period.anchor_utils",
-    "within_period_cpd": "within_period.within_period_cpd",
-    "posterior_predictive": "within_period.posterior_predictive",
-    "tempering": "within_period.samplers.tempering",
+    "anchor_utils": "changepoint_lab.algorithms.bayesian.within_period.anchor_utils",
+    "within_period_cpd": "changepoint_lab.algorithms.bayesian.within_period.within_period_cpd",
+    "posterior_predictive": "changepoint_lab.algorithms.bayesian.within_period.posterior_predictive",
+    "tempering": "changepoint_lab.algorithms.bayesian.within_period.samplers.tempering",
     "rff_variants": "changepoint_lab.algorithms.kernel.rff_variants",
     "bandwidth_cv": "changepoint_lab.algorithms.kernel.bandwidth_cv",
     "ar_emissions": "changepoint_lab.algorithms.state_space.emissions.ar_emissions",

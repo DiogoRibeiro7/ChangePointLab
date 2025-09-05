@@ -36,7 +36,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Local modules
-from within_period.within_period_cpd import WithinPeriodCPD, ModelPrior, RJConfig, Tau
+from .within_period_cpd import WithinPeriodCore, ModelPrior, RJConfig, Tau
 from changepoint_lab.common.plotting.plotting_helpers import (
     plot_changepoint_posterior_mass,
     plot_pointwise_bands,
@@ -48,7 +48,7 @@ from changepoint_lab.common.io.data_loader import (
     load_binary_from_csv,
     empirical_per_bin_mean,
 )
-from within_period.samplers.tempering import PTConfig, parallel_tempering_fit
+from .samplers import PTConfig, parallel_tempering_fit
 
 
 # --------------------------- Plotting orchestration ---------------------------
@@ -59,7 +59,7 @@ def _save_all_plots(
     samples_tau: list[Tau],
     cp_hist: np.ndarray,
     mode_tau: Tau,
-    model: WithinPeriodCPD,
+    model: WithinPeriodCore,
     outdir: Path,
     start_hour: int,
     hours_step: int,

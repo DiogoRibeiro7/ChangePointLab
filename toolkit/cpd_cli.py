@@ -375,7 +375,11 @@ def run_hsmm(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 
 def run_within_period(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
     """Run Within-Period Change-Point Detection."""
-    from within_period.within_period_cpd import WithinPeriodCPD, ModelPrior, RJConfig
+    from changepoint_lab.algorithms.bayesian.within_period import (
+        ModelPrior,
+        RJConfig,
+        WithinPeriodCPD,
+    )
     from changepoint_lab.common.io.data_loader import (
         load_binary_from_csv,
         empirical_per_bin_mean,
