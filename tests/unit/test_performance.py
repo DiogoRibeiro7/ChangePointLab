@@ -19,11 +19,11 @@ from edivisive.edivisive import edivisive
 from hsmm.gaussian_diag import GaussianDiagParams, gaussian_diag_loglik
 from hsmm.gaussian_full import GaussianFullParams, gaussian_full_loglik
 from hsmm.hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
-from pelt.pelt import (
+from algorithms.optimization.cost_functions import (
     BetaBinomialCost,
     NormalMeanVarUnknown,
-    pelt,
 )
+from algorithms.optimization.pelt import pelt
 from sdhmm.sdhmm import SDHMM, SDHMMConfig
 from within_period.within_period_cpd import ModelPrior, WithinPeriodCPD, RJConfig
 

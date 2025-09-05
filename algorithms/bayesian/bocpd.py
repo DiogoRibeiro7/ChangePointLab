@@ -4,7 +4,8 @@ from typing import Optional
 
 import numpy as np
 
-from algorithms._base import BaseDetector, ChangePointResult
+from algorithms._base import BaseDetector
+from core.datatypes import ChangePointResult
 from bocpd import BOCPD as _BOCPD, BOCPDConfig, Hazard, ConstantHazard
 
 

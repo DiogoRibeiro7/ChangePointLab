@@ -5,7 +5,8 @@ import pytest
 pytestmark = pytest.mark.slow
 
 from bocpd.bocpd import BOCPD, BOCPDConfig, ConstantHazard
-from pelt.pelt import BetaBinomialCost, pelt
+from algorithms.optimization.cost_functions import BetaBinomialCost
+from algorithms.optimization.pelt import pelt
 from edivisive.edivisive import edivisive
 from hsmm.hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
 from hsmm.gaussian_diag import (

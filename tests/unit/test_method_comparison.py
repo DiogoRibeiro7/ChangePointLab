@@ -11,11 +11,11 @@ from bocpd.bocpd import (
     BoostedBoundaryHazard,
     ConstantHazard,
 )
-from pelt.pelt import (
+from algorithms.optimization.cost_functions import (
     BetaBinomialCost,
     NormalMeanVarUnknown,
-    pelt,
 )
+from algorithms.optimization.pelt import pelt
 from edivisive.edivisive import edivisive
 from within_period.within_period_cpd import ModelPrior, WithinPeriodCPD, RJConfig
 

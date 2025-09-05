@@ -1,6 +1,7 @@
 import numpy as np
 
-from pelt.pelt import NormalMeanVarUnknown, pelt
+from algorithms.optimization.cost_functions import NormalMeanVarUnknown
+from algorithms.optimization.pelt import pelt
 from edivisive.edivisive import edivisive
 from within_period.within_period_cpd import ModelPrior, WithinPeriodCPD, RJConfig
 

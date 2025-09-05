@@ -4,7 +4,8 @@ from typing import Optional
 
 import numpy as np
 
-from algorithms._base import BaseDetector, ChangePointResult
+from algorithms._base import BaseDetector
+from core.datatypes import ChangePointResult
 from hsmm.hsmm import HSMM as _HSMM, HSMMConfig, HSMMParams
 
 

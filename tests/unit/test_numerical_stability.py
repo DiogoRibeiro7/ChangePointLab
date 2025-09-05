@@ -5,7 +5,11 @@ import pytest
 pytestmark = pytest.mark.slow
 
 from bocpd.bocpd import BOCPD, BOCPDConfig, ConstantHazard
-from pelt.pelt import pelt, NormalMeanKnownVar, NormalMeanVarUnknown
+from algorithms.optimization.pelt import pelt
+from algorithms.optimization.cost_functions import (
+    NormalMeanKnownVar,
+    NormalMeanVarUnknown,
+)
 from edivisive.edivisive import edivisive
 from hsmm.hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
 from sdhmm.sdhmm import SDHMM, SDHMMConfig

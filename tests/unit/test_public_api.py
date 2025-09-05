@@ -9,9 +9,13 @@ def test_top_level_reexports():
         HSMM,
         KernelCPD,
         PELT,
+        WithinPeriodBOCPD,
         ChangePointResult,
     )
     from changepoint_lab.algorithms.bayesian.bocpd import BOCPD as _BOCPD
+    from changepoint_lab.algorithms.bayesian.within_period import (
+        WithinPeriodBOCPD as _WP,
+    )
     from changepoint_lab.algorithms.nonparametric.edivisive import (
         EDivisive as _EDivisive,
     )
@@ -25,6 +29,7 @@ def test_top_level_reexports():
     assert HSMM.__name__ == _HSMM.__name__
     assert KernelCPD.__name__ == _KernelCPD.__name__
     assert PELT.__name__ == _PELT.__name__
+    assert WithinPeriodBOCPD.__name__ == _WP.__name__
     assert ChangePointResult.__name__ == _CPR.__name__
 
 

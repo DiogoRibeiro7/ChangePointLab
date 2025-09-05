@@ -1,6 +1,7 @@
 import numpy as np
 
-from pelt.pelt import NormalMeanVarUnknown, pelt
+from algorithms.optimization.cost_functions import NormalMeanVarUnknown
+from algorithms.optimization.pelt import pelt
 
 
 def test_pelt_result_contains_labels_and_costs():
