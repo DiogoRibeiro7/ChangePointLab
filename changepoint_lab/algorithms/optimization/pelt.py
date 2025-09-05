@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections import deque
-from typing import Callable, List, Optional, Sequence
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 
 import numpy as np
 from numpy.typing import NDArray
 
-from .._base import BaseDetector
 from ...core.datatypes import ChangePointResult
+from .._base import BaseDetector
 from .cost_functions import (
-    SegmentCost,
+    BetaBinomialCost,
     NormalMeanKnownVar,
     NormalMeanVarUnknown,
-    BetaBinomialCost,
-    bic_penalty,
+    SegmentCost,
     aic_penalty,
+    bic_penalty,
 )
 
 ArrayF = NDArray[np.floating]
@@ -24,7 +24,7 @@ ArrayI = NDArray[np.int_]
 
 @dataclass
 class PELTResult:
-    change_points: List[int]
+    change_points: list[int]
     total_cost: float
     F: ArrayF
     prev: NDArray[np.int64]
@@ -71,7 +71,7 @@ def pelt(
 
     for t in range(min_seg_len, n + 1):
         cost_cache = {}
-        eligible: List[int] = []
+        eligible: list[int] = []
         best_val = float("inf")
         best_tau = -1
         for tau in R:
@@ -100,7 +100,7 @@ def pelt(
                 new_R.append(tau)
         R = new_R
 
-    cps: List[int] = []
+    cps: list[int] = []
     t = n
     while t > 0:
         tau = int(prev[t])
@@ -113,7 +113,7 @@ def pelt(
     edges = [0] + cps + [n]
     labels = np.empty(n, dtype=int)
     costs = []
-    for k, (a, b) in enumerate(zip(edges[:-1], edges[1:])):
+    for k, (a, b) in enumerate(zip(edges[:-1], edges[1:], strict=True)):
         labels[a:b] = k
         costs.append(cost_fn.cost(a, b))
     return PELTResult(
@@ -142,7 +142,7 @@ def pelt_concave_penalty(
 ) -> PELTResult:
     m_old = -1
     m_hat = 1
-    res: Optional[PELTResult] = None
+    res: PELTResult | None = None
     for _ in range(max_iter):
         beta = float(fprime(max(1, m_hat)))
         res = pelt(y, cost_fn, penalty=beta, min_seg_len=min_seg_len, K=K)
@@ -160,14 +160,14 @@ class PELT(BaseDetector):
     penalty: float
     min_seg_len: int = 1
 
-    _result: Optional[PELTResult] = None
+    _result: PELTResult | None = None
 
-    def fit(self, x: np.ndarray) -> "PELT":
+    def fit(self, x: np.ndarray) -> PELT:
         self._validate_input(x)
         self._result = pelt(x, self.cost_fn, penalty=self.penalty, min_seg_len=self.min_seg_len)
         return self
 
-    def predict(self, x: Optional[np.ndarray] = None) -> ChangePointResult:
+    def predict(self, x: np.ndarray | None = None) -> ChangePointResult:
         if x is not None:
             return self.fit(x).predict()
         if self._result is None:

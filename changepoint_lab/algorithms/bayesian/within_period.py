@@ -1,36 +1,36 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
-from .._base import BaseDetector
-from ...core.datatypes import ChangePointResult
 from within_period.within_period_cpd import (
-    WithinPeriodCPD,
+    MCMCResult,
     ModelPrior,
     RJConfig,
     Tau,
-    MCMCResult,
+    WithinPeriodCPD,
 )
+
+from ...core.datatypes import ChangePointResult
+from .._base import BaseDetector
 
 
 @dataclass
 class WithinPeriodBOCPD(BaseDetector):
     prior: ModelPrior
     cfg: RJConfig = RJConfig()
-    init: Optional[Tau] = None
+    init: Tau | None = None
 
-    _result: Optional[MCMCResult] = None
+    _result: MCMCResult | None = None
 
-    def fit(self, x: np.ndarray) -> "WithinPeriodBOCPD":
+    def fit(self, x: np.ndarray) -> WithinPeriodBOCPD:
         self._validate_input(x)
         model = WithinPeriodCPD(self.prior)
         self._result = model.fit(x, cfg=self.cfg, init=self.init)
         return self
 
-    def predict(self, x: Optional[np.ndarray] = None) -> ChangePointResult:
+    def predict(self, x: np.ndarray | None = None) -> ChangePointResult:
         if x is not None:
             return self.fit(x).predict()
         if self._result is None:

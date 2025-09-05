@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 import numpy as np
 
@@ -14,12 +13,12 @@ class BaseDetector(ABC):
     """Common interface all detectors must implement."""
 
     @abstractmethod
-    def fit(self, x: ArrayLike) -> "BaseDetector":
+    def fit(self, x: ArrayLike) -> BaseDetector:
         """Fit internal state to `x` (if needed)."""
         raise NotImplementedError
 
     @abstractmethod
-    def predict(self, x: Optional[ArrayLike] = None) -> ChangePointResult:
+    def predict(self, x: ArrayLike | None = None) -> ChangePointResult:
         """Detect change points on `x` or the data seen in ``fit``."""
         raise NotImplementedError
 

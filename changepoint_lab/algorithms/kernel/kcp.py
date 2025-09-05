@@ -1,18 +1,20 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Optional, Callable, Any
+from typing import Any
 
 import numpy as np
 
-from .._base import BaseDetector
-from ...core.datatypes import ChangePointResult
 from kcp.kcp import (
+    KCPResult,
+    gram_rbf,
     kcp_penalized,
     kcp_select_bic,
-    gram_rbf,
-    KCPResult,
 )
+
+from ...core.datatypes import ChangePointResult
+from .._base import BaseDetector
 
 KernelFunc = Callable[[np.ndarray], np.ndarray]
 
@@ -23,15 +25,15 @@ class KernelCPD(BaseDetector):
     kernel: Callable[[np.ndarray], np.ndarray] = gram_rbf
     kernel_kwargs: dict[str, Any] | None = None
 
-    _result: Optional[KCPResult] = None
+    _result: KCPResult | None = None
 
-    def fit(self, x: np.ndarray) -> "KernelCPD":
+    def fit(self, x: np.ndarray) -> KernelCPD:
         self._validate_input(x)
         K = self.kernel(x, **(self.kernel_kwargs or {}))
         self._result = kcp_penalized(K, penalty=self.penalty)
         return self
 
-    def predict(self, x: Optional[np.ndarray] = None) -> ChangePointResult:
+    def predict(self, x: np.ndarray | None = None) -> ChangePointResult:
         if x is not None:
             return self.fit(x).predict()
         if self._result is None:

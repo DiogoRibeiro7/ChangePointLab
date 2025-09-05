@@ -1,14 +1,13 @@
-from __future__ import annotations
+from __future__ import annotations  # ruff: noqa: I001
 
-# Re-export main algorithm classes (clean public API)
-from .algorithms.optimization.pelt import PELT
+from ._compat import __all__ as _compat_all
+from ._compat import __getattr__  # noqa: F401
 from .algorithms.bayesian.bocpd import BOCPD
 from .algorithms.bayesian.within_period import WithinPeriodBOCPD
-from .algorithms.nonparametric.edivisive import EDivisive
-from .algorithms.state_space.hsmm import HSMM
 from .algorithms.kernel.kcp import KernelCPD
-
-# Useful public types
+from .algorithms.nonparametric.edivisive import EDivisive
+from .algorithms.optimization.pelt import PELT
+from .algorithms.state_space.hsmm import HSMM
 from .core.datatypes import ChangePointResult
 
 __all__ = [
@@ -22,6 +21,4 @@ __all__ = [
 ]
 
 # Attach compatibility layer (lazy attribute fallback + deprecations)
-from ._compat import __getattr__, __all__ as _compat_all  # noqa: E402
-
 __all__ += _compat_all

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
-from .._base import BaseDetector
+from edivisive.edivisive import EDivisiveResult
+from edivisive.edivisive import edivisive as _edivisive
+
 from ...core.datatypes import ChangePointResult
-from edivisive.edivisive import edivisive as _edivisive, EDivisiveResult
+from .._base import BaseDetector
 
 
 @dataclass
@@ -15,18 +16,18 @@ class EDivisive(BaseDetector):
     alpha: float = 1.0
     min_size: int = 10
     R: int = 199
-    seed: Optional[int] = None
+    seed: int | None = None
 
-    _result: Optional[EDivisiveResult] = None
+    _result: EDivisiveResult | None = None
 
-    def fit(self, x: np.ndarray) -> "EDivisive":
+    def fit(self, x: np.ndarray) -> EDivisive:
         self._validate_input(x)
         self._result = _edivisive(
             x, alpha=self.alpha, min_size=self.min_size, R=self.R, seed=self.seed
         )
         return self
 
-    def predict(self, x: Optional[np.ndarray] = None) -> ChangePointResult:
+    def predict(self, x: np.ndarray | None = None) -> ChangePointResult:
         if x is not None:
             return self.fit(x).predict()
         if self._result is None:
