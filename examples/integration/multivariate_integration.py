@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 
-from edivisive import edivisive
+from changepoint_lab import edivisive
 from pelt import pelt, NormalMeanVarUnknown
 from examples.comparison_helpers import plot_series
 

@@ -10,8 +10,11 @@ explicit-duration HSMM with a standard HMM from `hmmlearn`.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from hsmm.gaussian_diag import estimate_by_kmeanspp, gaussian_diag_loglik
-from hsmm.hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
+from changepoint_lab import HSMM, HSMMConfig, HSMMParams, PoissonDur
+from changepoint_lab.algorithms.state_space.emissions import (
+    estimate_by_kmeanspp,
+    gaussian_diag_loglik,
+)
 
 try:
     from hmmlearn.hmm import GaussianHMM  # type: ignore

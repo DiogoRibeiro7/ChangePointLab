@@ -98,8 +98,8 @@ The `hsmm` module implements Yu's explicit-duration hidden semi-Markov models [@
 - Viterbi decoding for optimal state sequence recovery
 
 ```python
-from changepoint_lab import hsmm
-model = hsmm.HSMM(n_states=3, duration="poisson")
+from changepoint_lab import HSMM
+model = HSMM(n_states=3, duration="poisson")
 result = model.fit(data)
 ```
 
@@ -113,9 +113,9 @@ The `kcp` module provides kernel-based methods for flexible non-linear segmentat
 - BIC-style model selection
 
 ```python
-from changepoint_lab import kcp
-kernel_matrix = kcp.gram_rbf(data)
-result = kcp.detect_penalized(kernel_matrix, gamma=np.log(len(data)))
+from changepoint_lab.algorithms.kernel.kcp_core import gram_rbf, kcp_penalized
+K, _ = gram_rbf(data)
+result = kcp_penalized(K, penalty=np.log(len(data)))
 ```
 
 # Comparison with Existing Software

@@ -48,16 +48,8 @@ Issues = "https://example.com/repo/issues"
 
 # ---- setuptools config -------------------------------------------------------
 [tool.setuptools]
-packages = [
-    "bayesian_blocks",
-    "bocpd",
-    "common",
-    "kcp",
-    "hsmm",
-    "toolkit",
-    "within_period",
-]
-py-modules = ["kcp_rff"]
+packages = ["changepoint_lab", "toolkit", "within_period"]
+py-modules = []
 include-package-data = true
 
 # ---- tooling (optional but handy) -------------------------------------------

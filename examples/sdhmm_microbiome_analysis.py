@@ -10,8 +10,8 @@ analysis on centered log-ratio (clr) transformed data.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sdhmm import SDHMM, SDHMMConfig
-from edivisive import edivisive
+from changepoint_lab import SDHMM, SDHMMConfig
+from changepoint_lab import edivisive
 
 
 # ---------------------------------------------------------------------------
@@ -37,7 +37,7 @@ def generate_microbiome(seed: int = 0):
 
 def run_sdhmm(data: np.ndarray):
     model = SDHMM(SDHMMConfig(K=3, max_iter=100, min_iter=5, tol=1e-5))
-    res = model.fit(data)
+    model.fit(data)
     z = model.viterbi(data)
     cps = np.where(np.diff(z) != 0)[0] + 1
     return cps

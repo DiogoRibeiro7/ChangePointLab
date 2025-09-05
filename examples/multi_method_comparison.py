@@ -16,23 +16,17 @@ from typing import Callable, Dict, List, Tuple
 
 import numpy as np
 
-from changepoint_toolkit import (
+from changepoint_lab.algorithms.bayesian.bocpd import (
     BOCPD,
     BOCPDConfig,
     BoostedBoundaryHazard,
     ConstantHazard,
-    HSMM,
-    HSMMConfig,
-    ModelPrior,
-    NormalMeanKnownVar,
-    NormalMeanVarUnknown,
-    RJConfig,
-    SDHMM,
-    SDHMMConfig,
-    WithinPeriodCPD,
-    edivisive,
-    pelt,
 )
+from changepoint_lab.algorithms.state_space.hsmm import HSMM, HSMMConfig
+from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
+from changepoint_lab import edivisive
+from pelt import NormalMeanKnownVar, NormalMeanVarUnknown, pelt
+from changepoint_lab.algorithms.state_space.sdhmm import SDHMM, SDHMMConfig
 from examples.comparison_helpers import compare_detectors, print_summary
 
 # ---------------------------------------------------------------------------
@@ -128,8 +122,9 @@ def run_hsmm(data: np.ndarray) -> List[int]:
     return (np.where(np.diff(z) != 0)[0] + 1).tolist()
 
 def run_sdhmm(comp: np.ndarray) -> List[int]:
-    model = SDHMM(SDHMMConfig(K=2, max_em_iters=5))
-    z = model.fit_predict(comp)
+    model = SDHMM(SDHMMConfig(K=2, max_iter=5, min_iter=5))
+    model.fit(comp)
+    z = model.viterbi(comp)
     return (np.where(np.diff(z) != 0)[0] + 1).tolist()
 
 def run_within_period(binary: np.ndarray, period: int) -> List[int]:

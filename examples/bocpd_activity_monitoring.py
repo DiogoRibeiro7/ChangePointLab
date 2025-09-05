@@ -11,7 +11,10 @@ online BOCPD detection with an offline PELT segmentation.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from bocpd import BOCPD, BoostedBoundaryHazard
+from changepoint_lab.algorithms.bayesian.bocpd import (
+    BOCPD,
+    BoostedBoundaryHazard,
+)
 from pelt import pelt, BinomialCost
 
 

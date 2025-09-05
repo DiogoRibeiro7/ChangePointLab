@@ -3,7 +3,7 @@
 The former `cpd` package has been split into dedicated modules:
 
 - `within_period` – within-period change-point detection
-- `kcp` – kernel change-point detection and RFF helpers
+- `algorithms.kernel` – kernel change-point detection and RFF helpers
 - `hsmm` – state-space emissions
 - `toolkit` – shared CLI and API glue
 - `common` – utilities, I/O, plotting, and diagnostics
@@ -14,11 +14,14 @@ This file exists for historical context only.
 
 ### Random Fourier feature variants
 
-The `kcp.rff_variants` module provides orthogonal, quasi–Monte Carlo, and
+The `changepoint_lab.algorithms.kernel.rff_variants` module provides orthogonal, quasi–Monte Carlo, and
 compact-support RFF mappings.  A minimal usage example:
 
 ```python
-from kcp.rff_variants import orthogonal_rff_map, OrthogonalRFFConfig
+from changepoint_lab.algorithms.kernel.rff_variants import (
+    orthogonal_rff_map,
+    OrthogonalRFFConfig,
+)
 
 Z = orthogonal_rff_map(X, OrthogonalRFFConfig(n_features=512)).Z
 ```

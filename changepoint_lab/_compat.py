@@ -6,10 +6,14 @@ from typing import Any
 
 # Map legacy names to their modules/attributes
 _LEGACY_ATTRS = {
-    "pelt": "pelt.pelt",
-    "edivisive": "edivisive.edivisive.edivisive",
-    "kcp_penalized": "kcp.kcp.kcp_penalized",
-    "kcp_select_bic": "kcp.kcp.kcp_select_bic",
+    "pelt": "changepoint_lab.algorithms.optimization.pelt.pelt",
+    "edivisive": "changepoint_lab.algorithms.nonparametric.edivisive_core.edivisive",
+    "hsmm": "changepoint_lab.algorithms.state_space.hsmm_core.HSMM",
+    "sdhmm": "changepoint_lab.algorithms.state_space.sdhmm.SDHMM",
+    "sdhmm_mix_vi": "changepoint_lab.algorithms.state_space.sdhmm_mix_vi.SDHMMMixVI",
+    "kcp_penalized": "changepoint_lab.algorithms.kernel.kcp_core.kcp_penalized",
+    "kcp_select_bic": "changepoint_lab.algorithms.kernel.kcp_core.kcp_select_bic",
+    "gram_rbf": "changepoint_lab.algorithms.kernel.kcp_core.gram_rbf",
 }
 
 __all__ = list(_LEGACY_ATTRS.keys())

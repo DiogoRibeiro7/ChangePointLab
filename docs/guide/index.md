@@ -29,6 +29,5 @@ This guide introduces core concepts and directs you to method‑specific tutoria
 Mathematical notation uses standard LaTeX syntax (e.g., $p(r_t \mid x_{1:t})$ for the run‑length posterior).
 
 For upcoming improvements and cross-module plans (e.g., Numba acceleration,
-CLI utilities), see the project roadmap in
-[`bayesian_blocks/FUTURE_WORKS.md`](../../bayesian_blocks/FUTURE_WORKS.md).
+CLI utilities), see the project roadmap in the repository `CHANGELOG.md`.
 

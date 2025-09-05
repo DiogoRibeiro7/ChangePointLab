@@ -6,7 +6,6 @@ setup(
     author="Change-Point Detection Contributors",
     description="Comprehensive toolkit for change-point detection in time series",
     packages=find_packages(),
-    py_modules=["kcp_rff"],
     install_requires=[
         "numpy>=1.20.0",
         "matplotlib>=3.5.0",
@@ -14,7 +13,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "bocpd-cli=bocpd.bocpd_cli:main",
+            "bocpd-cli=changepoint_lab.cli.bocpd_cli:main",
             "within-period-cli=within_period.cli:main",
             "cpd-cli=toolkit.cpd_cli:main",
         ],

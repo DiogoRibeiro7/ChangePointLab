@@ -17,7 +17,7 @@ from changepoint_lab.algorithms.state_space.hsmm import (
     PoissonDur,
 )
 
-from hsmm.gaussian_diag import (
+from changepoint_lab.algorithms.state_space.emissions.gaussian_diag import (
     GaussianDiagParams,
     estimate_from_labels,
     gaussian_diag_loglik,

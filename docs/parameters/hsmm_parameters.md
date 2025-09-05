@@ -35,7 +35,7 @@ Hidden Markov Models (HMM) and Hidden Semi-Markov Models (HSMM) require careful 
 
 ## Example: State Count vs. BIC
 ```python
-from hsmm import HSMM
+from changepoint_lab import HSMM
 scores = []
 for k in range(2,6):
     model = HSMM(n_states=k).fit(X)

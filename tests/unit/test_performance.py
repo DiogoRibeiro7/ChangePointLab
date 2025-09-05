@@ -25,9 +25,15 @@ from changepoint_lab.algorithms.state_space.hsmm import (
     PoissonDur,
 )
 
-from hsmm.gaussian_diag import GaussianDiagParams, gaussian_diag_loglik
-from hsmm.gaussian_full import GaussianFullParams, gaussian_full_loglik
-from sdhmm.sdhmm import SDHMM, SDHMMConfig
+from changepoint_lab.algorithms.state_space.emissions.gaussian_diag import (
+    GaussianDiagParams,
+    gaussian_diag_loglik,
+)
+from changepoint_lab.algorithms.state_space.emissions.gaussian_full import (
+    GaussianFullParams,
+    gaussian_full_loglik,
+)
+from changepoint_lab.algorithms.state_space.sdhmm import SDHMM, SDHMMConfig
 from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
 
 # ---------------------------------------------------------------------------

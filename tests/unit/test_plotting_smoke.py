@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from kcp.kcp_plotting import plot_segments_1d
+from changepoint_lab.common.plotting.kcp_plotting import plot_segments_1d
 
 
 def test_kcp_plot_segments_smoke():

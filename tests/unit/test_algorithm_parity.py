@@ -4,11 +4,13 @@ from changepoint_lab import edivisive as legacy_edivisive
 from changepoint_lab import pelt as legacy_pelt
 from changepoint_lab.algorithms.bayesian.bocpd import BOCPDConfig, ConstantHazard
 from changepoint_lab.algorithms.optimization.cost_functions import NormalMeanVarUnknown
-from changepoint_lab.algorithms.state_space.hsmm import HSMM, HSMMConfig, HSMMParams
+from changepoint_lab.algorithms.state_space.hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
 
-from bocpd.bocpd import BOCPD as LegacyBOCPD
-from hsmm.gaussian_diag import GaussianDiagParams, gaussian_diag_loglik
-from hsmm.hsmm import PoissonDur
+from changepoint_lab.algorithms.bayesian.bocpd.core import BOCPD as LegacyBOCPD
+from changepoint_lab.algorithms.state_space.emissions.gaussian_diag import (
+    GaussianDiagParams,
+    gaussian_diag_loglik,
+)
 
 
 def test_pelt_parity():

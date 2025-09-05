@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 
-from kcp.kcp import (
+from .kcp_core import (
     KCPResult,
     gram_rbf,
     kcp_penalized,

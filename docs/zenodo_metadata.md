@@ -30,10 +30,11 @@ pip install cp-ss-toolkit
 ## Usage
 ```python
 import numpy as np
-from bocpd import bocpd, ConstantHazard
+from changepoint_lab.algorithms.bayesian.bocpd import BOCPD, ConstantHazard
 
 data = np.random.randn(100)
-result = bocpd(data, ConstantHazard(mean_run_length=200))
+model = BOCPD(ConstantHazard(mean_run_length=200))
+result = model.run(data)
 print(result.changepoints)
 ```
 

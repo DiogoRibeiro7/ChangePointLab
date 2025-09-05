@@ -2,31 +2,13 @@
 # MIT License
 from __future__ import annotations
 
-import csv
 import datetime as dt
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Optional, Tuple, Union
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
-
-
-def _parse_iso(ts: str) -> dt.datetime:
-    """
-    Parse common ISO-8601 timestamps (e.g., '2025-08-28T09:15:00' or with 'Z').
-    Naive datetimes treated as UTC by default (no tz conversion is applied).
-    """
-    ts = ts.strip()
-    if ts.endswith("Z"):
-        ts = ts[:-1]
-    # Support fractional seconds
-    fmts = ("%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d")
-    for f in fmts:
-        try:
-            return dt.datetime.strptime(ts, f)
-        except ValueError:
-            continue
-    raise ValueError(f"Unrecognized timestamp format: {ts!r}")
 
 
 def load_binary_from_csv(
@@ -38,93 +20,136 @@ def load_binary_from_csv(
     bin_minutes: int = 15,
     start_hour: int = 0,
     days_span: Optional[int] = None,
-) -> Tuple[NDArray[np.bool_], int]:
-    """
-    Convert a CSV of timestamps (and optional value) to a binary time series at fixed bins per day.
-
-    Semantics
-    ---------
-    - Each row marks an "event". If 'value_col' is None, every row counts as an event.
-      Otherwise, rows with value > value_threshold count as events.
-    - For each calendar day (based on local naive datetime), we split the 24h day into
-      N = 24 * 60 / bin_minutes bins, anchored so that index 0 corresponds to start_hour:00.
-    - If at least one event falls inside a bin, that bin is marked True for that day (else False).
-    - Output x is a 1-D boolean array of length (#days * N), day-major order.
+    timezone: Optional[str] = None,
+    return_time_bins: bool = False,
+) -> Union[Tuple[NDArray[np.bool_], int], Tuple[NDArray[np.bool_], int, pd.DatetimeIndex]]:
+    """Load event data from CSV and convert to a binned boolean series.
 
     Parameters
     ----------
-    csv_path : path to a CSV with at least 'timestamp_col'
-    timestamp_col : column name containing timestamps (ISO-8601 compatible)
-    value_col : optional numeric column; if provided, filter events with value > value_threshold
-    value_threshold : threshold for value_col
-    bin_minutes : number of minutes per bin (e.g., 15 => N=96)
-    start_hour : hour-of-day that maps to index 0 (0..23)
-    days_span : optionally force an exact number of consecutive days starting from min date
+    csv_path : str or Path
+        Path to the CSV file.
+    timestamp_col : str
+        Name of the timestamp column.
+    value_col : str, optional
+        If provided, threshold this column to determine events.
+    value_threshold : float
+        Threshold for event detection when value_col is provided.
+    bin_minutes : int
+        Size of each time bin in minutes.
+    start_hour : int
+        Local hour of day to align as the first bin (0-23).
+    days_span : int, optional
+        If provided, force the data to span exactly this many days from the
+        earliest timestamp (using LOCAL calendar days in the chosen timezone).
+    timezone : str, optional
+        IANA timezone for local "wall clock" binning (e.g., "Europe/Lisbon").
+        - If timestamps are naive, tz-localize with nonexistent='shift_forward'
+          and ambiguous='NaT' (dropping NaT rows).
+        - If timestamps are tz-aware, convert into `timezone`.
+        - If None, leave times naive.
+    return_time_bins : bool
+        If True, also return the DatetimeIndex of bin edges (left-closed).
 
     Returns
     -------
-    x : np.ndarray[bool] shape (D*N,)
-    N : int (bins per day)
+    binary_series : np.ndarray[bool]
+        True if any event falls into the bin.
+    bins_per_day : int
+        24 * 60 / bin_minutes (number of bins in a standard 24h day).
+    time_bins : pd.DatetimeIndex, optional
+        Bin edges as a tz-aware (if timezone given) or naive index.
     """
-    path = Path(csv_path)
-    N = int(24 * 60 // bin_minutes)
-    bins_per_hour = N // 24
-    assert (24 * 60) % bin_minutes == 0, "bin_minutes must divide 1440."
+    if bin_minutes <= 0 or bin_minutes > 1440 or 1440 % bin_minutes != 0:
+        raise ValueError(
+            f"bin_minutes must be a positive divisor of 1440, got {bin_minutes}"
+        )
+    if not (0 <= start_hour < 24):
+        raise ValueError(f"start_hour must be in range [0, 23], got {start_hour}")
 
-    # Collect parsed timestamps (and optional values)
-    stamps: List[dt.datetime] = []
-    vals: List[float] = []
+    df = pd.read_csv(csv_path)
+    if timestamp_col not in df.columns:
+        raise ValueError(f"Timestamp column '{timestamp_col}' not found in CSV")
+    if value_col is not None and value_col not in df.columns:
+        raise ValueError(f"Value column '{value_col}' not found in CSV")
 
-    with path.open("r", newline="") as f:
-        reader = csv.DictReader(f)
-        if timestamp_col not in reader.fieldnames:
-            raise ValueError(f"CSV must have column {timestamp_col!r}")
-        for row in reader:
-            ts = _parse_iso(row[timestamp_col])
-            if value_col is not None:
-                try:
-                    v = float(row[value_col])
-                except Exception:
-                    continue
-                if not (v > value_threshold):
-                    continue
-            stamps.append(ts)
+    ts = pd.to_datetime(df[timestamp_col], errors="coerce", utc=False)
 
-    if not stamps:
-        return np.array([], dtype=bool), N
+    if timezone:
+        if ts.dt.tz is None:
+            ts = ts.dt.tz_localize(
+                timezone,
+                nonexistent="shift_forward",
+                ambiguous="NaT",
+            )
+        else:
+            ts = ts.dt.tz_convert(timezone)
+        mask_valid = ~ts.isna()
+        if not mask_valid.all():
+            df = df.loc[mask_valid].copy()
+            ts = ts.loc[mask_valid]
+    df[timestamp_col] = ts
 
-    # Build day indices
-    dates = [s.date() for s in stamps]
-    day0 = min(dates)
-    if days_span is None:
-        day_last = max(dates)
-        D = (day_last - day0).days + 1
+    if value_col is not None:
+        df = df[df[value_col] > value_threshold]
+    if df.empty:
+        out = (np.array([], dtype=bool), 24 * 60 // bin_minutes)
+        return (*out, pd.DatetimeIndex([], dtype="datetime64[ns]")) if return_time_bins else out
+
+    df = df.sort_values(timestamp_col)
+    bins_per_day = 24 * 60 // bin_minutes
+    minutes_per_bin = int(bin_minutes)
+
+    min_time = df[timestamp_col].min()
+    if timezone:
+        start_anchor = min_time.normalize() + pd.Timedelta(hours=start_hour)
+        if min_time < start_anchor:
+            min_time_adjusted = start_anchor
+        else:
+            min_time_adjusted = start_anchor + pd.Timedelta(days=1)
     else:
-        D = int(days_span)
+        min_date = min_time.normalize()
+        min_time_adjusted = min_date + dt.timedelta(hours=start_hour)
+        if min_time >= min_time_adjusted:
+            min_time_adjusted = min_time_adjusted + dt.timedelta(days=1)
 
-    def day_index(d: dt.date) -> int:
-        return (d - day0).days
+    max_time = df[timestamp_col].max()
+    if days_span is not None and days_span > 0:
+        max_time_inc = min_time_adjusted + pd.Timedelta(days=int(days_span))
+    else:
+        max_time_inc = max_time + pd.Timedelta(minutes=minutes_per_bin)
 
-    # Populate (day, bin) occupancy
-    x = np.zeros(D * N, dtype=bool)
-    for ts in stamps:
-        d = day_index(ts.date())
-        if not (0 <= d < D):
-            # outside forced span
-            continue
-        # seconds since start_hour
-        sec = (ts.hour - start_hour) * 3600 + ts.minute * 60 + ts.second
-        sec %= 24 * 3600
-        bin_idx = int(sec // (bin_minutes * 60))
-        x[d * N + bin_idx] = True
+    time_bins = pd.date_range(
+        start=min_time_adjusted,
+        end=max_time_inc,
+        freq=f"{minutes_per_bin}min",
+        inclusive="both",
+    )
 
-    return x, N
+    binned = pd.cut(
+        df[timestamp_col],
+        bins=time_bins.to_list(),
+        right=False,
+        labels=False,
+        include_lowest=True,
+    )
+
+    total_bins = max(len(time_bins) - 1, 0)
+    binary_series = np.zeros(total_bins, dtype=bool)
+    binned = binned.dropna().astype(int)
+    if not binned.empty:
+        idx = binned.to_numpy()
+        idx = idx[(0 <= idx) & (idx < total_bins)]
+        if idx.size:
+            binary_series[np.unique(idx)] = True
+
+    if return_time_bins:
+        return binary_series, bins_per_day, time_bins
+    return binary_series, bins_per_day
 
 
 def empirical_per_bin_mean(x: NDArray[np.bool_], N: int) -> NDArray[np.floating]:
-    """
-    Compute per-bin mean across days for a binary series of shape (D*N,).
-    """
+    """Compute per-bin mean across days for a binary series of shape (D*N,)."""
     if x.ndim != 1 or x.size % N != 0:
         raise ValueError("x must be 1-D with length multiple of N.")
     D = x.size // N
@@ -133,19 +158,10 @@ def empirical_per_bin_mean(x: NDArray[np.bool_], N: int) -> NDArray[np.floating]
 
 
 def parse_binary_string(binary_str: str) -> NDArray[np.bool_]:
-    """Parse a string of 0s and 1s into a boolean array.
-
-    Whitespace characters are ignored. Any character other than ``0`` or ``1``
-    raises a :class:`ValueError`.
-    """
+    """Parse a string of 0s and 1s into a boolean array."""
     clean = "".join(ch for ch in binary_str if ch in "01")
     if not clean:
         return np.array([], dtype=bool)
     if set(clean) - {"0", "1"}:
         raise ValueError("Input must contain only 0s and 1s")
     return np.frombuffer(clean.encode(), dtype="S1") == b"1"
-
-
-# from data_loader import load_binary_from_csv, empirical_per_bin_mean
-# x, N = load_binary_from_csv("events.csv", timestamp_col="ts", bin_minutes=15, start_hour=0)
-# # Fit model with prior.N == N

@@ -10,7 +10,7 @@ Results are compared with a Gaussian PELT segmentation.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from edivisive import edivisive
+from changepoint_lab import edivisive
 from pelt import pelt, NormalMeanVarUnknown
 
 
