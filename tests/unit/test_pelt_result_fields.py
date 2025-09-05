@@ -1,7 +1,8 @@
 import numpy as np
-
-from algorithms.optimization.cost_functions import NormalMeanVarUnknown
-from algorithms.optimization.pelt import pelt
+from changepoint_lab import pelt
+from changepoint_lab.algorithms.optimization.cost_functions import (
+    NormalMeanVarUnknown,
+)
 
 
 def test_pelt_result_contains_labels_and_costs():

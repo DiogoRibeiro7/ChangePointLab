@@ -1,6 +1,5 @@
 import numpy as np
-
-from edivisive.edivisive import edivisive
+from changepoint_lab import edivisive
 
 
 def test_edivisive_memmap_and_deque():

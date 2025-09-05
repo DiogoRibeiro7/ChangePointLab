@@ -1,38 +1,40 @@
 import time
-from dataclasses import dataclass
-from typing import Callable, Dict, List, Sequence, Tuple
+from collections.abc import Callable, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-
 pytestmark = pytest.mark.slow
 
-from bocpd.bocpd import (
+from changepoint_lab import edivisive, pelt
+from changepoint_lab.algorithms.bayesian.bocpd import (
     BOCPD,
     BOCPDConfig,
     BoostedBoundaryHazard,
     ConstantHazard,
 )
-from edivisive.edivisive import edivisive
-from hsmm.gaussian_diag import GaussianDiagParams, gaussian_diag_loglik
-from hsmm.gaussian_full import GaussianFullParams, gaussian_full_loglik
-from hsmm.hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
-from algorithms.optimization.cost_functions import (
+from changepoint_lab.algorithms.optimization.cost_functions import (
     BetaBinomialCost,
     NormalMeanVarUnknown,
 )
-from algorithms.optimization.pelt import pelt
-from sdhmm.sdhmm import SDHMM, SDHMMConfig
-from within_period.within_period_cpd import ModelPrior, WithinPeriodCPD, RJConfig
+from changepoint_lab.algorithms.state_space.hsmm import (
+    HSMM,
+    HSMMConfig,
+    HSMMParams,
+    PoissonDur,
+)
 
+from hsmm.gaussian_diag import GaussianDiagParams, gaussian_diag_loglik
+from hsmm.gaussian_full import GaussianFullParams, gaussian_full_loglik
+from sdhmm.sdhmm import SDHMM, SDHMMConfig
+from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
 
 # ---------------------------------------------------------------------------
 # Metric helpers
 # ---------------------------------------------------------------------------
 
-def _precision_recall_f1(true: Sequence[int], pred: Sequence[int], tol: int) -> Tuple[float, float, float]:
+def _precision_recall_f1(true: Sequence[int], pred: Sequence[int], tol: int) -> tuple[float, float, float]:
     """Precision/recall/F1 with tolerance window."""
     true = list(true)
     pred = list(pred)
@@ -72,7 +74,7 @@ def evaluate(
     *,
     tol: int = 5,
     online: bool = False,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     start = time.perf_counter()
     pred = list(method(data))
     runtime = time.perf_counter() - start
@@ -88,7 +90,7 @@ def evaluate(
     }
 
 
-def plot_performance(records: Dict[str, Dict[str, float]], metric: str = "f1"):
+def plot_performance(records: dict[str, dict[str, float]], metric: str = "f1"):
     """Visualize a chosen metric for each method."""
     fig, ax = plt.subplots()
     names = list(records)
@@ -106,11 +108,11 @@ def plot_performance(records: Dict[str, Dict[str, float]], metric: str = "f1"):
 
 def binary_data(
     seg_lengths: Sequence[int], probs: Sequence[float], rng: np.random.Generator
-) -> Tuple[np.ndarray, List[int]]:
+) -> tuple[np.ndarray, list[int]]:
     data = []
     cps = []
     cum = 0
-    for L, p in zip(seg_lengths, probs):
+    for L, p in zip(seg_lengths, probs, strict=False):
         data.append(rng.binomial(1, p, size=L))
         cum += L
         cps.append(cum)
@@ -120,11 +122,11 @@ def binary_data(
 
 def continuous_data(
     means: Sequence[float], vars: Sequence[float], seg_lengths: Sequence[int], rng: np.random.Generator
-) -> Tuple[np.ndarray, List[int]]:
+) -> tuple[np.ndarray, list[int]]:
     data = []
     cps = []
     cum = 0
-    for m, v, L in zip(means, vars, seg_lengths):
+    for m, v, L in zip(means, vars, seg_lengths, strict=False):
         data.append(rng.normal(m, np.sqrt(v), size=L))
         cum += L
         cps.append(cum)
@@ -138,7 +140,7 @@ def periodic_data(
     cp1: int,
     cp2: int,
     break_cycle: int,
-) -> Tuple[np.ndarray, int, List[int]]:
+) -> tuple[np.ndarray, int, list[int]]:
     """Binary periodic sequence with structural break in within-period cp."""
     pattern1 = np.concatenate([np.zeros(cp1, dtype=int), np.ones(period - cp1, dtype=int)])
     pattern2 = np.concatenate([np.zeros(cp2, dtype=int), np.ones(period - cp2, dtype=int)])
@@ -150,11 +152,11 @@ def periodic_data(
 
 def compositional_data(
     alphas: Sequence[Sequence[float]], seg_lengths: Sequence[int], rng: np.random.Generator
-) -> Tuple[np.ndarray, List[int]]:
+) -> tuple[np.ndarray, list[int]]:
     data = []
     cps = []
     cum = 0
-    for a, L in zip(alphas, seg_lengths):
+    for a, L in zip(alphas, seg_lengths, strict=False):
         data.append(rng.dirichlet(a, size=L))
         cum += L
         cps.append(cum)
@@ -166,8 +168,8 @@ def compositional_data(
 # Method wrappers
 # ---------------------------------------------------------------------------
 
-def run_bocpd_const(mean_rl: int) -> Callable[[np.ndarray], List[int]]:
-    def _run(x: np.ndarray) -> List[int]:
+def run_bocpd_const(mean_rl: int) -> Callable[[np.ndarray], list[int]]:
+    def _run(x: np.ndarray) -> list[int]:
         model = BOCPD(ConstantHazard(mean_rl), BOCPDConfig(max_run_length=500))
         res = model.run(x)
         positions = np.flatnonzero(res.cp_prob >= 0.05)
@@ -180,8 +182,8 @@ def run_bocpd_const(mean_rl: int) -> Callable[[np.ndarray], List[int]]:
     return _run
 
 
-def run_bocpd_boost(period: int, boundary: int) -> Callable[[np.ndarray], List[int]]:
-    def _run(x: np.ndarray) -> List[int]:
+def run_bocpd_boost(period: int, boundary: int) -> Callable[[np.ndarray], list[int]]:
+    def _run(x: np.ndarray) -> list[int]:
         hazard = BoostedBoundaryHazard(
             base=ConstantHazard(mean_run_length=period),
             period=period,

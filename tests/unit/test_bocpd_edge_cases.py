@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
-
-from bocpd.bocpd import (
+from changepoint_lab.algorithms.bayesian.bocpd import (
     BOCPD,
     BOCPDConfig,
     BoostedBoundaryHazard,

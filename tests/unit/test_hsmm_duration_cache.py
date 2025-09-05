@@ -1,6 +1,7 @@
 import numpy as np
+from changepoint_lab.algorithms.state_space.hsmm import HSMM, HSMMConfig, HSMMParams
 
-from hsmm.hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur, HSMMSufficient
+from hsmm.hsmm import HSMMSufficient, PoissonDur
 
 
 def _dummy_suff(cfg: HSMMConfig, T: int) -> HSMMSufficient:

@@ -1,9 +1,10 @@
 import numpy as np
+from changepoint_lab import edivisive, pelt
+from changepoint_lab.algorithms.optimization.cost_functions import (
+    NormalMeanVarUnknown,
+)
 
-from algorithms.optimization.cost_functions import NormalMeanVarUnknown
-from algorithms.optimization.pelt import pelt
-from edivisive.edivisive import edivisive
-from within_period.within_period_cpd import ModelPrior, WithinPeriodCPD, RJConfig
+from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
 
 
 def test_methods_interoperability():

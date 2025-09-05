@@ -1,18 +1,26 @@
 import numpy as np
 import pytest
 
-
 pytestmark = pytest.mark.slow
 
-from bocpd.bocpd import BOCPD, BOCPDConfig, ConstantHazard
-from algorithms.optimization.cost_functions import BetaBinomialCost
-from algorithms.optimization.pelt import pelt
-from edivisive.edivisive import edivisive
-from hsmm.hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
+from changepoint_lab import edivisive, pelt
+from changepoint_lab.algorithms.bayesian.bocpd import (
+    BOCPD,
+    BOCPDConfig,
+    ConstantHazard,
+)
+from changepoint_lab.algorithms.optimization.cost_functions import BetaBinomialCost
+from changepoint_lab.algorithms.state_space.hsmm import (
+    HSMM,
+    HSMMConfig,
+    HSMMParams,
+    PoissonDur,
+)
+
 from hsmm.gaussian_diag import (
     GaussianDiagParams,
-    gaussian_diag_loglik,
     estimate_from_labels,
+    gaussian_diag_loglik,
 )
 
 

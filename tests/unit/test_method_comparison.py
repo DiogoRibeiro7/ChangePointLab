@@ -1,23 +1,21 @@
 import numpy as np
 import pytest
 
-
 pytestmark = pytest.mark.slow
 import matplotlib.pyplot as plt
-
-from bocpd.bocpd import (
+from changepoint_lab import edivisive, pelt
+from changepoint_lab.algorithms.bayesian.bocpd import (
     BOCPD,
     BOCPDConfig,
     BoostedBoundaryHazard,
     ConstantHazard,
 )
-from algorithms.optimization.cost_functions import (
+from changepoint_lab.algorithms.optimization.cost_functions import (
     BetaBinomialCost,
     NormalMeanVarUnknown,
 )
-from algorithms.optimization.pelt import pelt
-from edivisive.edivisive import edivisive
-from within_period.within_period_cpd import ModelPrior, WithinPeriodCPD, RJConfig
+
+from within_period.within_period_cpd import ModelPrior, RJConfig, WithinPeriodCPD
 
 
 def f1_score(a, b, tol):
