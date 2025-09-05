@@ -1,183 +1,122 @@
-# Change-Point Detection Toolkit
+# ChangePointLab
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Versions](https://img.shields.io/pypi/pyversions/changepoint-toolkit.svg)](https://pypi.org/project/changepoint-toolkit/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/changepoint-lab.svg)](https://pypi.org/project/changepoint-lab/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.0000000.svg)](https://doi.org/10.5281/zenodo.0000000)
-[![JOSS](https://joss.theoj.org/papers/10.21105/joss.00000/status.svg)](https://doi.org/10.21105/joss.00000)
 [![CI](https://github.com/DiogoRibeiro7/articles_future/actions/workflows/ci.yml/badge.svg)](https://github.com/DiogoRibeiro7/articles_future/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/DiogoRibeiro7/articles_future/branch/main/graph/badge.svg)](https://codecov.io/gh/DiogoRibeiro7/articles_future)
 
 Comprehensive Python toolkit for detecting structural changes in time series. The
-package unifies multiple change-point algorithms behind a common API, making it
-straightforward to compare approaches and choose the right tool for a given
-data set.
+package unifies multiple changepoint algorithms behind a common API, making it
+straightforward to compare approaches and choose the right tool for a given data
+set.
 
 ## Features
 
 - Bayesian **online** detection for streaming data (BOCPD)
 - Classical **offline** dynamic programming via **PELT**
-- Non-parametric **E-Divisive** energy statistics
-- Probabilistic **HMM/HSMM** models with explicit durations
-- Scaled-Dirichlet **SD-HMM** for compositional data
-- **Within-period** detection for repeating seasonal patterns
+- Non‑parametric **E‑Divisive** energy statistics
+- Probabilistic **HSMM** models with explicit durations
+- Kernel methods for non‑linear boundaries
+- Within‑period detection for seasonal patterns
 - Utilities for plotting, evaluation, and algorithm comparison
-
-## Method comparison
-
-| Method | Setting | Strengths | Typical use cases |
-|-------|---------|-----------|-------------------|
-| BOCPD | Online Bayesian | Sequential updates, immediate alarms | Real-time monitoring of binary/count data |
-| PELT | Offline DP | Exact segmentation with linear complexity | Large offline numeric series |
-| E-Divisive | Offline non-parametric | Few assumptions, multivariate | High-dimensional or unknown distributions |
-| HMM/HSMM | Probabilistic state models | Regime switching with durations | Regime analysis, speech, genomics |
-| SD-HMM | Duration-robust HMM | Handles over-dispersed state lengths | Compositional or proportion data |
-| Within-period | Bayesian seasonal | Detects changes within cycles | Daily/weekly activity patterns |
 
 ## Installation
 
-### From PyPI
-
 ```bash
-pip install changepoint-toolkit
+pip install changepoint-lab
 ```
 
-### From source
+or from source:
 
 ```bash
-git clone https://github.com/DiogoRibeiro7/changepoint-toolkit
-cd changepoint-toolkit
+git clone https://github.com/DiogoRibeiro7/changepoint-lab
+cd changepoint-lab
 pip install -e .
 ```
 
 Requires Python 3.10 or later.
 
-## Basic usage
+## Quick Start
 
-### BOCPD
-```python
-from changepoint_toolkit import BOCPD, BOCPDConfig, ConstantHazard
-import numpy as np
-
-rng = np.random.default_rng(0)
-data = rng.binomial(1, [0.1]*50 + [0.8]*50)
-model = BOCPD(ConstantHazard(mean_run_length=50), BOCPDConfig())
-result = model.run(data)
-print(result.change_points)
-```
-
-### PELT
 ```python
 import numpy as np
-from pelt import pelt, NormalMeanVarUnknown
+from changepoint_lab import PELT
+from changepoint_lab.algorithms.optimization.pelt import (
+    NormalMeanVarUnknown,
+    bic_penalty,
+)
 
-y = np.r_[np.random.normal(0,1,60), np.random.normal(3,1,60)]
+x = np.r_[np.zeros(50), np.ones(50)]
 cost = NormalMeanVarUnknown()
-res = pelt(y, cost, penalty=2*np.log(len(y)))
-print(res.change_points)
+cost.precompute(x)
+detector = PELT(cost_fn=cost, penalty=bic_penalty(2, len(x)))
+result = detector.fit_predict(x)
+print(result.indices)
 ```
 
-### E-Divisive
+## Algorithms
+
+| Algorithm | Description | Import Path |
+|-----------|-------------|-------------|
+| PELT | Offline exact segmentation | `from changepoint_lab import PELT` |
+| BOCPD | Bayesian online detection | `from changepoint_lab import BOCPD` |
+| EDivisive | Nonparametric energy statistics | `from changepoint_lab import EDivisive` |
+| HSMM | Explicit‑duration state model | `from changepoint_lab import HSMM` |
+| KernelCPD | Kernel‑based segmentation | `from changepoint_lab import KernelCPD` |
+| WithinPeriodBOCPD | Seasonal Bayesian detector | `from changepoint_lab import WithinPeriodBOCPD` |
+
+## Migration notes
+
+Common import rewrites:
+
 ```python
-import numpy as np
-from edivisive import edivisive
+# Old
+from pelt.pelt import pelt, NormalMeanVarUnknown
+from bocpd.bocpd import BOCPD
 
-y = np.r_[np.random.normal(0,1,300), np.random.normal(2,1,300)]
-res = edivisive(y, alpha=1.0, min_size=40, R=499, seed=0)
-print(res.change_points)
+# New
+from changepoint_lab import PELT, BOCPD
+from changepoint_lab.algorithms.optimization.pelt import NormalMeanVarUnknown
 ```
 
-### HMM/HSMM
-```python
-import numpy as np
-from hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
+Legacy module paths remain available but emit `DeprecationWarning` and will be
+removed in a future release.
 
-X = np.random.normal(0,1,(300,2))
-L = np.random.normal(0,1,(300,3))  # placeholder log-likelihoods
-params = HSMMParams(pi=np.full(3,1/3), A=np.full((3,3),1/3), duration=("poisson", PoissonDur(lam=np.array([30,40,50]))))
-model = HSMM(HSMMConfig(K=3, Dmax=100), params)
-params_fit, _ = model.fit(L)
-```
+## API stability
 
-### SD-HMM
-```python
-import numpy as np
-from sdhmm import SDHMM, SDHMMConfig
-
-X = np.random.random((500,4))
-model = SDHMM(SDHMMConfig(K=3))
-res = model.fit(X)
-print(res.pi)
-```
-
-### Within-period changepoints
-```python
-import numpy as np
-from within_period import WithinPeriodCPD, ModelPrior, RJConfig
-
-rng = np.random.default_rng(1)
-x = rng.binomial(1, 0.1, 240)
-prior = ModelPrior(N=24, l=4)
-model = WithinPeriodCPD(prior)
-result = model.fit(x, RJConfig(iters=1000, burn=200, thin=5))
-print(result.mode_tau)
-```
-
-## Choosing a method
-- **Streaming or online monitoring** → BOCPD
-- **Fast offline segmentation with cost function** → PELT
-- **Minimal distributional assumptions / multivariate** → E-Divisive
-- **Latent-state modeling or durations** → HMM/HSMM or SD-HMM
-- **Periodic structure (e.g., daily cycles)** → Within-period CPD
-
-## Parameter guidelines
-- **BOCPD**: hazard mean run length controls sensitivity; priors tune distributional assumptions.
-- **PELT**: choose penalty ~`β ≈ 2 log n` for Gaussian cost; adjust for expected number of changes.
-- **E-Divisive**: `min_size` ensures segment length; `R` controls permutation replicates.
-- **HMM/HSMM**: set number of states and duration distribution based on domain knowledge.
-- **SD-HMM**: select state count and iteration limits; data must be non-negative and will be normalized.
-- **Within-period**: period `N` and minimum segment length `l` should match the cycle of interest.
-
-## Experimental features
-
-The toolkit still contains a few components that are under active development and
-should be considered experimental:
-
-- **CLI wrappers** for running algorithms from the command line.  Interfaces may
-  change and error handling is minimal.
-- **Advanced emission models** for BOCPD and HMM/HSMM modules (e.g. Gaussian and
-  Poisson alternatives) are prototypes and have not yet received the same level
-  of testing as the core Beta–Bernoulli implementations.
-
-Feedback and pull requests are welcome to help stabilise these features.
+The top‑level classes re‑exported from `changepoint_lab` form the stable public
+API. Deprecated aliases are scheduled for removal in version **2.0**.
 
 ## Documentation
 
-Detailed documentation and additional examples are available in the
-[`docs/`](docs/) folder and in the [`examples/`](examples/) directory.
+See the `docs/` folder for tutorials and the API reference.
 
 ## Citation
 
 If you use this toolkit in your research, please cite:
 
 ```bibtex
-@article{ribeiro2024cpdtoolkit,
-  author = {Diogo Ribeiro},
-  title = {Change-Point Detection Toolkit},
-  journal = {Journal of Open Source Software},
-  year = {2024},
-  doi = {10.21105/joss.00000}
+@article{ribeiro2025changepoint,
+  title={ChangePointLab: A Unified Toolkit for Time Series Changepoint Detection},
+  author={Ribeiro, Diogo F.},
+  journal={Journal of Open Source Software},
+  year={2025},
+  volume={10},
+  number={100},
+  pages={xxxx},
+  doi={10.xxxx/xxxxx}
 }
 ```
 
 ## Acknowledgments
 
-Developed by Diogo Ribeiro and contributors at ESMAD - Instituto Politécnico do Porto.
-We thank the open-source community for foundational libraries such as NumPy.
+Developed by Diogo Ribeiro and contributors at ESMAD - Instituto Politécnico do
+Porto. We thank the open‑source community for foundational libraries such as
+NumPy.
 
 ## References
 - Adams, R., & MacKay, D. (2007). *Bayesian Online Changepoint Detection*.
 - Matteson, D., & James, N. (2014). *A Nonparametric Approach for Multiple Change Point Analysis of Multivariate Data*.
 - Killick, R., Fearnhead, P., & Eckley, I. (2012). *Optimal Detection of Changepoints With a Linear Computational Cost*.
-- Rabiner, L. (1989). *A Tutorial on Hidden Markov Models*.
 - Yu, S.-Z. (2010). *Hidden Semi-Markov Models*.
-- Taylor, S., Killick, R., Burr, T., & Rogerson, P. (2021). *Assessing Daily Patterns Using Within-Period Changepoint Detection*.
+```

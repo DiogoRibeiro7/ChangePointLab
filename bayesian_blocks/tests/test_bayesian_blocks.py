@@ -92,11 +92,11 @@ class TestBasicFunctionality:
 
         assert len(result_small_p0.block_value) > len(result_large_p0.block_value)
 
-        # Direct gamma testing
-        result_small_gamma = bayesian_blocks_counts(data, gamma=0.1)
-        result_large_gamma = bayesian_blocks_counts(data, gamma=100.0)
+        # Direct penalty testing
+        result_small_pen = bayesian_blocks_counts(data, penalty=0.1)
+        result_large_pen = bayesian_blocks_counts(data, penalty=100.0)
 
-        assert len(result_small_gamma.block_value) > len(result_large_gamma.block_value)
+        assert len(result_small_pen.block_value) > len(result_large_pen.block_value)
 
     def test_invalid_inputs(self):
         """Test various invalid inputs."""
@@ -118,6 +118,11 @@ class TestBasicFunctionality:
         # Negative widths - this should be caught by validation
         with pytest.raises(ValueError):
             bayesian_blocks_counts([1, 2], [-1, 1])
+
+    def test_penalty_gamma_conflict(self):
+        """Specifying both penalty and gamma should raise an error."""
+        with pytest.raises(ValueError):
+            BBConfig(penalty=1.0, gamma=1.0)
 
     def test_numerical_stability(self):
         """Test numerical stability with extreme values."""
@@ -197,6 +202,12 @@ class TestDataTypeDetection:
         """Test detection of binary sequences."""
         binary_data = [0, 1, 1, 0, 1]
         detected = _detect_data_type(binary_data)
+        assert detected == DataType.BERNOULLI
+
+    def test_detect_noisy_binary_data(self):
+        """Binary data with tiny noise should still be detected."""
+        noisy_binary = [0.0, 1.0, 1.0 + 1e-12, -1e-12]
+        detected = _detect_data_type(noisy_binary)
         assert detected == DataType.BERNOULLI
 
     def test_detect_count_data(self):
@@ -312,7 +323,7 @@ class TestStatisticalProperties:
 
         events = np.sort(np.concatenate([t1, t2]))
 
-        result = bayesian_blocks_events(events, t_start=0.0, t_stop=t_end, p0=0.05)
+        result = bayesian_blocks_events(events, t_start=0.0, t_stop=t_end, penalty=0.5)
 
         # Should detect rate change
         assert len(result.block_value) >= 2

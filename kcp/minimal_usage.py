@@ -14,11 +14,11 @@ X = np.vstack([
 ])
 
 # Use RBF kernel (median heuristic) and build prefix structures
-K, gamma = gram_rbf(X)       # or gram_linear(X)
+K, _ = gram_rbf(X)       # or gram_linear(X)
 pref = build_kernel_prefix(K)
 
 # Penalized fit with PELT (expected linear time)
-res = kcp_penalized(pref, gamma=np.log(X.shape[0]), min_size=20, method="pelt")
+res = kcp_penalized(pref, penalty=np.log(X.shape[0]), min_size=20, method="pelt")
 print("Change points (penalized):", res.change_points.tolist())
 
 # Fixed-m + BIC-style model selection

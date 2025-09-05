@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Tuple
+from collections import deque
 
 import numpy as np
 from numpy.typing import NDArray
@@ -63,14 +64,16 @@ def _resample_block_permutation(m: int, b: int, rng: np.random.Generator) -> Arr
     Shuffle non-overlapping contiguous blocks of length b (last block may be shorter).
     Produces a true permutation (no repeats, no omissions).
     """
-    starts = list(range(0, m, b))
-    order = rng.permutation(len(starts))
-    idx_list: list[int] = []
-    for k in order:
-        a = starts[k]
-        b_end = min(a + b, m)
-        idx_list.extend(range(a, b_end))
-    return np.asarray(idx_list, dtype=int)
+    starts = np.arange(0, m, b)
+    order = rng.permutation(starts)
+    out = np.empty(m, dtype=int)
+    pos = 0
+    for s in order:
+        e = min(s + b, m)
+        k = e - s
+        out[pos:pos + k] = np.arange(s, e)
+        pos += k
+    return out
 
 
 def _resample_circular_block_bootstrap(m: int, b: int, rng: np.random.Generator) -> ArrayI:
@@ -91,27 +94,65 @@ def _resample_circular_block_bootstrap(m: int, b: int, rng: np.random.Generator)
 
 # ------------------------------- Distance helpers -------------------------------
 
-def _pairwise_energy_dist_alpha(X: ArrayF, alpha: float) -> ArrayF:
+def _pairwise_energy_dist_alpha(
+    X: ArrayF, alpha: float, *, chunk_size: Optional[int] = None, use_memmap: bool = False
+) -> tuple[ArrayF, Optional["tempfile._TemporaryFileWrapper"]]:
     """
-    Compute pairwise Euclidean distances raised to the power alpha:
-        D[i,j] = ||X[i]-X[j]||_2 ** alpha
-    Efficient via the squared distance identity; alpha in (0, 2].
+    Compute pairwise distances raised to ``alpha`` with optional chunking and memmap.
+
+    Parameters
+    ----------
+    X : ArrayF
+        Data matrix of shape (m, d).
+    alpha : float in (0, 2]
+        Distance exponent.
+    chunk_size : Optional[int]
+        Process the matrix in row chunks of this size to limit peak memory.
+    use_memmap : bool
+        Store the distance matrix on disk via ``np.memmap`` instead of RAM.
+
+    Returns
+    -------
+    D : ArrayF
+        Pairwise distance matrix (may be a memmap).
+    tmp : Optional[tempfile._TemporaryFileWrapper]
+        Temporary file handle when ``use_memmap`` is True (must be cleaned up).
     """
     if not (0.0 < alpha <= 2.0):
         raise ValueError("alpha must be in (0, 2].")
     X = np.asarray(X, dtype=float)
     if X.ndim == 1:
         X = X[:, None]
-    # squared distances via ||a-b||^2 = ||a||^2 + ||b||^2 - 2 a·b
+
+    m = X.shape[0]
+    if chunk_size is None or chunk_size <= 0:
+        chunk_size = m
+
     s = np.sum(X * X, axis=1, keepdims=True)
-    dist2 = np.maximum(s + s.T - 2.0 * (X @ X.T), 0.0)
-    # distance^alpha = (distance^2)^(alpha/2)
-    if alpha == 2.0:
-        D = dist2  # (||x-y||^2)^{1} = ||x-y||^2
+
+    tmp = None
+    if use_memmap:
+        import tempfile
+
+        tmp = tempfile.NamedTemporaryFile()
+        D = np.memmap(tmp, dtype=float, mode="w+", shape=(m, m))
     else:
-        D = np.power(dist2, alpha / 2.0, where=(dist2 > 0.0), out=np.zeros_like(dist2))
+        D = np.empty((m, m), dtype=float)
+
+    for start in range(0, m, chunk_size):
+        stop = min(start + chunk_size, m)
+        Xi = X[start:stop]
+        si = s[start:stop]
+        dist2 = np.maximum(si + s.T - 2.0 * (Xi @ X.T), 0.0)
+        if alpha == 2.0:
+            D[start:stop] = dist2
+        else:
+            D[start:stop] = np.power(
+                dist2, alpha / 2.0, where=(dist2 > 0.0), out=np.zeros_like(dist2)
+            )
+
     np.fill_diagonal(D, 0.0)
-    return D
+    return D, tmp
 
 
 def _prefix2d(M: ArrayF) -> ArrayF:
@@ -245,6 +286,8 @@ def edivisive(
     # --- new options ---
     resample: str = "iid",                 # "iid" | "block-permutation" | "circular-block-bootstrap"
     block_size: Optional[int] = None,      # block length for block-based resampling
+    chunk_size: Optional[int] = None,      # row chunk size for pairwise distances
+    use_memmap: bool = False,              # store distances on disk
 ) -> EDivisiveResult:
     """
     E-Divisive multiple changepoint detection using energy statistics.
@@ -276,6 +319,10 @@ def edivisive(
     block_size : Optional[int]
         Block length. If None, an automatic rule is used per tested segment:
         ceil(1.5 * m^(1/3)), clamped to [2, m], where m is the segment length.
+    chunk_size : Optional[int]
+        Process pairwise distances in blocks of this many rows to reduce peak memory.
+    use_memmap : bool, default=False
+        Store distance matrices on disk via ``np.memmap`` to avoid holding O(n^2) arrays in RAM.
     """
     # ------------- validate & shape -------------
     X_arr = np.asarray(X, dtype=float)
@@ -296,71 +343,99 @@ def edivisive(
     rng = np.random.default_rng(seed)
 
     # Worklist for divisive recursion
-    segments: List[Tuple[int, int]] = [(0, n)]
+    segments: deque[Tuple[int, int]] = deque([(0, n)])
     accepted: List[EDivisiveSplit] = []
     total_cps = 0
 
     while segments:
-        s, e = segments.pop(0)
+        s, e = segments.popleft()
         m = e - s
         if m < 2 * min_size:
             continue
 
         # Distance matrix on the segment
-        D = _pairwise_energy_dist_alpha(X_arr[s:e], alpha=alpha)
+        D, tmp = _pairwise_energy_dist_alpha(
+            X_arr[s:e], alpha=alpha, chunk_size=chunk_size, use_memmap=use_memmap
+        )
+        try:
+            # Observed best split
+            a_rel, E_star, _ = _best_split_statistic(D, min_size=min_size)
+            if not np.isfinite(E_star) or E_star <= 0.0:
+                continue
 
-        # Observed best split
-        a_rel, E_star, _ = _best_split_statistic(D, min_size=min_size)
-        if not np.isfinite(E_star) or E_star <= 0.0:
-            continue
+            # Build resampler for this segment
+            if resample == "iid":
+                def _draw_idx() -> ArrayI:
+                    return _resample_iid_permutation(m, rng)
+            elif resample == "block-permutation":
+                b = _choose_block_size(m, block_size)
+                def _draw_idx(b=b) -> ArrayI:
+                    return _resample_block_permutation(m, b, rng)
+            else:  # "circular-block-bootstrap"
+                b = _choose_block_size(m, block_size)
+                def _draw_idx(b=b) -> ArrayI:
+                    return _resample_circular_block_bootstrap(m, b, rng)
 
-        # Build resampler for this segment
-        if resample == "iid":
-            def _draw_idx() -> ArrayI:
-                return _resample_iid_permutation(m, rng)
-        elif resample == "block-permutation":
-            b = _choose_block_size(m, block_size)
-            def _draw_idx(b=b) -> ArrayI:
-                return _resample_block_permutation(m, b, rng)
-        else:  # "circular-block-bootstrap"
-            b = _choose_block_size(m, block_size)
-            def _draw_idx(b=b) -> ArrayI:
-                return _resample_circular_block_bootstrap(m, b, rng)
+            # Null distribution of the max statistic under chosen resampling
+            max_null = np.empty(R, dtype=float)
+            for r in range(R):
+                idx = _draw_idx()
+                Dp = D[np.ix_(idx, idx)]
+                _, Enull, _ = _best_split_statistic(Dp, min_size=min_size)
+                max_null[r] = Enull
 
-        # Null distribution of the max statistic under chosen resampling
-        max_null = np.empty(R, dtype=float)
-        for r in range(R):
-            idx = _draw_idx()
-            Dp = D[np.ix_(idx, idx)]
-            _, Enull, _ = _best_split_statistic(Dp, min_size=min_size)
-            max_null[r] = Enull
+            # Unbiased permutation p-value
+            pval = (1.0 + np.sum(max_null >= E_star)) / (R + 1.0)
 
-        # Unbiased permutation p-value
-        pval = (1.0 + np.sum(max_null >= E_star)) / (R + 1.0)
+            if progress:
+                meth = (
+                    resample
+                    if resample == "iid"
+                    else f"{resample}(b={_choose_block_size(m, block_size)})"
+                )
+                print(
+                    f"[segment {s}:{e}] best@{s + a_rel}  stat={E_star:.4g}  "
+                    f"p={pval:.3g}  via {meth}"
+                )
 
-        if progress:
-            meth = resample if resample == "iid" else f"{resample}(b={_choose_block_size(m, block_size)})"
-            print(f"[segment {s}:{e}] best@{s + a_rel}  stat={E_star:.4g}  "
-                  f"p={pval:.3g}  via {meth}")
+            # Accept / split
+            if pval < significance:
+                cp = s + a_rel
+                accepted.append(
+                    EDivisiveSplit(
+                        index=cp,
+                        seg_start=s,
+                        seg_end=e,
+                        statistic=float(E_star),
+                        pvalue=float(pval),
+                    )
+                )
+                total_cps += 1
+                if (max_cps is not None) and (total_cps >= max_cps):
+                    break
+                segments.append((s, cp))
+                segments.append((cp, e))
+            # else: reject and do not subdivide further
+        finally:
+            if tmp is not None:
+                D.flush()
+                D._mmap.close()
+                tmp.close()
 
-        # Accept / split
-        if pval < significance:
-            cp = s + a_rel
-            accepted.append(EDivisiveSplit(
-                index=cp, seg_start=s, seg_end=e,
-                statistic=float(E_star), pvalue=float(pval)
-            ))
-            total_cps += 1
-            if (max_cps is not None) and (total_cps >= max_cps):
-                break
-            segments.append((s, cp))
-            segments.append((cp, e))
-        # else: reject and do not subdivide further
-
-    cps = np.array(sorted([sp.index for sp in accepted]), dtype=np.int64) if accepted else np.array([], dtype=np.int64)
+    cps = (
+        np.array(sorted([sp.index for sp in accepted]), dtype=np.int64)
+        if accepted
+        else np.array([], dtype=np.int64)
+    )
     labels = _labels_from_cps(n, cps)
-    return EDivisiveResult(n=n, alpha=float(alpha), min_size=int(min_size),
-                           splits=accepted, change_points=cps, labels=labels)
+    return EDivisiveResult(
+        n=n,
+        alpha=float(alpha),
+        min_size=int(min_size),
+        splits=accepted,
+        change_points=cps,
+        labels=labels,
+    )
 
 
 def _labels_from_cps(n: int, cps: ArrayI) -> ArrayI:

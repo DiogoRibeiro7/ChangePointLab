@@ -376,7 +376,7 @@ For larger datasets, consider:
 ```python
 config = BBConfig(
     p0=0.05,              # False positive rate (0 < p0 < 1)
-    gamma=None,           # Direct penalty (overrides p0 if set) 
+    penalty=None,         # Direct penalty (overrides p0 if set)
     min_block_size=1,     # Minimum data points per block
     max_blocks=None,      # Maximum number of blocks (not implemented)
     method="dp"           # Algorithm method ("dp" only currently)

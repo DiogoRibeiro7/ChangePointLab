@@ -361,7 +361,7 @@ def multi_resolution_analysis(
 
     results = []
     for scale in scales:
-        config = BBConfig(gamma=scale)
+        config = BBConfig(penalty=scale)
         result = algorithm_func(data, config=config)
         results.append(result)
 
@@ -510,7 +510,7 @@ class AdaptiveBayesianBlocks:
         """Adapt parameters based on data statistics."""
         adapted_config = BBConfig(
             p0=self.base_config.p0,
-            gamma=self.base_config.gamma,
+            penalty=self.base_config.penalty,
             min_block_size=self.base_config.min_block_size,
         )
 

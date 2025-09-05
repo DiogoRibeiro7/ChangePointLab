@@ -31,6 +31,7 @@ class BBConfig:
     """Configuration for Bayesian Blocks algorithm."""
 
     p0: Optional[float] = 0.05
+    penalty: Optional[float] = None
     gamma: Optional[float] = None
     min_block_size: int = 1
     max_blocks: Optional[int] = None
@@ -41,6 +42,17 @@ class BBConfig:
             raise ValueError(f"p0 must be in (0,1), got {self.p0}")
         if self.min_block_size < 1:
             raise ValueError(f"min_block_size must be >= 1, got {self.min_block_size}")
+        if self.penalty is not None and self.gamma is not None:
+            raise ValueError("Specify either penalty or gamma, not both.")
+        if self.gamma is not None:
+            warnings.warn(
+                "gamma is deprecated and will be removed in a future release; "
+                "use penalty instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.penalty = self.gamma
+        self.gamma = self.penalty
 
 
 @dataclass
@@ -175,11 +187,7 @@ def _dp_solve(
         num = stat_num[j] - stat_num[:j]  # shape (j,)
         den = stat_den[j] - stat_den[:j]  # shape (j,)
         # Fitness for each candidate block [i, j)
-        fit = np.fromiter(
-            (fitness_per_block(nu, de) for nu, de in zip(num, den)),
-            count=j,
-            dtype=float,
-        )
+        fit = np.asarray(fitness_per_block(num, den), dtype=float)
         # Total objective if last change at i: opt[i] + fit(i->j) - gamma
         total = opt[:j] + fit - gamma
         i_star = int(np.argmax(total))
@@ -206,42 +214,30 @@ def _dp_solve(
 # ---------------------------------------------------------------------
 
 
-def _fit_poisson(num: float, den: float) -> float:
-    """
-    Poisson process / counts:
-      num = total counts in block (k),
-      den = total exposure/width in block (T),
-      fitness = k * (log k - log T), with convention 0*log(0/T) := 0.
-    """
-    if den <= 0:
-        return -np.inf
-    if num <= 0:
-        return 0.0
-    return num * (math.log(num) - math.log(den))
+def _fit_poisson(num: Union[ArrayF, float], den: Union[ArrayF, float]) -> Union[ArrayF, float]:
+    """Poisson process / counts fitness supporting array inputs."""
+    num_arr = np.asarray(num, dtype=float)
+    den_arr = np.asarray(den, dtype=float)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        res = np.where(
+            den_arr > 0,
+            np.where(num_arr > 0, num_arr * (np.log(num_arr) - np.log(den_arr)), 0.0),
+            -np.inf,
+        )
+    return res if np.ndim(res) > 0 else float(res)
 
 
-def _fit_bernoulli(success: float, trials: float) -> float:
-    """
-    Bernoulli/Binomial:
-      success = # successes in block (s),
-      trials  = # trials in block (n >= s),
-      fitness = s*log(s/n) + (n-s)*log(1 - s/n), with 0*log 0 := 0.
-
-    Note: we omit the binomial coefficient log C(n, s) since it's constant w.r.t the
-    parameter and standard in Bayesian Blocks to drop parameter-independent terms.
-    """
-    if trials <= 0:
-        return -np.inf
-    s = success
-    n = trials
-    if s <= 0 or s >= n:
-        # handle edge cases; use limits s->0 or s->n
-        if s <= 0:
-            return n * math.log(max(1.0 - 1e-16, 1.0))  # -> 0
-        else:
-            return n * math.log(1e-16)  # ~ -inf, but this path is uncommon
-    p = s / n
-    return s * math.log(p) + (n - s) * math.log(1.0 - p)
+def _fit_bernoulli(
+    success: Union[ArrayF, float], trials: Union[ArrayF, float]
+) -> Union[ArrayF, float]:
+    """Bernoulli/Binomial fitness supporting array inputs."""
+    s = np.asarray(success, dtype=float)
+    n = np.asarray(trials, dtype=float)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        p = np.where(n > 0, s / n, 0.0)
+        res = s * np.log(p) + (n - s) * np.log(1.0 - p)
+        res = np.where((n <= 0), -np.inf, np.where((s <= 0) | (s >= n), 0.0, res))
+    return res if np.ndim(res) > 0 else float(res)
 
 
 # ---------------------------------------------------------------------
@@ -322,17 +318,15 @@ def _bayesian_blocks_events(data, config: BBConfig, **kwargs) -> BBResult:
     T = np.concatenate([[0.0], np.cumsum(widths)])  # exposures
 
     # Penalty
-    gamma = config.gamma
-    if gamma is None and config.p0 is not None:
-        gamma = ncp_prior_from_p0(len(counts), config.p0)
-    elif gamma is None:
-        gamma = 0.0
-    # Event data tends to be sparse; use a softer penalty to ensure sensitivity
-    gamma *= 0.1
+    penalty = config.penalty
+    if penalty is None and config.p0 is not None:
+        penalty = ncp_prior_from_p0(len(counts), config.p0)
+    elif penalty is None:
+        penalty = 0.0
 
     # Solve
     last, cps, opt = _dp_solve(
-        stat_num=K, stat_den=T, fitness_per_block=_fit_poisson, gamma=gamma
+        stat_num=K, stat_den=T, fitness_per_block=_fit_poisson, gamma=penalty
     )
 
     if len(cps) == 0:
@@ -395,14 +389,14 @@ def _bayesian_blocks_counts(data, config: BBConfig, **kwargs) -> BBResult:
     T = np.concatenate([[0.0], np.cumsum(w)])
 
     # Penalty
-    gamma = config.gamma
-    if gamma is None and config.p0 is not None:
-        gamma = ncp_prior_from_p0(N, config.p0)
-    elif gamma is None:
-        gamma = 0.0
+    penalty = config.penalty
+    if penalty is None and config.p0 is not None:
+        penalty = ncp_prior_from_p0(N, config.p0)
+    elif penalty is None:
+        penalty = 0.0
 
     last, cps, opt = _dp_solve(
-        stat_num=K, stat_den=T, fitness_per_block=_fit_poisson, gamma=gamma
+        stat_num=K, stat_den=T, fitness_per_block=_fit_poisson, gamma=penalty
     )
 
     # Build edges (bin indices) and block rates
@@ -462,14 +456,14 @@ def _bayesian_blocks_bernoulli(data, config: BBConfig, **kwargs) -> BBResult:
     Ntr = np.concatenate([[0.0], np.cumsum(n)])
 
     # Penalty
-    gamma = config.gamma
-    if gamma is None and config.p0 is not None:
-        gamma = ncp_prior_from_p0(N, config.p0)
-    elif gamma is None:
-        gamma = 0.0
+    penalty = config.penalty
+    if penalty is None and config.p0 is not None:
+        penalty = ncp_prior_from_p0(N, config.p0)
+    elif penalty is None:
+        penalty = 0.0
 
     last, cps, opt = _dp_solve(
-        stat_num=S, stat_den=Ntr, fitness_per_block=_fit_bernoulli, gamma=gamma
+        stat_num=S, stat_den=Ntr, fitness_per_block=_fit_bernoulli, gamma=penalty
     )
 
     if len(cps) == 0:
@@ -520,8 +514,8 @@ def _detect_data_type(data) -> DataType:
         # Single array - need to distinguish between events, counts, and binary
         arr = np.asarray(data)
 
-        # If all 0s and 1s, likely binary
-        if np.all(np.isin(arr, [0, 1])):
+        # If all 0s and 1s (with tolerance), likely binary
+        if np.all(np.isclose(arr, 0) | np.isclose(arr, 1)):
             return DataType.BERNOULLI
         # If all non-negative integers, likely counts
         elif np.all(arr >= 0) and np.all(arr == arr.astype(int)):
@@ -611,6 +605,7 @@ def bayesian_blocks_events(
     t_start: Optional[float] = None,
     t_stop: Optional[float] = None,
     p0: Optional[float] = 0.05,
+    penalty: Optional[float] = None,
     gamma: Optional[float] = None,
 ) -> BBResult:
     """
@@ -624,9 +619,11 @@ def bayesian_blocks_events(
         Start and stop of observation window. If None, inferred from data using
         half-interval edges around the min/max event times.
     p0 : Optional[float], default=0.05
-        Target false positive rate. If provided, overrides `gamma` via the Scargle prior.
+        Target false positive rate. If provided, overrides `penalty` via the Scargle prior.
+    penalty : Optional[float]
+        Direct penalty per block. Use either p0 or penalty (p0 takes precedence if both set).
     gamma : Optional[float]
-        Direct penalty per block. Use either p0 or gamma (p0 takes precedence if both set).
+        Deprecated alias for penalty.
 
     Returns
     -------
@@ -635,7 +632,7 @@ def bayesian_blocks_events(
         block_value: MLE rate per block (events per unit time)
         change_points: indices in the *event-cell* space
     """
-    config = BBConfig(p0=p0, gamma=gamma)
+    config = BBConfig(p0=p0, penalty=penalty if penalty is not None else gamma)
     return _bayesian_blocks_events(t, config, t_start=t_start, t_stop=t_stop)
 
 
@@ -644,6 +641,7 @@ def bayesian_blocks_counts(
     widths: Optional[Sequence[float]] = None,
     *,
     p0: Optional[float] = 0.05,
+    penalty: Optional[float] = None,
     gamma: Optional[float] = None,
 ) -> BBResult:
     """
@@ -655,7 +653,7 @@ def bayesian_blocks_counts(
         Count in each bin (non-negative).
     widths : optional sequence (N,)
         Exposure/width for each bin (positive). If None, all ones.
-    p0, gamma : as in bayesian_blocks_events (p0 takes precedence if set).
+    p0, penalty : as in bayesian_blocks_events (p0 takes precedence if set).
 
     Returns
     -------
@@ -664,7 +662,7 @@ def bayesian_blocks_counts(
         block_value: rate per unit exposure within each block
         change_points: bin indices (right-exclusive)
     """
-    config = BBConfig(p0=p0, gamma=gamma)
+    config = BBConfig(p0=p0, penalty=penalty if penalty is not None else gamma)
     return _bayesian_blocks_counts(counts, config, widths=widths)
 
 
@@ -673,6 +671,7 @@ def bayesian_blocks_bernoulli(
     trials: Optional[Sequence[int] | Sequence[float]] = None,
     *,
     p0: Optional[float] = 0.05,
+    penalty: Optional[float] = None,
     gamma: Optional[float] = None,
 ) -> BBResult:
     """
@@ -684,7 +683,9 @@ def bayesian_blocks_bernoulli(
         Number of successes in each cell (0..trials).
     trials : sequence (N,), optional
         Number of trials per cell (>0). If None, all ones (i.e., raw binary stream).
-    p0, gamma : as before (p0 overrides gamma if set).
+    p0, penalty : as before (p0 overrides penalty if set).
+    gamma : Optional[float]
+        Deprecated alias for penalty.
 
     Returns
     -------
@@ -693,5 +694,5 @@ def bayesian_blocks_bernoulli(
         block_value: MLE success probability p̂ per block
         change_points: cell indices (right-exclusive)
     """
-    config = BBConfig(p0=p0, gamma=gamma)
+    config = BBConfig(p0=p0, penalty=penalty if penalty is not None else gamma)
     return _bayesian_blocks_bernoulli(successes, config, trials=trials)

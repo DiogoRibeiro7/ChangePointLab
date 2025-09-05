@@ -23,6 +23,12 @@ This guide introduces core concepts and directs you to method‑specific tutoria
 - [Nonparametric Methods](nonparametric_methods.md)
 - [State‑Space Methods](state_space_methods.md)
 - [Visualization](visualization.md)
+- [Architecture](../architecture/index.md)
+- [Extending ChangePointLab](extending.md)
 
 Mathematical notation uses standard LaTeX syntax (e.g., $p(r_t \mid x_{1:t})$ for the run‑length posterior).
+
+For upcoming improvements and cross-module plans (e.g., Numba acceleration,
+CLI utilities), see the project roadmap in
+[`bayesian_blocks/FUTURE_WORKS.md`](../../bayesian_blocks/FUTURE_WORKS.md).
 

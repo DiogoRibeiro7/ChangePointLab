@@ -1,60 +1,23 @@
-PELT Module
-===========
+PELT
+====
 
-The :mod:`pelt` module implements the Pruned Exact Linear Time algorithm
-for offline changepoint detection [1]_.
-
-Main Algorithm
---------------
-
-.. autofunction:: pelt.pelt.pelt
-
-Cost Functions
---------------
-
-.. autoclass:: pelt.pelt.NormalMeanKnownVar
+.. autoclass:: changepoint_lab.algorithms.optimization.pelt.PELT
    :members:
 
-.. autoclass:: pelt.pelt.NormalMeanVarUnknown
+.. autoclass:: changepoint_lab.algorithms.optimization.pelt.PELTResult
    :members:
 
-.. autoclass:: pelt.pelt.BetaBinomialCost
+.. autoclass:: changepoint_lab.algorithms.optimization.pelt.NormalMeanVarUnknown
    :members:
 
-Penalty Helpers
----------------
-
-.. autofunction:: pelt.pelt.bic_penalty
-
-.. autofunction:: pelt.pelt.aic_penalty
-
-Result Container
-----------------
-
-.. autoclass:: pelt.pelt.PELTResult
+.. autoclass:: changepoint_lab.algorithms.optimization.pelt.NormalMeanKnownVar
    :members:
 
-Example
--------
+.. autoclass:: changepoint_lab.algorithms.optimization.pelt.BetaBinomialCost
+   :members:
 
-.. code-block:: python
+.. autofunction:: changepoint_lab.algorithms.optimization.pelt.bic_penalty
 
-    import numpy as np
-    from pelt.pelt import pelt, NormalMeanVarUnknown, bic_penalty
+.. autofunction:: changepoint_lab.algorithms.optimization.pelt.aic_penalty
 
-    data = np.r_[np.zeros(50), np.ones(50)]
-    cost = NormalMeanVarUnknown()
-    cost.precompute(data)
-    res = pelt(data, cost, penalty=bic_penalty(2, len(data)))
-    print(res.change_points)
-
-Related Components
-------------------
-
-The online counterpart is :class:`bocpd.bocpd.BOCPD`.
-
-References
-----------
-
-.. [1] Killick, R., Fearnhead, P. & Eckley, I. A. (2012).
-       *Optimal detection of changepoints with a linear computational cost*.
+.. autofunction:: changepoint_lab.algorithms.optimization.pelt.pelt_detect

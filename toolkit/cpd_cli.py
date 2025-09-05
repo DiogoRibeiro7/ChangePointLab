@@ -401,8 +401,14 @@ def run_hsmm(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 def run_within_period(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
     """Run Within-Period Change-Point Detection."""
     from within_period.within_period_cpd import WithinPeriodCPD, ModelPrior, RJConfig
-    from common.io.data_loader import load_binary_from_csv, empirical_per_bin_mean
-    from common.plotting.plotting_helpers import plot_changepoint_posterior_mass, plot_pointwise_bands
+    from changepoint_lab.common.io.data_loader import (
+        load_binary_from_csv,
+        empirical_per_bin_mean,
+    )
+    from changepoint_lab.common.plotting.plotting_helpers import (
+        plot_changepoint_posterior_mass,
+        plot_pointwise_bands,
+    )
 
     # Load binary time series
     x, N = load_binary_from_csv(

@@ -1,0 +1,40 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+from edivisive.edivisive import EDivisiveResult
+from edivisive.edivisive import edivisive as _edivisive
+
+from ...core.datatypes import ChangePointResult
+from .._base import BaseDetector
+
+
+@dataclass
+class EDivisive(BaseDetector):
+    alpha: float = 1.0
+    min_size: int = 10
+    R: int = 199
+    seed: int | None = None
+
+    _result: EDivisiveResult | None = None
+
+    def fit(self, x: np.ndarray) -> EDivisive:
+        self._validate_input(x)
+        self._result = _edivisive(
+            x, alpha=self.alpha, min_size=self.min_size, R=self.R, seed=self.seed
+        )
+        return self
+
+    def predict(self, x: np.ndarray | None = None) -> ChangePointResult:
+        if x is not None:
+            return self.fit(x).predict()
+        if self._result is None:
+            raise RuntimeError("Call fit before predict.")
+        cps = np.array(self._result.change_points, dtype=int)
+        meta = {"labels": self._result.labels, "splits": self._result.splits}
+        return ChangePointResult(indices=cps, metadata=meta)
+
+
+__all__ = ["EDivisive"]

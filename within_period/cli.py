@@ -37,14 +37,17 @@ import matplotlib.pyplot as plt
 
 # Local modules
 from within_period.within_period_cpd import WithinPeriodCPD, ModelPrior, RJConfig, Tau
-from common.plotting.plotting_helpers import (
+from changepoint_lab.common.plotting.plotting_helpers import (
     plot_changepoint_posterior_mass,
     plot_pointwise_bands,
     plot_posterior_num_segments,
 )
-from common.diagnostics.diagnostics import posterior_num_segments
-from common.io.io_utils import save_result_npz, load_result_npz
-from common.io.data_loader import load_binary_from_csv, empirical_per_bin_mean
+from changepoint_lab.common.diagnostics.diagnostics import posterior_num_segments
+from changepoint_lab.common.io.io_utils import save_result_npz, load_result_npz
+from changepoint_lab.common.io.data_loader import (
+    load_binary_from_csv,
+    empirical_per_bin_mean,
+)
 from within_period.samplers.tempering import PTConfig, parallel_tempering_fit
 
 
