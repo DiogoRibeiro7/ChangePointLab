@@ -1,22 +1,14 @@
-"""Quick start examples for changepoint-toolkit.
+"""Quick start examples for ChangePointLab.
 
-Demonstrates basic usage of BOCPD, Within-Period CPD, and Kernel Change Point
-(KCP) detection on small synthetic data sets.
+Demonstrates basic usage of BOCPD, Within-Period BOCPD, and kernel-based
+changepoint detection on small synthetic data sets.
 """
 
 import numpy as np
 
-from changepoint_toolkit import (
-    BOCPD,
-    BOCPDConfig,
-    ConstantHazard,
-    WithinPeriodCPD,
-    ModelPrior,
-    RJConfig,
-    gram_rbf,
-    kcp_penalized,
-)
-from kcp import build_kernel_prefix
+from changepoint_lab import BOCPD, WithinPeriodBOCPD, KernelCPD
+from changepoint_lab.algorithms.bayesian.bocpd import BOCPDConfig, ConstantHazard
+from changepoint_lab.algorithms.bayesian.within_period import ModelPrior, RJConfig
 
 
 def run_bocpd():
@@ -44,10 +36,9 @@ def run_within_period():
         idx = d * N + 8
         x[idx : idx + 4] = rng.binomial(1, 0.8, 4).astype(bool)
     prior = ModelPrior(N=N, l=4)
-    model = WithinPeriodCPD(prior)
-    cfg = RJConfig(iters=1000, burn=200, thin=5, seed=42)
-    result = model.fit(x, cfg)
-    print("Within-Period CPD MAP changepoints:", result.mode_tau)
+    model = WithinPeriodBOCPD(prior, RJConfig(iters=1000, burn=200, thin=5, seed=42))
+    result = model.fit(x).predict()
+    print("Within-Period CPD MAP changepoints:", result.indices.tolist())
 
 
 def run_kcp():
@@ -56,10 +47,9 @@ def run_kcp():
     X = np.concatenate(
         [rng.normal(0, 1, 60), rng.normal(3, 1, 60)]
     )[:, None]
-    K, _ = gram_rbf(X)
-    pref = build_kernel_prefix(K)
-    res = kcp_penalized(pref, penalty=np.log(X.shape[0]), min_size=10, method="pelt")
-    print("KCP change points:", res.change_points.tolist())
+    model = KernelCPD(penalty=np.log(X.shape[0]))
+    result = model.fit_predict(X)
+    print("KCP change points:", result.indices.tolist())
 
 
 if __name__ == "__main__":

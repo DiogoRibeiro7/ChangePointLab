@@ -100,45 +100,54 @@ graph TD
 ```python
 # Volatility regime detection in financial returns
 import numpy as np
-from changepoint_lab import pelt
+from changepoint_lab import PELT
+from changepoint_lab.algorithms.optimization.pelt import (
+    NormalMeanVarUnknown,
+    bic_penalty,
+)
 
 # Daily returns data
 returns = get_stock_returns("AAPL", "2020-01-01", "2023-01-01")
 abs_returns = np.abs(returns)  # Proxy for volatility
 
-# Detect volatility regimes using PELT with unknown variance
-cost_fn = pelt.NormalMeanVarUnknown()
+cost_fn = NormalMeanVarUnknown()
 cost_fn.precompute(abs_returns)
-result = pelt.pelt(abs_returns, cost_fn, penalty=np.log(len(returns)) * 2)
+detector = PELT(cost_fn=cost_fn, penalty=bic_penalty(2, len(returns)))
+result = detector.fit_predict(abs_returns)
 
-print("Volatility regime changes detected at:", result.change_points)
+print("Volatility regime changes detected at:", result.indices)
 ```
 
 ### Health Monitoring
 
 ```python
 # Patient state detection from vital signs
-from changepoint_lab import hsmm
 import numpy as np
+from changepoint_lab import HSMM
+from changepoint_lab.algorithms.state_space.hsmm import (
+    HSMMConfig,
+    HSMMParams,
+    PoissonDur,
+)
 
 # Multi-channel patient data (heart rate, BP, SpO2)
 vitals = get_patient_vitals(patient_id="P12345")
 
-# HSMM with 3 states (normal, warning, critical)
-model = hsmm.HSMM(
-    cfg=hsmm.HSMMConfig(K=3, Dmax=100, min_duration=5),
-    params=hsmm.HSMMParams(
-        pi=np.array([0.8, 0.15, 0.05]),  # Initial state probabilities
-        A=np.array([  # Transition matrix (avoid self-transitions)
-            [0.0, 0.9, 0.1],
-            [0.7, 0.0, 0.3],
-            [0.3, 0.7, 0.0]
-        ]),
-        duration=("poisson", hsmm.PoissonDur(lam=np.array([30, 20, 15])))
-    )
+model = HSMM(
+    cfg=HSMMConfig(K=3, Dmax=100, min_duration=5),
+    params=HSMMParams(
+        pi=np.array([0.8, 0.15, 0.05]),
+        A=np.array(
+            [
+                [0.0, 0.9, 0.1],
+                [0.7, 0.0, 0.3],
+                [0.3, 0.7, 0.0],
+            ]
+        ),
+        duration=("poisson", PoissonDur(lam=np.array([30, 20, 15]))),
+    ),
 )
 
-# Run Viterbi to get most likely state sequence
 states, durations = model.decode_viterbi(vitals)
 print("Patient state sequence:", states)
 ```
@@ -147,25 +156,27 @@ print("Patient state sequence:", states)
 
 ```python
 # Online detection of anomalies in sensor readings
-from changepoint_lab import bocpd
 import numpy as np
+from changepoint_lab import BOCPD
+from changepoint_lab.algorithms.bayesian.bocpd import (
+    BOCPDConfig,
+    ConstantHazard,
+)
 
-# Streaming temperature data
 def process_temperature_stream(sensor_id):
-    # Initialize detector
-    detector = bocpd.BOCPD(
-        hazard=bocpd.ConstantHazard(mean_run_length=1000),
-        config=bocpd.BOCPDConfig(max_run_length=2000)
+    detector = BOCPD(
+        hazard=ConstantHazard(mean_run_length=1000),
+        config=BOCPDConfig(max_run_length=2000),
     )
-    
-    # Process stream
+
     for batch in get_sensor_data_stream(sensor_id):
         detector.update(batch)
         cp_prob = detector.get_changepoint_probability()
-        
-        # Alert if probability exceeds threshold
+
         if cp_prob > 0.8:
-            send_alert(f"Potential anomaly detected in {sensor_id} with {cp_prob:.2f} probability")
+            send_alert(
+                f"Potential anomaly detected in {sensor_id} with {cp_prob:.2f} probability"
+            )
 
 process_temperature_stream("temp_sensor_12")
 ```

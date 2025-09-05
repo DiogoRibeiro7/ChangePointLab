@@ -23,7 +23,8 @@ This guide introduces core concepts and directs you to method‑specific tutoria
 - [Nonparametric Methods](nonparametric_methods.md)
 - [State‑Space Methods](state_space_methods.md)
 - [Visualization](visualization.md)
-- [Package Structure](../architecture/package_structure.md)
+- [Architecture](../architecture/index.md)
+- [Extending ChangePointLab](extending.md)
 
 Mathematical notation uses standard LaTeX syntax (e.g., $p(r_t \mid x_{1:t})$ for the run‑length posterior).
 

@@ -1,6 +1,8 @@
-# Proposed Package Structure
+# Architecture
 
-The library will consolidate modules under a single `changepoint_lab/` package for easier discovery and consistent APIs.
+ChangePointLab groups code into a single `changepoint_lab/` package with clear
+responsibilities for each subfolder. The layout below shows the main
+directories and their roles.
 
 ```
 changepoint_lab/
