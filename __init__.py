@@ -1,37 +1,25 @@
-"""Top-level package API for changepoint toolkit."""
+from __future__ import annotations
 
-from bocpd import (
-    BOCPD,
-    BOCPDConfig,
-    BOCPDResult,
-    ConstantHazard,
-    BoostedBoundaryHazard,
-)
-from within_period import WithinPeriodCPD, ModelPrior, RJConfig
-from kcp import gram_rbf, kcp_penalized, kcp_select_bic
-from edivisive import edivisive
-from pelt import pelt, NormalMeanKnownVar, NormalMeanVarUnknown
-from hsmm import HSMM, HSMMConfig
-from sdhmm import SDHMM, SDHMMConfig
+# Re-export main algorithm classes (clean public API)
+from algorithms.optimization.pelt import PELT
+from algorithms.bayesian.bocpd import BOCPD
+from algorithms.nonparametric.edivisive import EDivisive
+from algorithms.state_space.hsmm import HSMM
+from algorithms.kernel.kcp import KernelCPD
+
+# Useful public types
+from core.datatypes import ChangePointResult
 
 __all__ = [
+    "PELT",
     "BOCPD",
-    "BOCPDConfig",
-    "BOCPDResult",
-    "ConstantHazard",
-    "BoostedBoundaryHazard",
-    "WithinPeriodCPD",
-    "ModelPrior",
-    "RJConfig",
-    "gram_rbf",
-    "kcp_penalized",
-    "kcp_select_bic",
-    "edivisive",
-    "pelt",
-    "NormalMeanKnownVar",
-    "NormalMeanVarUnknown",
+    "EDivisive",
     "HSMM",
-    "HSMMConfig",
-    "SDHMM",
-    "SDHMMConfig",
+    "KernelCPD",
+    "ChangePointResult",
 ]
+
+# Attach compatibility layer (lazy attribute fallback + deprecations)
+from ._compat import __getattr__, __all__ as _compat_all  # noqa: E402
+
+__all__ += _compat_all
