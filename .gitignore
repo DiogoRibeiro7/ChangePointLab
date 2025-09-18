@@ -1,4 +1,16 @@
-.pyc
+# Python artifacts
+__pycache__/
+*.py[cod]
+
+# Sphinx build artifacts
+/docs/build/
+
+# Virtual environments
+.venv/
+
+# IDE settings
+.idea/
+.vscode/
 
 # Ignore binary assets
 papers/
