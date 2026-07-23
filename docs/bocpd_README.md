@@ -6,21 +6,16 @@
 
 ## Purpose
 
-BOCPD is a Python implementation of Bayesian Online Changepoint Detection specifically designed for binary (Bernoulli) data streams, with extensions for other distributions. The package implements the algorithm from Adams and MacKay (2007) with novel hazard functions that incorporate domain knowledge about expected changepoint locations, significantly improving detection performance for periodic patterns and time-of-day analysis.
+BOCPD is a Python implementation of Bayesian Online Changepoint Detection for binary (Bernoulli) data streams. The package adapts the algorithm from Adams and MacKay (2007) and includes hazard functions that can encode domain knowledge about expected changepoint locations.
 
 Key innovations:
 - **Flexible hazard functions** for periodic patterns and known boundaries
 - **DST-safe binning** for proper handling of timezone transitions
 - **Numerically stable** algorithms for long sequences
-- **Pluggable likelihoods** for different data types
+- **Beta-Bernoulli likelihood** for binary streams
 - **Comprehensive visualization** tools and metrics
 
 ## Installation
-
-### From PyPI
-```bash
-pip install bocpd
-```
 
 ### From Source
 ```bash
@@ -28,13 +23,6 @@ pip install bocpd
 git clone https://github.com/DiogoRibeiro7/ChangePointLab.git
 cd ChangePointLab
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Install the package
-pip install .
-
-# For development
 pip install -e ".[dev]"
 ```
 
@@ -85,12 +73,12 @@ model = BOCPD(boosted_hazard)
 
 ### Command-Line Interface
 ```bash
-python -m bocpd_cli --csv events.csv --bin-minutes 15 --mean-rl 96 --cp-threshold 0.6
+bocpd-cli --csv events.csv --bin-minutes 15 --mean-rl 96 --cp-threshold 0.6
 ```
 
 For built-in demo:
 ```bash
-python -m bocpd_cli --demo --days 14 --period 96
+bocpd-cli --demo --days 14 --period 96
 ```
 
 ## Documentation
@@ -111,7 +99,7 @@ If you use BOCPD in your research, please cite the archived ChangePointLab relea
   author={Ribeiro, Diogo},
   year={2026},
   publisher={Zenodo},
-  note={Zenodo DOI assigned on release}
+  note={See CITATION.cff and the Zenodo archive for release-specific metadata}
 }
 ```
 
@@ -122,7 +110,7 @@ You can also use the citation provided by the CITATION.cff file in this reposito
 We welcome contributions to BOCPD! Please see our [contributing guidelines](CONTRIBUTING.md) for details on how to get started.
 
 Key areas for contributions:
-- Implementing additional likelihood models
+- Implementing additional likelihood models with oracle tests
 - Adding new hazard functions
 - Improving visualization tools
 - Enhancing documentation and examples

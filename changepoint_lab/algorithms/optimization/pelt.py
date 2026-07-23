@@ -18,6 +18,10 @@ from .cost_functions import (
     bic_penalty,
 )
 
+# Scientific traceability:
+# - Killick, Fearnhead, and Eckley (2012), doi:10.1080/01621459.2012.737745.
+# - Registry entry: docs/science/method_registry.yml, method id "pelt".
+
 ArrayF = NDArray[np.floating]
 ArrayI = NDArray[np.int_]
 

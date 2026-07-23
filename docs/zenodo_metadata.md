@@ -1,7 +1,7 @@
 # Zenodo Metadata for ChangePointLab
 
 ## Abstract
-ChangePointLab is an open-source Python library that unifies classical and modern approaches to changepoint detection. It implements Bayesian Online Change Point Detection, Pruned Exact Linear Time segmentation, energy-distance divisive algorithms, Hidden Markov and semi-Markov models, state-dependent HMMs for compositional data, and within-period detectors for seasonal signals. A consistent API, lightweight NumPy dependency, and extensive validation utilities allow researchers to prototype, compare, and combine methods across binary, continuous, multivariate, periodic, and compositional time series. The toolkit ships with synthetic data generators, evaluation metrics, visualization helpers, and a command-line interface, promoting reproducible experimentation and cross-method insight. Detailed parameter guides, interoperability examples, and comprehensive tests support both research and teaching. ChangePointLab serves statisticians, machine-learning practitioners, and domain scientists working in fields such as IoT analytics, healthcare monitoring, finance, industrial diagnostics, and environmental science. By consolidating disparate paradigms and encouraging hybrid workflows, the project lowers the barrier to rigorous changepoint analysis and accelerates methodological innovation. Released under the permissive MIT license, ChangePointLab welcomes community contributions and is suitable for academic publication and long-term research use.
+ChangePointLab is an open-source Python library that unifies several changepoint detection approaches behind a common package interface. The current package includes Bayesian Online Change Point Detection for Bernoulli streams, Pruned Exact Linear Time segmentation, energy-distance divisive algorithms, hidden Markov and semi-Markov models, state-dependent HMMs for compositional data, kernel-based methods, and within-period detectors for seasonal binary signals. Documentation, examples, tests, and command-line entry points support source-based installation and Zenodo archival releases.
 
 ## Keywords
 changepoint detection; time series analysis; Bayesian online changepoint detection; PELT; energy statistics; hidden Markov model; hidden semi-Markov model; SD-HMM; within-period detection; anomaly detection; state-space models; online algorithms; offline algorithms; Python; open source; regime shift; compositional data; periodic signals; reproducible research
@@ -13,8 +13,7 @@ changepoint detection; time series analysis; Bayesian online changepoint detecti
 Supported by internal research funds from ESMAD - Instituto Politécnico do Porto. The author thanks the open-source community for feedback and contributions.
 
 ## Related Publications and Datasets
-- Ribeiro, D. (2025). *Change-Point Detection Toolkit*. Journal of Open Source Software.
-- Synthetic datasets and examples included in the project repository: <https://github.com/DiogoRibeiro7/ChangePointLab>.
+- Synthetic examples included in the project repository: <https://github.com/DiogoRibeiro7/ChangePointLab>.
 
 ## Technical Specifications and System Requirements
 - **Programming language:** Python ≥3.10
@@ -24,25 +23,27 @@ Supported by internal research funds from ESMAD - Instituto Politécnico do Port
 
 ## Installation
 ```bash
-pip install changepoint-lab
+git clone https://github.com/DiogoRibeiro7/ChangePointLab
+cd ChangePointLab
+pip install -e .
 ```
 
 ## Usage
 ```python
 import numpy as np
-from changepoint_lab.algorithms.bayesian.bocpd import BOCPD, ConstantHazard
+from changepoint_lab import BOCPD, ConstantHazard
 
-data = np.random.randn(100)
+data = np.random.binomial(1, 0.2, size=100)
 model = BOCPD(ConstantHazard(mean_run_length=200))
 result = model.run(data)
-print(result.changepoints)
+print(result.cp_prob)
 ```
 
 ## Citation Guidelines
-If you use ChangePointLab in your research, please cite the accompanying JOSS paper and reference the Zenodo archive:
+If you use ChangePointLab in your research, please cite the Zenodo archive and the metadata in `CITATION.cff`:
 
 ```
-Ribeiro, D. (2026). *ChangePointLab: A Unified Python Toolkit for Changepoint Detection*. Zenodo DOI assigned on release.
+Ribeiro, D. (2026). *ChangePointLab: A Unified Python Toolkit for Changepoint Detection*. Zenodo.
 ```
 
 The CITATION.cff file in the repository provides bibliographic metadata for citation managers.

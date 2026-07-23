@@ -16,7 +16,9 @@ Detecting these changes helps segment time series into homogeneous regions, iden
 ## Installation
 
 ```bash
-pip install changepoint-lab
+git clone https://github.com/DiogoRibeiro7/ChangePointLab
+cd ChangePointLab
+pip install -e .
 ```
 
 ## A Simple Example: COVID-19 Impact on Stock Prices
@@ -103,17 +105,20 @@ plt.show()
 
 ### Method 2: BOCPD for Sequential Detection
 
-Now let's try Bayesian Online Changepoint Detection, which processes data sequentially:
+Now let's try Bayesian Online Changepoint Detection on a binary indicator stream.
+The current BOCPD wrapper uses the implemented Beta-Bernoulli likelihood path.
 
 ```python
+negative_return = (returns < 0).astype(int)
+
 # Initialize BOCPD detector
 detector = BOCPD(
     hazard=ConstantHazard(mean_run_length=180),  # Expected segment length ~180 days
-    config=BOCPDConfig(max_run_length=500),
+    cfg=BOCPDConfig(max_run_length=500),
 )
 
-# Process returns sequentially
-result_bocpd = detector.fit_predict(returns)
+# Process binary returns sequentially
+result_bocpd = detector.fit_predict(negative_return)
 
 # Extract changepoint probabilities
 cp_probs = result_bocpd.metadata["cp_prob"]
@@ -131,7 +136,7 @@ plt.grid(True, alpha=0.3)
 # Plot changepoint probability
 plt.subplot(2, 1, 2)
 plt.plot(dates[1:len(returns)+1], cp_probs)
-plt.title('Changepoint Probability (BOCPD)')
+plt.title('Changepoint Probability (BOCPD on Negative-Return Indicator)')
 plt.ylabel('Probability')
 plt.xlabel('Date')
 plt.grid(True, alpha=0.3)

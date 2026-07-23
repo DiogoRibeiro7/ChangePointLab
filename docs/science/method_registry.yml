@@ -1,0 +1,313 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-07-23",
+  "verification_status_values": [
+    "verified",
+    "partially_verified",
+    "characterized_only",
+    "unverified",
+    "not_implemented"
+  ],
+  "citations": {
+    "adams_mackay_2007": {
+      "label": "Adams and MacKay (2007)",
+      "title": "Bayesian Online Changepoint Detection",
+      "authors": ["Ryan Prescott Adams", "David J. C. MacKay"],
+      "year": 2007,
+      "doi": null,
+      "url": "https://arxiv.org/abs/0710.3742"
+    },
+    "killick_2012": {
+      "label": "Killick, Fearnhead, and Eckley (2012)",
+      "title": "Optimal Detection of Changepoints With a Linear Computational Cost",
+      "authors": ["Rebecca Killick", "Paul Fearnhead", "Idris A. Eckley"],
+      "year": 2012,
+      "doi": "10.1080/01621459.2012.737745",
+      "url": "https://doi.org/10.1080/01621459.2012.737745"
+    },
+    "matteson_james_2014": {
+      "label": "Matteson and James (2014)",
+      "title": "A Nonparametric Approach for Multiple Change Point Analysis of Multivariate Data",
+      "authors": ["David S. Matteson", "Nicholas A. James"],
+      "year": 2014,
+      "doi": "10.1080/01621459.2013.849605",
+      "url": "https://doi.org/10.1080/01621459.2013.849605"
+    },
+    "taylor_2021": {
+      "label": "Taylor, Killick, Burr, and Rogerson (2021)",
+      "title": "Assessing Daily Patterns Using Home Activity Sensors and Within Period Changepoint Detection",
+      "authors": ["Simon A. C. Taylor", "Rebecca Killick", "Jonathan Burr", "Louise Rogerson"],
+      "year": 2021,
+      "doi": "10.1111/rssc.12472",
+      "url": "https://doi.org/10.1111/rssc.12472"
+    },
+    "martinez_hernandez_killick_2024": {
+      "label": "Martinez-Hernandez and Killick (2024)",
+      "title": "Changepoint Detection on Daily Home Activity Pattern: A Sliced Poisson Process Method",
+      "authors": ["Israel Martinez-Hernandez", "Rebecca Killick"],
+      "year": 2024,
+      "doi": "10.1093/biomtc/ujae114",
+      "url": "https://doi.org/10.1093/biomtc/ujae114"
+    },
+    "harchaoui_bach_2008": {
+      "label": "Harchaoui and Bach (2008)",
+      "title": "Kernel Change-point Analysis",
+      "authors": ["Zaid Harchaoui", "Francis Bach"],
+      "year": 2008,
+      "doi": null,
+      "url": "https://proceedings.neurips.cc/paper/2008/hash/08b255a5d42b89b0585260b6f2360bdd-Abstract.html"
+    },
+    "arlot_celisse_harchaoui_2019": {
+      "label": "Arlot, Celisse, and Harchaoui (2019)",
+      "title": "A Kernel Multiple Change-point Algorithm via Model Selection",
+      "authors": ["Sylvain Arlot", "Alain Celisse", "Zaid Harchaoui"],
+      "year": 2019,
+      "doi": null,
+      "url": "https://jmlr.org/papers/v20/16-155.html"
+    },
+    "rahimi_recht_2007": {
+      "label": "Rahimi and Recht (2007)",
+      "title": "Random Features for Large-Scale Kernel Machines",
+      "authors": ["Ali Rahimi", "Benjamin Recht"],
+      "year": 2007,
+      "doi": null,
+      "url": "https://papers.nips.cc/paper/3182-random-features-for-large-scale-kernel-machines"
+    },
+    "yu_2010": {
+      "label": "Yu (2010)",
+      "title": "Hidden Semi-Markov Models",
+      "authors": ["Shun-Zheng Yu"],
+      "year": 2010,
+      "doi": "10.1016/j.artint.2009.11.011",
+      "url": "https://doi.org/10.1016/j.artint.2009.11.011"
+    },
+    "manouchehri_bouguila_2023": {
+      "label": "Manouchehri and Bouguila (2023)",
+      "title": "Human Activity Recognition with an HMM-Based Generative Model",
+      "authors": ["Narges Manouchehri", "Nizar Bouguila"],
+      "year": 2023,
+      "doi": "10.3390/s23031390",
+      "url": "https://doi.org/10.3390/s23031390"
+    }
+  },
+  "methods": [
+    {
+      "id": "pelt",
+      "name": "Pruned Exact Linear Time",
+      "stable_package_symbols": ["PELT"],
+      "citation_ids": ["killick_2012"],
+      "relationship_to_source": "adaptation",
+      "implemented_equations_or_algorithms": ["dynamic programming recursion", "PELT pruning condition", "AIC/BIC penalty helpers"],
+      "code_paths": [
+        "changepoint_lab/algorithms/optimization/pelt.py",
+        "changepoint_lab/algorithms/optimization/cost_functions.py"
+      ],
+      "public_api": ["changepoint_lab.PELT", "changepoint_lab.algorithms.optimization.pelt.pelt", "changepoint_lab.algorithms.optimization.pelt.pelt_detect"],
+      "tests": [
+        "tests/unit/test_algorithm_parity.py",
+        "tests/unit/test_pelt_result_fields.py",
+        "tests/integration/test_methods_interoperability.py"
+      ],
+      "documentation_paths": ["README.md", "docs/api/pelt.rst", "docs/guide/optimization_methods.md"],
+      "reproduction_artifact": "No independent paper oracle yet; current tests are package characterization and interoperability tests.",
+      "deviations": ["Cost functions are a local typed interface.", "Penalty choice is caller-controlled.", "Concave-penalty wrapper is exploratory."],
+      "extensions": ["Normal and beta-binomial costs", "sklearn-like wrapper returning ChangePointResult"],
+      "verification_status": "partially_verified",
+      "mysense_connection": "General offline segmentation baseline for event-count workflows."
+    },
+    {
+      "id": "bocpd_beta_bernoulli",
+      "name": "Bayesian Online Changepoint Detection, Beta-Bernoulli path",
+      "stable_package_symbols": ["BOCPD", "BOCPDConfig", "BOCPDResult", "Hazard", "ConstantHazard", "BoostedBoundaryHazard", "ScheduledHazard"],
+      "citation_ids": ["adams_mackay_2007"],
+      "relationship_to_source": "adaptation",
+      "implemented_equations_or_algorithms": ["run-length posterior recursion", "hazard-weighted growth and changepoint mass", "Beta-Bernoulli conjugate updates"],
+      "code_paths": [
+        "changepoint_lab/algorithms/bayesian/bocpd/core.py",
+        "changepoint_lab/algorithms/bayesian/bocpd/likelihoods.py",
+        "changepoint_lab/algorithms/bayesian/bocpd/__init__.py"
+      ],
+      "public_api": ["changepoint_lab.BOCPD", "changepoint_lab.ConstantHazard", "changepoint_lab.BoostedBoundaryHazard", "bocpd-cli"],
+      "tests": [
+        "tests/unit/test_bocpd_edge_cases.py",
+        "tests/unit/test_algorithm_parity.py",
+        "tests/integration/test_cli_integration.py"
+      ],
+      "documentation_paths": ["docs/api/bocpd.rst", "docs/bocpd_README.md"],
+      "reproduction_artifact": "No independent posterior calibration oracle yet.",
+      "deviations": ["Wrapper uses cp_scale and threshold extraction policy that are not canonical Adams-MacKay defaults.", "Only Beta-Bernoulli is implemented as a usable likelihood path."],
+      "extensions": ["Scheduled and boundary-boosted hazard functions"],
+      "verification_status": "characterized_only",
+      "mysense_connection": "Streaming binary event detector for home-activity event streams."
+    },
+    {
+      "id": "within_period_rjmcmc",
+      "name": "Within-period changepoint detection",
+      "stable_package_symbols": ["WithinPeriodCPD"],
+      "citation_ids": ["taylor_2021"],
+      "relationship_to_source": "adaptation",
+      "implemented_equations_or_algorithms": ["circular changepoint state", "Beta-binomial segment marginal likelihood", "Dirichlet-multinomial excess-length prior", "birth, move, and death proposals"],
+      "code_paths": [
+        "changepoint_lab/algorithms/bayesian/within_period/__init__.py",
+        "changepoint_lab/algorithms/bayesian/within_period/within_period_cpd.py",
+        "changepoint_lab/algorithms/bayesian/within_period/posterior_predictive.py",
+        "changepoint_lab/algorithms/bayesian/within_period/samplers/tempering.py"
+      ],
+      "public_api": ["changepoint_lab.WithinPeriodCPD", "within-period-cli"],
+      "tests": ["tests/integration/test_methods_interoperability.py", "tests/integration/test_cli_integration.py"],
+      "documentation_paths": ["docs/api/within_period.rst", "docs/parameters/within_period_parameters.md"],
+      "reproduction_artifact": "No paper-derived posterior or detailed-balance oracle yet.",
+      "deviations": ["Uses global numpy and Python random state in parts of the sampler.", "Proposal probability accounting is under scientific audit."],
+      "extensions": ["Parallel tempering helper", "posterior predictive summaries"],
+      "verification_status": "unverified",
+      "mysense_connection": "Direct implementation target for repeated daily home-activity sensor patterns."
+    },
+    {
+      "id": "sliced_poisson_process",
+      "name": "Sliced Poisson process changepoint detection",
+      "stable_package_symbols": [],
+      "citation_ids": ["martinez_hernandez_killick_2024"],
+      "relationship_to_source": "not_implemented",
+      "implemented_equations_or_algorithms": [],
+      "code_paths": [],
+      "public_api": [],
+      "tests": [],
+      "documentation_paths": ["docs/science/claim_audit.md"],
+      "reproduction_artifact": "Not present in the package as a stable implementation.",
+      "deviations": ["Research material is referenced by project scope but no stable code path was found."],
+      "extensions": [],
+      "verification_status": "not_implemented",
+      "mysense_connection": "Primary MySense event-count research method to add only after paper-derived tests exist."
+    },
+    {
+      "id": "edivisive",
+      "name": "E-Divisive energy-statistic changepoint detection",
+      "stable_package_symbols": ["EDivisive", "edivisive"],
+      "citation_ids": ["matteson_james_2014"],
+      "relationship_to_source": "adaptation",
+      "implemented_equations_or_algorithms": ["energy-distance split statistic", "recursive divisive segmentation", "permutation and block-resampling p-values"],
+      "code_paths": [
+        "changepoint_lab/algorithms/nonparametric/edivisive.py",
+        "changepoint_lab/algorithms/nonparametric/edivisive_core.py"
+      ],
+      "public_api": ["changepoint_lab.EDivisive", "changepoint_lab.edivisive"],
+      "tests": [
+        "tests/unit/test_edivisive_memmap.py",
+        "tests/unit/test_algorithm_parity.py",
+        "tests/integration/test_methods_interoperability.py"
+      ],
+      "documentation_paths": ["docs/api/edivisive.rst", "docs/guide/nonparametric_methods.md"],
+      "reproduction_artifact": "No independent energy-statistic oracle yet.",
+      "deviations": ["Adds block permutation and circular block bootstrap options."],
+      "extensions": ["Optional memmap distance storage"],
+      "verification_status": "partially_verified",
+      "mysense_connection": "Distribution-free offline comparison method for event summaries."
+    },
+    {
+      "id": "kernel_cpd",
+      "name": "Kernel changepoint detection",
+      "stable_package_symbols": ["KernelCPD", "gram_rbf", "kcp_penalized", "kcp_select_bic"],
+      "citation_ids": ["harchaoui_bach_2008", "arlot_celisse_harchaoui_2019"],
+      "relationship_to_source": "adaptation",
+      "implemented_equations_or_algorithms": ["kernel segment cost", "penalized dynamic programming", "BIC-style model selection"],
+      "code_paths": [
+        "changepoint_lab/algorithms/kernel/kcp.py",
+        "changepoint_lab/algorithms/kernel/kcp_core.py",
+        "changepoint_lab/algorithms/kernel/bandwidth_cv.py"
+      ],
+      "public_api": ["changepoint_lab.KernelCPD", "changepoint_lab.gram_rbf", "changepoint_lab.kcp_penalized", "changepoint_lab.kcp_select_bic"],
+      "tests": [
+        "changepoint_lab/tests/test_kcp/test_bandwidth_cv.py",
+        "tests/unit/test_kcp_segment_bounds.py",
+        "tests/unit/test_algorithm_parity.py"
+      ],
+      "documentation_paths": ["docs/api/kcp.rst", "docs/cpd.md"],
+      "reproduction_artifact": "No independent KCP oracle yet.",
+      "deviations": ["Current top-level KernelCPD wrapper is documented as broken by the audit."],
+      "extensions": ["Bandwidth selection helpers"],
+      "verification_status": "characterized_only",
+      "mysense_connection": "Flexible nonparametric offline comparison method."
+    },
+    {
+      "id": "rff_kernel_cpd",
+      "name": "Random Fourier feature kernel changepoint detection",
+      "stable_package_symbols": [],
+      "citation_ids": ["rahimi_recht_2007", "harchaoui_bach_2008"],
+      "relationship_to_source": "extension",
+      "implemented_equations_or_algorithms": ["RBF random Fourier map", "feature-prefix segment cost", "approximate KCP dynamic programming"],
+      "code_paths": [
+        "changepoint_lab/algorithms/kernel/kcp_rff.py",
+        "changepoint_lab/algorithms/kernel/rff_variants.py"
+      ],
+      "public_api": ["changepoint_lab.algorithms.kernel.kcp_rff"],
+      "tests": [
+        "changepoint_lab/tests/test_kcp/test_rff_variants.py",
+        "tests/unit/test_performance.py"
+      ],
+      "documentation_paths": ["docs/cpd.md"],
+      "reproduction_artifact": "No exact/RFF parity oracle yet.",
+      "deviations": ["Approximation layer, not a faithful exact KCP reproduction."],
+      "extensions": ["Orthogonal, quasi-Monte Carlo, compact-support, and adaptive RFF variants"],
+      "verification_status": "partially_verified",
+      "mysense_connection": "Scalability option for large event-derived feature matrices."
+    },
+    {
+      "id": "hsmm",
+      "name": "Hidden semi-Markov model",
+      "stable_package_symbols": ["HSMM", "HSMMConfig", "HSMMParams", "PoissonDur"],
+      "citation_ids": ["yu_2010"],
+      "relationship_to_source": "adaptation",
+      "implemented_equations_or_algorithms": ["explicit-duration forward-backward", "duration M-step", "Viterbi decoding"],
+      "code_paths": [
+        "changepoint_lab/algorithms/state_space/hsmm.py",
+        "changepoint_lab/algorithms/state_space/hsmm_core.py"
+      ],
+      "public_api": ["changepoint_lab.HSMM", "changepoint_lab.HSMMConfig", "changepoint_lab.PoissonDur"],
+      "tests": [
+        "tests/unit/test_hsmm_duration_cache.py",
+        "tests/unit/test_hsmm/test_emission_models.py",
+        "tests/unit/test_algorithm_parity.py"
+      ],
+      "documentation_paths": ["docs/api/hsmm.rst", "docs/guide/state_space_methods.md"],
+      "reproduction_artifact": "No independent duration-semantics oracle yet.",
+      "deviations": ["Wrapper changepoints are derived from decoded duration cumulative sums."],
+      "extensions": ["Poisson and negative-binomial duration helpers", "Gaussian and AR emission helpers"],
+      "verification_status": "partially_verified",
+      "mysense_connection": "State-duration baseline for activity-regime workflows."
+    },
+    {
+      "id": "sd_hmm",
+      "name": "Scaled-Dirichlet HMM",
+      "stable_package_symbols": ["SDHMM", "SDHMMConfig", "SDHMMResult"],
+      "citation_ids": ["manouchehri_bouguila_2023"],
+      "relationship_to_source": "adaptation",
+      "implemented_equations_or_algorithms": ["scaled-Dirichlet log density", "forward-backward", "MAP gradient emission updates", "Viterbi decoding"],
+      "code_paths": ["changepoint_lab/algorithms/state_space/sdhmm.py"],
+      "public_api": ["changepoint_lab.SDHMM", "changepoint_lab.SDHMMConfig"],
+      "tests": ["tests/unit/test_numerical_stability.py", "tests/unit/test_algorithm_parity.py"],
+      "documentation_paths": ["docs/api/sdhmm.rst", "docs/guide/state_space_methods.md"],
+      "reproduction_artifact": "No independent scaled-Dirichlet gradient oracle yet.",
+      "deviations": ["Uses local digamma approximation and projected gradient updates."],
+      "extensions": ["sklearn-like changepoint wrapper"],
+      "verification_status": "characterized_only",
+      "mysense_connection": "Compositional state-space comparison method."
+    },
+    {
+      "id": "sd_hmm_mix_vi",
+      "name": "Scaled-Dirichlet mixture VI HMM",
+      "stable_package_symbols": ["SDHMMMixVI", "SDHMMMixVIConfig", "SDHMMMixVIResult"],
+      "citation_ids": ["manouchehri_bouguila_2023"],
+      "relationship_to_source": "extension",
+      "implemented_equations_or_algorithms": ["per-state scaled-Dirichlet mixtures", "variational mixture responsibilities", "Dirichlet mixture-weight update", "state forward-backward"],
+      "code_paths": ["changepoint_lab/algorithms/state_space/sdhmm_mix_vi.py"],
+      "public_api": ["changepoint_lab.SDHMMMixVI", "changepoint_lab.SDHMMMixVIConfig"],
+      "tests": ["tests/unit/test_numerical_stability.py"],
+      "documentation_paths": ["docs/api/sdhmm.rst", "docs/guide/state_space_methods.md"],
+      "reproduction_artifact": "No independent VI/ELBO oracle yet.",
+      "deviations": ["Mixture layer extends the single-emission SD-HMM source and needs derivation review."],
+      "extensions": ["Per-state mixtures with VI-style soft assignments"],
+      "verification_status": "unverified",
+      "mysense_connection": "Experimental compositional extension; not currently tied to the event-count paper."
+    }
+  ]
+}

@@ -14,6 +14,9 @@ from numpy.typing import NDArray
 from ...core.datatypes import ChangePointResult
 from .._base import BaseDetector
 
+# Scientific traceability:
+# - Manouchehri and Bouguila (2023), doi:10.3390/s23031390.
+# - Registry entry: docs/science/method_registry.yml, method id "sd_hmm_mix_vi".
 
 ArrayF = NDArray[np.floating]
 ArrayI = NDArray[np.integer]

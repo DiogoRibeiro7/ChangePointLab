@@ -13,6 +13,10 @@ from numpy.typing import NDArray
 from .likelihoods import BetaBernoulli, ConjugateLikelihood
 from .validation import int_ge, positive_float
 
+# Scientific traceability:
+# - Adams and MacKay (2007), Bayesian Online Changepoint Detection,
+#   https://arxiv.org/abs/0710.3742.
+# - Registry entry: docs/science/method_registry.yml, method id "bocpd_beta_bernoulli".
 
 # -------------------------- Type aliases ---------------------------
 

@@ -7,8 +7,8 @@ shifts, periodic patterns and compositional changes.
 
 Plotting, metric computation and summary printing are provided by
 ``comparison_helpers`` so that these routines remain focused on the workflow for
-each scenario.  The functions are intended to be short, documented examples that
-can be referenced in the toolkit documentation and JOSS paper.
+each scenario. The functions are intended to be short, documented examples for
+the toolkit documentation.
 """
 from __future__ import annotations
 

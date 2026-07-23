@@ -1,6 +1,6 @@
-# Reference: Taylor, Killick, Burr & Rogerson (2021), Assessing daily patterns using
-# home activity sensors and within period changepoint detection, JRSS-C 70(3): 579–595.
-#
+# Scientific traceability:
+# - Taylor, Killick, Burr, and Rogerson (2021), doi:10.1111/rssc.12472.
+# - Registry entry: docs/science/method_registry.yml, method id "within_period_rjmcmc".
 
 # within_period_cpd.py
 # MIT License
@@ -159,7 +159,7 @@ class RJConfig:
 @dataclass(frozen=True)
 class ModelPrior:
     """
-    Prior configuration, following Taylor et al. (2021). See Sections 2.1–2.3. :contentReference[oaicite:1]{index=1}
+    Prior configuration, following Taylor et al. (2021), Sections 2.1-2.3.
 
     Attributes
     ----------
@@ -169,10 +169,10 @@ class ModelPrior:
         Minimum segment length (e.g., l=4 for 1 hour at 15-min resolution).
     gamma : float
         Dirichlet–multinomial common shape parameter (γ>0). γ=1 is uniform
-        over excess-length allocations. (Section 2.2; Eq. (4)) :contentReference[oaicite:2]{index=2}
+        over excess-length allocations. See Taylor et al. (2021), Section 2.2, Eq. (4).
     pois_lambda : float
         Poisson(λ) prior on the number of segments m (truncated to 1..floor(N/l)).
-        Taylor et al. use λ=1. (Section 2.2) :contentReference[oaicite:3]{index=3}
+        Taylor et al. use lambda=1. See Section 2.2.
     """
 
     N: int
@@ -223,7 +223,7 @@ class WithinPeriodCore:
     """
     Within-period changepoint detection for periodic binary data with minimum segment length constraint,
     using an RJMCMC sampler (birth/move/death) over changepoints on a circular time axis. Follows
-    Taylor et al. (2021), Sections 2–3. :contentReference[oaicite:4]{index=4}
+    Taylor et al. (2021), Sections 2-3.
 
     Model:
         - Observations X_t | p(t) ~ Bernoulli(p(t)), t=0..T-1.
@@ -329,7 +329,7 @@ class WithinPeriodCore:
                     + log Poisson_trunc(m)
             Constants wrt τ,m are omitted; ratios are correct in MH steps.
 
-        See Eqs. (3), (4), (6), (7) in Taylor et al. (2021). :contentReference[oaicite:5]{index=5}
+        See Eqs. (3), (4), (6), (7) in Taylor et al. (2021).
         """
         N, l, gamma, lam = self._N, self._l, self.prior.gamma, self.prior.pois_lambda
         m = 1 if len(tau) == 0 else len(tau) + 1
@@ -666,7 +666,7 @@ class WithinPeriodCore:
     ) -> Dict[str, List[Tuple[float, float, float]]]:
         """
         Given a fixed τ (e.g., the MAP), return per-segment posterior summaries for the Bernoulli probability ϕ_i,
-        using the conditional posterior Beta(1+s_i, 1+n_i - s_i) (Eq. (6)). :contentReference[oaicite:6]{index=6}
+        using the conditional posterior Beta(1+s_i, 1+n_i - s_i). See Taylor et al. (2021), Eq. (6).
 
         Returns
         -------

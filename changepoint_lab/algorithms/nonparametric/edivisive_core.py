@@ -12,6 +12,9 @@ from typing import List, Optional, Sequence, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
+# Scientific traceability:
+# - Matteson and James (2014), doi:10.1080/01621459.2013.849605.
+# - Registry entry: docs/science/method_registry.yml, method id "edivisive".
 
 ArrayF = NDArray[np.floating]
 ArrayI = NDArray[np.integer]

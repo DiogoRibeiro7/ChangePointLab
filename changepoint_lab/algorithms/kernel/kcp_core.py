@@ -20,6 +20,10 @@ from .kcp_rff import (
     rff_kcp_penalized,
 )
 
+# Scientific traceability:
+# - Harchaoui and Bach (2008), Kernel Change-point Analysis.
+# - Arlot, Celisse, and Harchaoui (2019), JMLR 20(162).
+# - Registry entry: docs/science/method_registry.yml, method id "kernel_cpd".
 
 ArrayF = NDArray[np.floating]
 ArrayI = NDArray[np.integer]

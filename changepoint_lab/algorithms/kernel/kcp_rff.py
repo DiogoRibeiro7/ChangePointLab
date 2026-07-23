@@ -11,6 +11,10 @@ import math
 import numpy as np
 from numpy.typing import NDArray
 
+# Scientific traceability:
+# - Rahimi and Recht (2007), Random Features for Large-Scale Kernel Machines.
+# - Registry entry: docs/science/method_registry.yml, method id "rff_kernel_cpd".
+
 ArrayF = NDArray[np.floating]
 ArrayI = NDArray[np.integer]
 

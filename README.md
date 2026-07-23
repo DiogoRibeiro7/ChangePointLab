@@ -1,7 +1,6 @@
 # ChangePointLab
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Versions](https://img.shields.io/pypi/pyversions/changepoint-lab.svg)](https://pypi.org/project/changepoint-lab/)
 [![DOI](https://zenodo.org/badge/1046174252.svg)](https://zenodo.org/badge/latestdoi/1046174252)
 [![CI](https://github.com/DiogoRibeiro7/ChangePointLab/actions/workflows/ci.yml/badge.svg)](https://github.com/DiogoRibeiro7/ChangePointLab/actions/workflows/ci.yml)
 
@@ -22,11 +21,7 @@ set.
 
 ## Installation
 
-```bash
-pip install changepoint-lab
-```
-
-or from source:
+Install from source:
 
 ```bash
 git clone https://github.com/DiogoRibeiro7/ChangePointLab
@@ -70,14 +65,6 @@ print(result.indices)
 Common import rewrites:
 
 ```python
-# Old
-from changepoint_lab.algorithms.optimization.pelt import (
-    NormalMeanVarUnknown,
-    pelt,
-)
-from bocpd.bocpd import BOCPD
-
-# New
 from changepoint_lab import BOCPD, PELT
 from changepoint_lab.algorithms.optimization.pelt import NormalMeanVarUnknown
 ```
@@ -104,7 +91,7 @@ If you use this toolkit in your research, please cite:
   author={Ribeiro, Diogo F.},
   year={2026},
   publisher={Zenodo},
-  note={Zenodo DOI assigned on release}
+  note={See CITATION.cff and the Zenodo archive for release-specific metadata}
 }
 ```
 

@@ -21,14 +21,14 @@ Severity levels:
 | R-005 | High | Packaging/API | Packaged modules `changepoint_lab.examples.edivisive_example`, `hsmm_example`, `kcp_example`, and `kcp_rff_example` timed out on import; `sdhmm_mix_vi_example` failed on import. | Installed package contains importable modules with top-level execution or errors. | Move runnable example code behind `main()` guards or remove examples from package distribution. |
 | R-006 | High | Scientific correctness | Within-period RJMCMC uses `np.random.seed` and `random.seed`; proposals rely on module-level `random`. | Hidden global RNG state can break reproducibility and composition. | Characterize current seeded behavior, then move to explicit generator/state objects. |
 | R-007 | High | Scientific correctness | Within-period prior/proposal details are not independently verified; prior audit identified Poisson lambda and reverse-proposal issues. | Sampler may not target the stated posterior distribution. | Build paper-derived and brute-force small-state oracles before changing behavior. |
-| R-008 | High | Documentation | `docs/comparisons/benchmark_report.md` contains placeholder image URLs, version `v1.0.0`, and strong superiority claims. | Users may rely on unsupported performance and adoption claims. | Claim audit must classify unsupported claims and remove or replace them with generated evidence. |
-| R-009 | High | Release metadata | `docs/zenodo_metadata.md` says to cite an accompanying JOSS paper and has "Zenodo DOI assigned on release" prose. | Citation guidance conflicts with current "Zenodo only, no JOSS" release scope. | Update scholarly metadata docs after claim audit. |
+| R-008 | High | Documentation | `docs/comparisons/benchmark_report.md` previously contained placeholder image URLs, version `v1.0.0`, and strong superiority claims. | Users may rely on unsupported performance and adoption claims if old claims are restored without evidence. | Keep benchmark claims blocked until generated artifacts exist. |
+| R-009 | High | Release metadata | `docs/zenodo_metadata.md` previously said to cite an accompanying JOSS paper and had "Zenodo DOI assigned on release" prose. | Citation guidance can drift from current "Zenodo only, no JOSS" release scope. | Keep release metadata aligned before each Zenodo release. |
 | R-010 | Medium | Packaging | `requirements.txt` duplicates runtime dependencies already declared in `pyproject.toml`. | Dependency drift can recur. | Decide whether to remove it or generate it from project metadata in dependency-audit work. |
 | R-011 | Medium | Tests | Top-level public API tests mostly verify exports and deprecation warnings, not all estimator behavior. | Broken public wrappers can pass CI. | Add smoke and characterization tests for all exported stable estimators. |
 | R-012 | Medium | Type/quality | Mypy is scoped to two files only; Ruff is configured for critical errors only. | Many interface and style defects are outside current gates. | Broaden gates after correctness baseline exists. |
 | R-013 | Medium | Public API | `toolkit/api_harmonizer.py` exposes dictionary-heavy adapter metadata and is packaged as production code. | Public contract is unclear and conflicts with typed result-object goal. | Decide whether toolkit is stable API, compatibility layer, or internal CLI support. |
-| R-014 | Medium | Documentation | Root `README.md` still contains `from bocpd.bocpd import BOCPD`. | Quickstart/migration story is inconsistent. | Replace stale example during executable-documentation work. |
-| R-015 | Medium | Scientific traceability | No machine-readable method registry maps methods to sources, deviations, and tests. | Scientific claims are hard to verify and maintain. | Implement method registry and claim audit before scientific changes. |
+| R-014 | Medium | Documentation | Root `README.md` previously contained `from bocpd.bocpd import BOCPD`. | Quickstart/migration examples can drift after package reorganization. | Keep executable-documentation checks aligned with current imports. |
+| R-015 | Medium | Scientific traceability | `docs/science/method_registry.yml` now maps methods to sources, deviations, and tests, but several methods remain below `verified`. | Scientific claims can still overstate evidence if verification status is ignored. | Add independent oracles before marking any method `verified`. |
 | R-016 | Low | Repository hygiene | Empty marker files are expected, but package `__init__.py` files are inconsistent about exports. | Discoverability and API boundaries are unclear. | Normalize package exports after public API contract decision. |
 
 ## Resolved or Partially Resolved Findings
@@ -39,6 +39,9 @@ Severity levels:
 | RR-002 | Resolved before this audit | `setup.py` now delegates to `setup()` and no longer duplicates metadata. |
 | RR-003 | Partially resolved | CI now has a `quality` job and builds distributions, but type/lint scope remains deliberately narrow. |
 | RR-004 | Partially resolved | Runtime dependencies are declared in `pyproject.toml`; `requirements.txt` still duplicates them. |
+| RR-005 | Partially resolved | Scientific method registry and claim audit now exist; independent scientific oracles are still pending. |
+| RR-006 | Partially resolved | Unsupported active benchmark/JOSS/PyPI claims were rewritten or removed from the main documentation path. |
+| RR-007 | Resolved | Root `README.md` no longer contains the stale `from bocpd.bocpd import BOCPD` import. |
 
 ## Blockers Before External Scientific Readiness
 

@@ -14,6 +14,9 @@ from numpy.typing import NDArray
 from ...core.datatypes import ChangePointResult
 from .._base import BaseDetector
 
+# Scientific traceability:
+# - Manouchehri and Bouguila (2023), doi:10.3390/s23031390.
+# - Registry entry: docs/science/method_registry.yml, method id "sd_hmm".
 
 ArrayF = NDArray[np.floating]
 ArrayI = NDArray[np.integer]
@@ -201,7 +204,8 @@ class _SDHMM:
         * E-step: forward–backward with emission log-likelihood at current params.
         * M-step: Dirichlet posteriors for pi, A; MAP gradient steps for alpha/beta.
 
-    Reference: SD-HMM idea and SD pdf from Manouchehri & Bouguila (Sensors 2023). :contentReference[oaicite:1]{index=1}
+    Reference: SD-HMM idea and scaled-Dirichlet density from Manouchehri and
+    Bouguila (2023).
     """
 
     def __init__(self, cfg: SDHMMConfig) -> None:

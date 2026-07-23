@@ -1,6 +1,12 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- Added scientific method traceability and claim-audit documentation.
+
+### Changed
+- Replaced unsupported benchmark, citation, and publication-scope claims with
+  evidence-first status notes.
 
 ## [0.1.1] - 2026-07-23
 ### Fixed
