@@ -3,7 +3,7 @@
   "@type": "SoftwareSourceCode",
   "name": "ChangePointLab",
   "description": "Python toolkit unifying BOCPD, PELT, E-Divisive, kernel methods, HMM/HSMM, SD-HMM, and within-period changepoint detection methods.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "https://spdx.org/licenses/MIT.html",
   "codeRepository": "https://github.com/DiogoRibeiro7/ChangePointLab",
   "issueTracker": "https://github.com/DiogoRibeiro7/ChangePointLab/issues",
@@ -12,6 +12,7 @@
   "softwareRequirements": [
     "python >=3.10",
     "numpy >=1.21",
+    "pandas >=1.5",
     "matplotlib >=3.3"
   ],
   "keywords": [

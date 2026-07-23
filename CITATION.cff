@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use ChangePointLab, please cite the archived release."
 title: "ChangePointLab: A Unified Python Toolkit for Changepoint Detection"
-version: "0.1.0"
+version: "0.1.1"
 date-released: 2026-07-23
 authors:
   - family-names: Ribeiro
@@ -18,7 +18,7 @@ abstract: |
   Detection, Pruned Exact Linear Time segmentation, energy-distance divisive algorithms,
   Hidden Markov and semi-Markov models, state-dependent HMMs for compositional data,
   and within-period detectors for seasonal signals. A consistent API, lightweight
-  NumPy dependency, and extensive validation utilities allow researchers to
+  runtime dependencies, and extensive validation utilities allow researchers to
   prototype, compare, and combine methods across binary, continuous, multivariate,
   periodic, and compositional time series. The toolkit ships with synthetic data
   generators, evaluation metrics, visualization helpers, and a command-line

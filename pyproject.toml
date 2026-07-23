@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "changepoint-lab"
-version = "0.1.0"
+version = "0.1.1"
 description = "ChangePointLab: a unified Python toolkit for changepoint detection in time series."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -30,7 +30,9 @@ classifiers = [
 ]
 # Minimal runtime deps; matplotlib kept optional via extras
 dependencies = [
-  "numpy>=1.21"
+  "numpy>=1.21",
+  "pandas>=1.5",
+  "matplotlib>=3.3"
 ]
 
 [project.optional-dependencies]
