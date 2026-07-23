@@ -3,6 +3,8 @@
 ## [Unreleased]
 ### Added
 - Added scientific method traceability and claim-audit documentation.
+- Added deterministic baseline fixtures and characterization tests for public
+  wrappers and low-level algorithm entry points.
 
 ### Changed
 - Replaced unsupported benchmark, citation, and publication-scope claims with

@@ -14,13 +14,13 @@ Severity levels:
 
 | ID | Severity | Category | Evidence | Risk | Required next action |
 | --- | --- | --- | --- | --- | --- |
-| R-001 | Critical | API correctness | `KernelCPD(penalty=1.0).fit_predict(...)` failed with `AttributeError: 'tuple' object has no attribute 'K'` | Public top-level estimator is exported but broken on its default path. | Add characterization test, decide expected wrapper contract, then fix in the KernelCPD workstream. |
+| R-001 | Critical | API correctness | `KernelCPD(penalty=1.0).fit_predict(...)` failed with `AttributeError: 'tuple' object has no attribute 'K'`; `tests/fixtures/baseline/current_outputs.json` records this as `suspected_bug`. | Public top-level estimator is exported but broken on its default path. | Fix in the KernelCPD workstream using the independent tiny kernel oracle. |
 | R-002 | Critical | Scientific correctness | `changepoint_lab/algorithms/bayesian/bocpd/likelihoods.py` has TODO placeholders for `PoissonGamma.predictive_prob`, `PoissonGamma.update_*`, and `GaussianNIW` methods. | Documentation or API may imply count/Gaussian BOCPD support that is not implemented. | Mark unsupported likelihoods explicitly or implement with independent oracle tests. |
 | R-003 | Critical | Scientific correctness | BOCPD wrapper extracts changepoints as `cp_prob > 0.5`; prior audit notes scaled probabilities. | Reported probabilities and detected events may not correspond to canonical posterior semantics. | Freeze current behavior, derive canonical formulas, add calibration/oracle tests. |
 | R-004 | High | API correctness | `changepoint_lab.bocpd` is used in `paper.md`, but `getattr(changepoint_lab, "bocpd")` raises `AttributeError`. | Published examples can fail for users. | Update docs after preserving stale claim in claim audit; add compatibility test or documented removal. |
 | R-005 | High | Packaging/API | Packaged modules `changepoint_lab.examples.edivisive_example`, `hsmm_example`, `kcp_example`, and `kcp_rff_example` timed out on import; `sdhmm_mix_vi_example` failed on import. | Installed package contains importable modules with top-level execution or errors. | Move runnable example code behind `main()` guards or remove examples from package distribution. |
 | R-006 | High | Scientific correctness | Within-period RJMCMC uses `np.random.seed` and `random.seed`; proposals rely on module-level `random`. | Hidden global RNG state can break reproducibility and composition. | Characterize current seeded behavior, then move to explicit generator/state objects. |
-| R-007 | High | Scientific correctness | Within-period prior/proposal details are not independently verified; prior audit identified Poisson lambda and reverse-proposal issues. | Sampler may not target the stated posterior distribution. | Build paper-derived and brute-force small-state oracles before changing behavior. |
+| R-007 | High | Scientific correctness | Within-period prior/proposal details are not independently verified; prior audit identified Poisson lambda and reverse-proposal issues; a tiny `N=4, l=1` seeded fixture raises `ValueError`. | Sampler may not target the stated posterior distribution. | Build paper-derived and brute-force small-state oracles before changing behavior. |
 | R-008 | High | Documentation | `docs/comparisons/benchmark_report.md` previously contained placeholder image URLs, version `v1.0.0`, and strong superiority claims. | Users may rely on unsupported performance and adoption claims if old claims are restored without evidence. | Keep benchmark claims blocked until generated artifacts exist. |
 | R-009 | High | Release metadata | `docs/zenodo_metadata.md` previously said to cite an accompanying JOSS paper and had "Zenodo DOI assigned on release" prose. | Citation guidance can drift from current "Zenodo only, no JOSS" release scope. | Keep release metadata aligned before each Zenodo release. |
 | R-010 | Medium | Packaging | `requirements.txt` duplicates runtime dependencies already declared in `pyproject.toml`. | Dependency drift can recur. | Decide whether to remove it or generate it from project metadata in dependency-audit work. |
@@ -30,6 +30,8 @@ Severity levels:
 | R-014 | Medium | Documentation | Root `README.md` previously contained `from bocpd.bocpd import BOCPD`. | Quickstart/migration examples can drift after package reorganization. | Keep executable-documentation checks aligned with current imports. |
 | R-015 | Medium | Scientific traceability | `docs/science/method_registry.yml` now maps methods to sources, deviations, and tests, but several methods remain below `verified`. | Scientific claims can still overstate evidence if verification status is ignored. | Add independent oracles before marking any method `verified`. |
 | R-016 | Low | Repository hygiene | Empty marker files are expected, but package `__init__.py` files are inconsistent about exports. | Discoverability and API boundaries are unclear. | Normalize package exports after public API contract decision. |
+| R-017 | High | API correctness | HSMM core Viterbi baseline has changepoint `[2]`, but the public wrapper baseline reports `[0, 2, 2]`. | Public wrapper can emit duplicate or zero-derived changepoints from sparse duration-end indicators. | Fix wrapper conversion after preserving compatibility notes and migration impact. |
+| R-018 | High | API correctness | `SDHMMMixVI` tiny fixture raises `TypeError: 'tuple' object does not support item assignment`. | Exported estimator cannot complete a minimal fit. | Change internal parameter update to avoid tuple item assignment and add corrected oracle coverage. |
 
 ## Resolved or Partially Resolved Findings
 
@@ -42,6 +44,7 @@ Severity levels:
 | RR-005 | Partially resolved | Scientific method registry and claim audit now exist; independent scientific oracles are still pending. |
 | RR-006 | Partially resolved | Unsupported active benchmark/JOSS/PyPI claims were rewritten or removed from the main documentation path. |
 | RR-007 | Resolved | Root `README.md` no longer contains the stale `from bocpd.bocpd import BOCPD` import. |
+| RR-008 | Partially resolved | Baseline fixtures and tests now capture current outputs, warnings, exceptions, and independent tiny oracles before corrective refactoring. |
 
 ## Blockers Before External Scientific Readiness
 
