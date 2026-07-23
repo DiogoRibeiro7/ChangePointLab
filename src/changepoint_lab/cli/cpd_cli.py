@@ -151,8 +151,13 @@ def run_edivisive(args) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         min_size=args.min_size,
         R=args.R,
         significance=args.significance,
+        max_cps=args.max_cps,
+        progress=args.progress,
+        n_jobs=args.n_jobs,
         resample=args.resample,
         block_size=args.block_size,
+        chunk_size=args.chunk_size,
+        use_memmap=args.use_memmap,
         seed=args.seed,
     )
 
@@ -499,6 +504,9 @@ def create_parser() -> argparse.ArgumentParser:
     ed_parser.add_argument("--min-size", type=int, default=30, help="Minimum segment size")
     ed_parser.add_argument("--R", type=int, default=499, help="Number of permutations")
     ed_parser.add_argument("--significance", type=float, default=0.05, help="Significance level")
+    ed_parser.add_argument("--max-cps", type=int, help="Maximum accepted changepoints")
+    ed_parser.add_argument("--progress", action="store_true", help="Print deterministic progress lines")
+    ed_parser.add_argument("--n-jobs", type=int, default=1, help="Reserved; only 1 is supported")
     ed_parser.add_argument(
         "--resample",
         choices=["iid", "block-permutation", "circular-block-bootstrap"],
@@ -507,6 +515,10 @@ def create_parser() -> argparse.ArgumentParser:
     )
     ed_parser.add_argument(
         "--block-size", type=int, help="Block size for bootstrap (auto if not set)"
+    )
+    ed_parser.add_argument("--chunk-size", type=int, help="Pairwise-distance row chunk size")
+    ed_parser.add_argument(
+        "--use-memmap", action="store_true", help="Store pairwise distances on disk"
     )
 
     # Kernel CPD

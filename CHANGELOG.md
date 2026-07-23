@@ -1,6 +1,15 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- Added independent E-Divisive energy-statistic, resampling, null-calibration,
+  and power-curve validation tests.
+- Exposed E-Divisive significance, recursion, resampling, chunking, memmap,
+  progress, and sequential execution controls through the wrapper and CLI.
+
+### Fixed
+- Corrected E-Divisive split search so the last admissible split
+  `m - min_size` is considered.
 
 ## [0.1.14] - 2026-07-23
 ### Added

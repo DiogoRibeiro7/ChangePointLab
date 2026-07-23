@@ -85,6 +85,10 @@ class AlgorithmRegistry:
                 "significance": "Significance level",
                 "resample": "Resampling method",
                 "block_size": "Block size for bootstrap",
+                "chunk_size": "Pairwise-distance row chunk size",
+                "use_memmap": "Store pairwise distances on disk",
+                "max_cps": "Maximum accepted changepoints",
+                "n_jobs": "Reserved sequential execution control",
                 "seed": "Random seed",
             },
             "returns": "ChangePointResult with detected change points",
@@ -221,6 +225,10 @@ class AlgorithmRegistry:
         significance: float = 0.05,
         resample: str = "circular-block-bootstrap",
         block_size: Optional[int] = None,
+        chunk_size: Optional[int] = None,
+        use_memmap: bool = False,
+        max_cps: Optional[int] = None,
+        n_jobs: int = 1,
         seed: Optional[int] = None,
     ) -> ChangePointResult:
         """
@@ -253,9 +261,19 @@ class AlgorithmRegistry:
         if not MODULES_AVAILABLE:
             raise ImportError("edivisive module not available")
 
-        # Call original function
         result = edivisive(
-            data, alpha, min_size, R, significance, resample, block_size, seed
+            data,
+            alpha=alpha,
+            min_size=min_size,
+            R=R,
+            significance=significance,
+            max_cps=max_cps,
+            seed=seed,
+            n_jobs=n_jobs,
+            resample=resample,
+            block_size=block_size,
+            chunk_size=chunk_size,
+            use_memmap=use_memmap,
         )
 
         # Convert to standard result
@@ -269,7 +287,7 @@ class AlgorithmRegistry:
         return ChangePointResult(
             change_points=change_points,
             segments=segments,
-            scores=list(result.test_statistics) if result.test_statistics is not None else None,
+            scores=[float(split.statistic) for split in result.splits],
             cost=0.0,
             model_name="edivisive",
             parameters={
@@ -278,6 +296,12 @@ class AlgorithmRegistry:
                 "R": R,
                 "significance": significance,
                 "resample": resample,
+                "block_size": block_size,
+                "chunk_size": chunk_size,
+                "use_memmap": use_memmap,
+                "max_cps": max_cps,
+                "n_jobs": n_jobs,
+                "seed": seed,
             },
         )
 

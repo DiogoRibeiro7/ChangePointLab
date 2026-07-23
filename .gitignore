@@ -7,6 +7,12 @@ dist/
 
 # Sphinx build artifacts
 /docs/build/
+/docs/_build/
+
+# Tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 
 # Virtual environments
 .venv/

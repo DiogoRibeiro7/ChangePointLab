@@ -197,13 +197,14 @@
       ],
       "public_api": ["changepoint_lab.EDivisive", "changepoint_lab.edivisive"],
       "tests": [
+        "tests/unit/test_edivisive_statistics.py",
         "tests/unit/test_edivisive_memmap.py",
         "tests/unit/test_algorithm_parity.py",
         "tests/integration/test_methods_interoperability.py"
       ],
       "documentation_paths": ["docs/api/edivisive.rst", "docs/guide/nonparametric_methods.md"],
-      "reproduction_artifact": "No independent energy-statistic oracle yet.",
-      "deviations": ["Adds block permutation and circular block bootstrap options."],
+      "reproduction_artifact": "Independent energy-statistic, split-search, resampling, null-calibration, and power-curve fixtures in tests/unit/test_edivisive_statistics.py.",
+      "deviations": ["Adds block permutation and circular block bootstrap options; external implementation parity remains pending."],
       "extensions": ["Optional memmap distance storage"],
       "verification_status": "partially_verified",
       "mysense_connection": "Distribution-free offline comparison method for event summaries."

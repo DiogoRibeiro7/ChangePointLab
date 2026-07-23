@@ -18,13 +18,33 @@ class EDivisive(BaseDetector):
     min_size: int = 10
     R: int = 199
     seed: int | None = None
+    significance: float = 0.05
+    max_cps: int | None = None
+    progress: bool = False
+    n_jobs: int = 1
+    resample: str = "iid"
+    block_size: int | None = None
+    chunk_size: int | None = None
+    use_memmap: bool = False
 
     _result: EDivisiveResult | None = None
 
     def fit(self, x: np.ndarray) -> EDivisive:
         self._validate_input(x)
         self._result = _edivisive(
-            x, alpha=self.alpha, min_size=self.min_size, R=self.R, seed=self.seed
+            x,
+            alpha=self.alpha,
+            min_size=self.min_size,
+            R=self.R,
+            significance=self.significance,
+            max_cps=self.max_cps,
+            seed=self.seed,
+            progress=self.progress,
+            n_jobs=self.n_jobs,
+            resample=self.resample,
+            block_size=self.block_size,
+            chunk_size=self.chunk_size,
+            use_memmap=self.use_memmap,
         )
         return self
 

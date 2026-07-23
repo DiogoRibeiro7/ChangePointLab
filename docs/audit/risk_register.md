@@ -55,11 +55,12 @@ Severity levels:
 | RR-023 | Partially resolved | BOCPD now accepts explicit likelihood instances, preserves them across `reset()`, implements scalar `PoissonGamma`, supports `update_many`, missing-observation transitions, and checkpoint/resume state dictionaries. Gaussian/Student-t BOCPD remains unsupported. |
 | RR-024 | Partially resolved | PELT now matches an independent exhaustive optimal-partitioning oracle for bundled Gaussian known-variance, Gaussian unknown-variance, and beta-binomial costs on small deterministic, exhaustive, and random cases. Penalty units and current exact candidate-retention behavior are documented; external-library parity remains unavailable in the local environment. |
 | RR-025 | Partially resolved | Kernel CPD now validates dense Gram matrices, exposes exact/RFF controls through `KernelCPD`, retains kernel and approximation metadata, fixes changepoint bandwidth-CV scoring, and has independent linear/RBF/RFF oracle tests. Broader penalty-selection and large-scale approximation benchmarks remain pending. |
+| RR-026 | Partially resolved | E-Divisive now has independent energy-statistic and split-search oracles, deterministic resampling-path tests, small null-calibration and power-curve tests, public wrapper/CLI resampling controls, and corrected admissible split masking. External implementation parity and broad multiple-testing calibration remain pending. |
 
 ## Blockers Before External Scientific Readiness
 
 1. Fix or document broken public compatibility paths such as legacy `bocpd`.
 2. Establish method-to-source traceability and claim audit.
 3. Freeze current behavior with golden characterization tests before correcting scientific algorithms.
-4. Add independent oracles for E-Divisive, HSMM, and SD-HMM, and broaden existing within-period and KCP/RFF oracle coverage.
+4. Add independent oracles for HSMM and SD-HMM, and broaden existing within-period, KCP/RFF, and E-Divisive oracle coverage.
 5. Replace unsupported docs and paper claims with executable evidence.

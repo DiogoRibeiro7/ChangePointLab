@@ -56,6 +56,8 @@ def _choose_block_size(m: int, user_b: Optional[int]) -> int:
         b = int(np.ceil(1.5 * (m ** (1.0 / 3.0))))
     else:
         b = int(user_b)
+        if b < 2:
+            raise ValueError("block_size must be >= 2 when provided.")
     return max(2, min(b, m))
 
 
@@ -128,6 +130,8 @@ def _pairwise_energy_dist_alpha(
     X = np.asarray(X, dtype=float)
     if X.ndim == 1:
         X = X[:, None]
+    if not np.all(np.isfinite(X)):
+        raise ValueError("X must contain only finite values.")
 
     m = X.shape[0]
     if chunk_size is None or chunk_size <= 0:
@@ -242,9 +246,11 @@ def _best_split_statistic(D: ArrayF, min_size: int) -> Tuple[int, float, ArrayF]
     # Mask out invalid splits that violate min_size
     mask = np.ones_like(E, dtype=bool)
     mask[: max(0, min_size - 1)] = False
-    mask[m - min_size - 1 :] = False
+    mask[m - min_size :] = False
 
     E_masked = np.where(mask, E, -np.inf)
+    # np.argmax is deterministic and returns the first maximizer, so ties choose
+    # the earliest admissible right-exclusive split.
     a_star_rel = int(np.argmax(E_masked)) + 1  # +1 to convert to split index
     E_star = float(E_masked[a_star_rel - 1])
     # Put NaN for plotting outside valid region
@@ -286,6 +292,7 @@ def edivisive(
     max_cps: Optional[int] = None,
     seed: Optional[int] = 123,
     progress: bool = False,
+    n_jobs: int = 1,
     # --- new options ---
     resample: str = "iid",                 # "iid" | "block-permutation" | "circular-block-bootstrap"
     block_size: Optional[int] = None,      # block length for block-based resampling
@@ -312,7 +319,11 @@ def edivisive(
     seed : Optional[int]
         RNG seed.
     progress : bool
-        Print short progress lines.
+        Print deterministic progress lines in breadth-first segment-queue order.
+    n_jobs : int, default=1
+        Reserved parallel execution control. Only sequential execution is
+        currently implemented; values other than 1 are rejected to avoid
+        undefined random-stream ordering.
     resample : {"iid", "block-permutation", "circular-block-bootstrap"}, default="iid"
         Resampling scheme for the null:
           - "iid": full permutation (independent observations).
@@ -332,14 +343,22 @@ def edivisive(
     if X_arr.ndim == 1:
         X_arr = X_arr[:, None]
     n, d = X_arr.shape
+    if min_size < 1:
+        raise ValueError("min_size must be >= 1.")
     if n < 2 * min_size:
         raise ValueError(f"Need at least 2*min_size observations; got n={n}, min_size={min_size}.")
+    if not np.all(np.isfinite(X_arr)):
+        raise ValueError("X must contain only finite values.")
     if not (0.0 < alpha <= 2.0):
         raise ValueError("alpha must be in (0, 2].")
     if R < 1:
         raise ValueError("R must be >= 1.")
     if not (0.0 < significance < 1.0):
         raise ValueError("significance must be in (0,1).")
+    if max_cps is not None and max_cps < 1:
+        raise ValueError("max_cps must be >= 1 when provided.")
+    if n_jobs != 1:
+        raise ValueError("n_jobs must be 1; parallel E-Divisive is not implemented.")
     if resample not in {"iid", "block-permutation", "circular-block-bootstrap"}:
         raise ValueError("resample must be one of {'iid','block-permutation','circular-block-bootstrap'}.")
 
@@ -442,6 +461,7 @@ def edivisive(
             "seed": seed,
             "rng": "numpy.random.Generator",
             "R": R,
+            "n_jobs": n_jobs,
             "resample": resample,
             "block_size": block_size,
             "chunk_size": chunk_size,
