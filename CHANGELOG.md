@@ -1,11 +1,17 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.1.4] - 2026-07-23
 ### Changed
 - Reduced the core runtime dependency set to NumPy and moved Matplotlib and
   pandas behind optional extras with lazy import errors.
 - Added Python 3.10 through 3.14 compatibility policy and CI coverage for
   minimum and newest core dependency combinations.
+
+### Fixed
+- Recorded the Python 3.14 baseline exception text for the known within-period
+  tiny-input failure path.
 
 ## [0.1.3] - 2026-07-23
 ### Added

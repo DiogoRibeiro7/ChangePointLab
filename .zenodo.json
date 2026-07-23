@@ -1,6 +1,6 @@
 {
   "title": "ChangePointLab: A Unified Python Toolkit for Changepoint Detection",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publication_date": "2026-07-23",
   "description": "ChangePointLab is an open-source Python library that unifies several changepoint detection approaches behind a common package interface. The current package includes Bayesian Online Change Point Detection for Bernoulli streams, Pruned Exact Linear Time segmentation, energy-distance divisive algorithms, hidden Markov and semi-Markov models, state-dependent HMMs for compositional data, kernel-based methods, and within-period detectors for seasonal binary signals. Documentation, examples, tests, and command-line entry points support source-based installation and Zenodo archival releases.",
   "creators": [
