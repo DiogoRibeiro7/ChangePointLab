@@ -106,7 +106,8 @@ plt.show()
 ### Method 2: BOCPD for Sequential Detection
 
 Now let's try Bayesian Online Changepoint Detection on a binary indicator stream.
-The current BOCPD wrapper uses the implemented Beta-Bernoulli likelihood path.
+The default BOCPD wrapper uses the implemented Beta-Bernoulli likelihood path;
+scalar count streams can instead pass `PoissonGamma`.
 
 ```python
 negative_return = (returns < 0).astype(int)

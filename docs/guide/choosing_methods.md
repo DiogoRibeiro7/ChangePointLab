@@ -159,6 +159,7 @@ print("Patient state sequence:", states)
 import numpy as np
 from changepoint_lab import BOCPD
 from changepoint_lab.algorithms.bayesian.bocpd import (
+    BOCPDAlertConfig,
     BOCPDConfig,
     ConstantHazard,
 )
@@ -166,12 +167,15 @@ from changepoint_lab.algorithms.bayesian.bocpd import (
 def process_temperature_stream(sensor_id):
     detector = BOCPD(
         hazard=ConstantHazard(mean_run_length=1000),
-        config=BOCPDConfig(max_run_length=2000),
+        cfg=BOCPDConfig(
+            max_run_length=2000,
+            alert_config=BOCPDAlertConfig(probability_threshold=0.8),
+        ),
     )
 
     for batch in get_sensor_data_stream(sensor_id):
-        detector.update(batch)
-        cp_prob = detector.get_changepoint_probability()
+        result = detector.update_many(batch)
+        cp_prob = result.cp_prob[-1]
 
         if cp_prob > 0.8:
             send_alert(

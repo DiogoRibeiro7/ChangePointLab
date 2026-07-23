@@ -11,9 +11,9 @@ metadata before unsupported prose is rewritten. Classification values are
 | C-001 | `README.md` | Install with `pip install changepoint-lab` and PyPI badge. | false | The current release work is GitHub/Zenodo only; PyPI publishing is out of scope. Rewrite installation to source/GitHub archive paths. |
 | C-002 | `README.md` | Migration example imports `from bocpd.bocpd import BOCPD`. | obsolete | The package exposes `changepoint_lab.BOCPD`; legacy `changepoint_lab.bocpd` does not resolve. Replace with current imports. |
 | C-003 | `docs/zenodo_metadata.md` | Cite an accompanying JOSS paper. | false | There is no current JOSS submission scope. Replace with Zenodo/CITATION.cff citation guidance only. |
-| C-004 | `docs/zenodo_metadata.md` | BOCPD usage runs on `np.random.randn` and exposes `result.changepoints`. | false | Current BOCPD path expects binary/Bernoulli observations and returns `BOCPDResult.cp_prob`, `map_run_length`, and `pred_mean`. Replace usage. |
+| C-004 | `docs/zenodo_metadata.md` | BOCPD usage runs on `np.random.randn` and exposes `result.changepoints`. | false | Current BOCPD paths support binary/Bernoulli or scalar Poisson-count observations and return `BOCPDResult.cp_prob`, `map_run_length`, and `pred_mean`. Replace usage. |
 | C-005 | `docs/comparisons/benchmark_report.md` | Version `v1.0.0`, placeholder images, and superior benchmark numbers. | false | No generated benchmark artifacts were found for these claims. Replace the report with a benchmark-status note and require generated evidence before numeric claims. |
-| C-006 | `docs/bocpd_README.md` | Gaussian and Poisson BOCPD extensions are available. | false | `PoissonGamma` and `GaussianNIW` methods are placeholders. Limit active documentation to Beta-Bernoulli. |
+| C-006 | `docs/bocpd_README.md` | Gaussian and Poisson BOCPD extensions are available. | partially_verified | Scalar `PoissonGamma` is now implemented and tested; Gaussian/Student-t BOCPD remains unsupported and should stay out of active documentation. |
 | C-007 | `docs/bocpd_README.md` | Hazard extensions significantly improve periodic detection performance. | aspirational | Hazard extensions exist, but no reproducible benchmark evidence is present. Rewrite as available features without performance superiority. |
 | C-008 | `docs/bocpd_README.md` | Install package as `bocpd` from PyPI and run `python -m bocpd_cli`. | false | Active distribution name is `changepoint-lab`; PyPI is out of scope; console entry point is `bocpd-cli`. Rewrite. |
 | C-009 | `paper.md` | Manuscript-style claims of optimized implementations, broad applications, and better performance. | aspirational | No current publication target or benchmark evidence. Replace root paper text with a scholarly-status note pointing to this audit and registry. |
@@ -29,7 +29,8 @@ metadata before unsupported prose is rewritten. Classification values are
 - Source/GitHub installation is now the documented path; PyPI publishing remains out of scope.
 - Active citation guidance is Zenodo/CITATION.cff only.
 - Unsupported benchmark numbers and placeholder images are removed from active documentation.
-- BOCPD active documentation is limited to the implemented Beta-Bernoulli path.
+- BOCPD active documentation is limited to implemented Beta-Bernoulli and scalar
+  Poisson-Gamma paths.
 - JOSS preparation material is no longer active documentation.
 - The sliced Poisson process is recorded as research scope but not implemented.
 

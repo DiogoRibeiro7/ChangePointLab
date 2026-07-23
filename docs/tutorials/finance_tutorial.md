@@ -14,7 +14,8 @@ returns = prices.pct_change().dropna()
 
 ## Volatility Changepoint Analysis
 - **PELT** with a Gaussian cost on log returns to find volatility regimes
-- **BOCPD** with Student‑t likelihood for heavy‑tailed returns
+- **BOCPD** only after transforming the problem to a supported binary or count
+  stream; Student-t BOCPD is not currently implemented
 - **E‑Divisive** to detect nonparametric shifts across multiple assets
 
 ## Portfolio Rebalancing Based on Detected Regimes

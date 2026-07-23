@@ -10,6 +10,12 @@ BOCPD
 .. autoclass:: changepoint_lab.algorithms.bayesian.bocpd.BOCPDAlertConfig
    :members:
 
+.. autoclass:: changepoint_lab.algorithms.bayesian.bocpd.BetaBernoulli
+   :members:
+
+.. autoclass:: changepoint_lab.algorithms.bayesian.bocpd.PoissonGamma
+   :members:
+
 .. autoclass:: changepoint_lab.algorithms.bayesian.bocpd.ConstantHazard
    :members:
 

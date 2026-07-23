@@ -17,6 +17,13 @@ Bayesian Online Changepoint Detection (BOCPD) requires several hyperparameters t
 prior = dict(alpha=2, beta=8)  # baseline success rate 0.2
 ```
 
+## Likelihood Selection
+- **`BetaBernoulli(alpha0, beta0)`**: binary observations. This is the default
+  when no likelihood is passed.
+- **`PoissonGamma(shape0, rate0)`**: scalar nonnegative integer count
+  observations.
+- Gaussian and Student-t BOCPD likelihoods are not active public features yet.
+
 ## Hazard Function Selection
 - **ConstantHazard**: For memoryless changepoints.
 - **ScheduledHazard**: Use when changes align with known times.
@@ -48,6 +55,7 @@ prior = dict(alpha=2, beta=8)  # baseline success rate 0.2
 |-----------|---------------|---------|-------|
 | `mean_run_length` | 10–1000 | 200 | Memoryless changepoint rate |
 | `alpha`, `beta` | 0.1–100 | 1 | Prior counts for successes/failures |
+| `shape0`, `rate0` | 0.1–100 | 1 | Prior for Poisson-Gamma count rates |
 | `max_run_length` | 50–5000 | 1000 | Posterior truncation |
 | `prune_epsilon` | 0–1e-3 | 0.0 | Optional posterior-state pruning |
 | `probability_threshold` | 0–1 | None | Explicit alert threshold |

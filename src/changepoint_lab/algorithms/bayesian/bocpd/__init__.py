@@ -13,6 +13,7 @@ from .core import (
     ScheduledHazard,
     extract_changepoint_alerts,
 )
+from .likelihoods import BetaBernoulli, ConjugateLikelihood, PoissonGamma
 from ....core.datatypes import OnlineProbabilityResult
 from ..._base import BaseDetector
 
@@ -27,7 +28,7 @@ class BOCPD(_BOCPD, BaseDetector):
 
     def get_params(self) -> dict[str, object]:
         """Return constructor parameters for the estimator-style wrapper."""
-        return {"hazard": self.hazard, "cfg": self.cfg}
+        return {"hazard": self.hazard, "cfg": self.cfg, "likelihood": self.lik}
 
     def predict(self, x: np.ndarray | None = None) -> OnlineProbabilityResult:
         if x is not None:
@@ -73,6 +74,9 @@ __all__ = [
     "BOCPDAlertConfig",
     "BOCPDConfig",
     "BOCPDResult",
+    "ConjugateLikelihood",
+    "BetaBernoulli",
+    "PoissonGamma",
     "Hazard",
     "ConstantHazard",
     "BoostedBoundaryHazard",

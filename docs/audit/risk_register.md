@@ -14,7 +14,7 @@ Severity levels:
 
 | ID | Severity | Category | Evidence | Risk | Required next action |
 | --- | --- | --- | --- | --- | --- |
-| R-002 | Critical | Scientific correctness | `src/changepoint_lab/algorithms/bayesian/bocpd/likelihoods.py` has TODO placeholders for `PoissonGamma.predictive_prob`, `PoissonGamma.update_*`, and `GaussianNIW` methods. | Documentation or API may imply count/Gaussian BOCPD support that is not implemented. | Mark unsupported likelihoods explicitly or implement with independent oracle tests. |
+| R-002 | Medium | Scientific correctness | `src/changepoint_lab/algorithms/bayesian/bocpd/likelihoods.py` still contains `GaussianNIW` placeholder methods. | Users may infer Gaussian BOCPD support from internal class names if not kept out of public docs. | Keep Gaussian/Student-t BOCPD undocumented as supported until implemented with independent oracle tests. |
 | R-004 | High | API correctness | `changepoint_lab.bocpd` is used in `paper.md`, but `getattr(changepoint_lab, "bocpd")` raises `AttributeError`. | Published examples can fail for users. | Update docs after preserving stale claim in claim audit; add compatibility test or documented removal. |
 | R-008 | High | Documentation | `docs/comparisons/benchmark_report.md` previously contained placeholder image URLs, version `v1.0.0`, and strong superiority claims. | Users may rely on unsupported performance and adoption claims if old claims are restored without evidence. | Keep benchmark claims blocked until generated artifacts exist. |
 | R-009 | High | Release metadata | `docs/zenodo_metadata.md` previously said to cite an accompanying JOSS paper and had "Zenodo DOI assigned on release" prose. | Citation guidance can drift from current "Zenodo only, no JOSS" release scope. | Keep release metadata aligned before each Zenodo release. |
@@ -52,6 +52,7 @@ Severity levels:
 | RR-020 | Partially resolved | A one-command within-period reproduction workflow now generates paper-style synthetic scenarios, MySense-style synthetic sensor outputs, posterior summaries, diagnostics, prior sensitivity, and discrepancy notes; notebook execution is covered by tests. |
 | RR-021 | Partially resolved | Sliced Poisson process changepoint detection is now exposed as a dedicated API with B-spline IHPP segment costs, PELT optimization, exposure intervals, independent marked fitting, simulations, diagnostics, and focused tests. |
 | RR-022 | Partially resolved | BOCPD now defaults to the unscaled run-length posterior, moves changepoint alerts into `BOCPDAlertConfig`, deprecates `cp_scale`, and includes hand-computed, independent-recursion, normalization, alert-policy, and approximation diagnostics tests. Broader likelihood support remains pending. |
+| RR-023 | Partially resolved | BOCPD now accepts explicit likelihood instances, preserves them across `reset()`, implements scalar `PoissonGamma`, supports `update_many`, missing-observation transitions, and checkpoint/resume state dictionaries. Gaussian/Student-t BOCPD remains unsupported. |
 
 ## Blockers Before External Scientific Readiness
 

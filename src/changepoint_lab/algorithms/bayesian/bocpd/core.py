@@ -250,15 +250,26 @@ class BOCPDResult:
 
 class BOCPD:
     """
-    Bayesian Online Changepoint Detection (Adams & MacKay, 2007) for Bernoulli {0,1} data
-    with a pluggable conjugate likelihood (here: Beta–Bernoulli).
+    Bayesian Online Changepoint Detection (Adams & MacKay, 2007) with a
+    pluggable scalar conjugate likelihood.
 
     Hazard H(r, t) controls the prior CP probability; use ConstantHazard(λ) for the classic model.
     """
 
-    def __init__(self, hazard: Hazard, cfg: BOCPDConfig = BOCPDConfig()) -> None:
+    def __init__(
+        self,
+        hazard: Hazard,
+        cfg: BOCPDConfig = BOCPDConfig(),
+        *,
+        likelihood: ConjugateLikelihood | None = None,
+    ) -> None:
         self.hazard = hazard
         self.cfg = cfg
+        self._likelihood_template = (
+            likelihood.clone()
+            if likelihood is not None
+            else BetaBernoulli(cfg.alpha0, cfg.beta0)
+        )
 
         # Number of run-length states (R = max_run_length + 1)
         self.R: int = int(cfg.max_run_length) + 1
@@ -267,8 +278,8 @@ class BOCPD:
         self.R_prev: ArrayF = np.zeros(self.R, dtype=float)
         self.R_prev[0] = 1.0
 
-        # Conjugate likelihood (Beta–Bernoulli)
-        self.lik: ConjugateLikelihood = BetaBernoulli(cfg.alpha0, cfg.beta0)
+        # Conjugate likelihood state for each run length.
+        self.lik: ConjugateLikelihood = self._likelihood_template.clone()
         self.lik.init_stats(self.R)
 
         # Bookkeeping
@@ -278,10 +289,14 @@ class BOCPD:
     # Expose internal Beta parameters for compatibility with existing tests
     @property
     def alpha(self) -> ArrayF:
+        if not hasattr(self.lik, "stats") or not hasattr(self.lik.stats, "alpha"):
+            raise AttributeError("alpha is only available for BetaBernoulli likelihoods.")
         return self.lik.stats.alpha  # type: ignore[union-attr]
 
     @property
     def beta(self) -> ArrayF:
+        if not hasattr(self.lik, "stats") or not hasattr(self.lik.stats, "beta"):
+            raise AttributeError("beta is only available for BetaBernoulli likelihoods.")
         return self.lik.stats.beta  # type: ignore[union-attr]
 
     # ----------------------- Public API -----------------------
@@ -290,19 +305,32 @@ class BOCPD:
         """Reset the filter to its prior state."""
         self.R_prev.fill(0.0)
         self.R_prev[0] = 1.0
-        self.lik = BetaBernoulli(self.cfg.alpha0, self.cfg.beta0)
+        self.lik = self._likelihood_template.clone()
         self.lik.init_stats(self.R)
         self.t = 0
         self.normalization_issues_ = 0
 
-    def update(self, x_t: int | bool) -> Dict[str, float]:
+    @staticmethod
+    def _is_missing_observation(x_t: Any) -> bool:
+        if x_t is None:
+            return True
+        try:
+            arr = np.asarray(x_t, dtype=float)
+        except (TypeError, ValueError):
+            return False
+        return bool(arr.size > 0 and np.isnan(arr).all())
+
+    def update(self, x_t: Any) -> Dict[str, float]:
         """
         Ingest a single observation and update the run-length posterior online.
 
         Parameters
         ----------
-        x_t : int|bool
-            Observation at time t (0/1).
+        x_t : Any
+            Observation at time t. The configured likelihood defines valid
+            non-missing values. ``None`` and all-NaN numeric values are treated
+            as missing observations: the run-length transition advances, but
+            likelihood sufficient statistics are not updated with data.
 
         Returns
         -------
@@ -313,14 +341,19 @@ class BOCPD:
             "log_evidence" : log normalizer before pruning/top-k approximation
             "approximation_error": removed mass fraction from approximations
         """
-        xi = bool(x_t)
+        missing = self._is_missing_observation(x_t)
 
         # (1) One-step-ahead predictive mean BEFORE consuming x_t
         state_means: ArrayF = self.lik.predictive_mean()        # shape (R,)
-        pred_mean = float(np.dot(self.R_prev, state_means))     # mixture
+        mixture_mean = np.asarray(np.dot(self.R_prev, state_means), dtype=float)
+        pred_mean = float(mixture_mean.reshape(-1)[0])
 
         # (2) Per-state predictive probability for the realized x_t
-        pred: ArrayF = self.lik.predictive_prob(xi)             # shape (R,)
+        pred: ArrayF = (
+            np.ones(self.R, dtype=float)
+            if missing
+            else self.lik.predictive_prob(x_t)
+        )             # shape (R,)
 
         # (3) Hazard per state at time t
         H = np.fromiter(
@@ -340,7 +373,8 @@ class BOCPD:
         # prior predictive, not the posterior predictive of the previous r=0.
         # cp_scale is retained only for compatibility and is not canonical BOCPD.
         cp_mass = float(np.dot(self.R_prev, H))
-        R_next[0] = cp_mass * float(self.lik.prior_predictive_prob(xi))
+        prior_predictive = 1.0 if missing else float(self.lik.prior_predictive_prob(x_t))
+        R_next[0] = cp_mass * prior_predictive
         R_next[0] *= float(self.cfg.cp_scale)
 
         # (5) Normalize robustly (underflow guard, tail pruning, optional top-k)
@@ -361,8 +395,12 @@ class BOCPD:
 
         # (6) Update sufficient statistics for the likelihood
         #     Order matters: grow old segments first, then reset r=0.
-        self.lik.update_growth(xi)   # shift r -> r+1 and add x_t
-        self.lik.update_cp(xi)       # set r=0 with prior + x_t
+        if missing:
+            self.lik.update_growth_missing()
+            self.lik.update_cp_missing()
+        else:
+            self.lik.update_growth(x_t)   # shift r -> r+1 and add x_t
+            self.lik.update_cp(x_t)       # set r=0 with prior + x_t
 
         # (7) Commit
         self.R_prev = R_next
@@ -376,7 +414,7 @@ class BOCPD:
             "approximation_error": float(np.clip(approximation_error, 0.0, 1.0)),
         }
 
-    def run(self, x: Sequence[int | bool]) -> BOCPDResult:
+    def run(self, x: Sequence[Any]) -> BOCPDResult:
         """
         Process a full sequence in one pass (still online internally).
 
@@ -385,6 +423,10 @@ class BOCPD:
         BOCPDResult
         """
         self.reset()
+        return self.update_many(x)
+
+    def update_many(self, x: Sequence[Any]) -> BOCPDResult:
+        """Process a batch without resetting existing online state."""
         T = len(x)
 
         cp_probs = np.empty(T, dtype=float)
@@ -418,8 +460,44 @@ class BOCPD:
                 "prune_epsilon": self.cfg.prune_epsilon,
                 "top_k": self.cfg.top_k,
                 "max_run_length": self.cfg.max_run_length,
+                "likelihood": type(self.lik).__name__,
             },
         )
+
+    def state_dict(self) -> dict[str, Any]:
+        """Return a JSON-compatible checkpoint for the current online state."""
+        return {
+            "kind": "BOCPD",
+            "t": self.t,
+            "R": self.R,
+            "R_prev": self.R_prev.tolist(),
+            "normalization_issues": self.normalization_issues_,
+            "cfg": {
+                "max_run_length": self.cfg.max_run_length,
+                "prune_epsilon": self.cfg.prune_epsilon,
+                "prune_relative": self.cfg.prune_relative,
+                "top_k": self.cfg.top_k,
+                "cp_scale": self.cfg.cp_scale,
+            },
+            "likelihood": self.lik.state_dict(),
+        }
+
+    def load_state_dict(self, state: Mapping[str, Any]) -> None:
+        """Restore an online state produced by :meth:`state_dict`."""
+        if state.get("kind") != "BOCPD":
+            raise ValueError("state kind does not match BOCPD.")
+        if int(state["R"]) != self.R:
+            raise ValueError("state run-length support does not match this model.")
+        self.t = int(state["t"])
+        self.R_prev = np.asarray(state["R_prev"], dtype=float)
+        if self.R_prev.shape != (self.R,):
+            raise ValueError("state R_prev shape does not match this model.")
+        total = float(self.R_prev.sum())
+        if not np.isfinite(total) or total <= 0.0:
+            raise ValueError("state R_prev must contain positive finite mass.")
+        self.R_prev /= total
+        self.normalization_issues_ = int(state.get("normalization_issues", 0))
+        self.lik.load_state_dict(state["likelihood"])
 
     # ------------------- Numerics & pruning -------------------
 

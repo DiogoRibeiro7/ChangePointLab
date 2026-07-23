@@ -1,4 +1,4 @@
-# BOCPD: Bayesian Online Changepoint Detection for Binary Data
+# BOCPD: Bayesian Online Changepoint Detection for Binary and Count Data
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Versions](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
@@ -6,14 +6,19 @@
 
 ## Purpose
 
-BOCPD is a Python implementation of Bayesian Online Changepoint Detection for binary (Bernoulli) data streams. The package adapts the algorithm from Adams and MacKay (2007) and includes hazard functions that can encode domain knowledge about expected changepoint locations.
+BOCPD is a Python implementation of Bayesian Online Changepoint Detection for binary
+(Bernoulli) and scalar count data streams. The package adapts the algorithm from
+Adams and MacKay (2007) and includes hazard functions that can encode domain
+knowledge about expected changepoint locations.
 
 Key innovations:
 - **Flexible hazard functions** for periodic patterns and known boundaries
 - **DST-safe binning** for proper handling of timezone transitions
 - **Numerically stable** algorithms for long sequences
 - **Beta-Bernoulli likelihood** for binary streams
+- **Poisson-Gamma likelihood** for scalar nonnegative integer count streams
 - **Explicit alert extraction** separate from the run-length posterior recursion
+- **Checkpoint/resume support** through `state_dict()` and `load_state_dict()`
 - **Comprehensive visualization** tools and metrics
 
 The canonical default recursion returns `cp_prob[t] = P(r_t = 0 | x_1:t)`.
@@ -66,6 +71,32 @@ alerts = BOCPD(
     BOCPDConfig(alert_config=BOCPDAlertConfig(probability_threshold=0.4)),
 ).fit_predict(x)
 print(alerts.indices)
+```
+
+### Count Stream Example
+```python
+import numpy as np
+from changepoint_lab import BOCPD, BOCPDConfig, ConstantHazard, PoissonGamma
+
+counts = np.array([0, 1, 1, 4, 6, 5])
+model = BOCPD(
+    ConstantHazard(mean_run_length=20),
+    BOCPDConfig(max_run_length=100),
+    likelihood=PoissonGamma(shape0=2.0, rate0=3.0),
+)
+result = model.run(counts)
+print(result.cp_prob)
+```
+
+### Streaming and Resume
+```python
+model = BOCPD(ConstantHazard(mean_run_length=50), BOCPDConfig(max_run_length=200))
+first = model.update_many([0, 0, 1])
+checkpoint = model.state_dict()
+
+resumed = BOCPD(ConstantHazard(mean_run_length=50), BOCPDConfig(max_run_length=200))
+resumed.load_state_dict(checkpoint)
+second = resumed.update_many([1, 1, 0])
 ```
 
 ### Custom Hazard Functions
@@ -123,7 +154,8 @@ You can also use the citation provided by the CITATION.cff file in this reposito
 We welcome contributions to BOCPD! Please see our [contributing guidelines](CONTRIBUTING.md) for details on how to get started.
 
 Key areas for contributions:
-- Implementing additional likelihood models with oracle tests
+- Implementing additional likelihood models, such as Gaussian or Student-t,
+  with oracle tests
 - Adding new hazard functions
 - Improving visualization tools
 - Enhancing documentation and examples

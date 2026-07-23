@@ -22,11 +22,28 @@ print(result.indices)
 
 ## Counts and event times
 
-Previous helpers `bayesian_blocks_counts` and `bayesian_blocks_events` do not yet
-have direct counterparts in `changepoint_lab`. Support for these data types is
-planned through extended BOCPD likelihoods. Until then, applications depending on
-count or event-time segmentation should retain their existing implementation or
-manually discretize data for use with other algorithms.
+Scalar nonnegative count streams can use BOCPD with the Poisson-Gamma
+likelihood:
+
+```python
+from changepoint_lab.algorithms.bayesian.bocpd import (
+    BOCPD,
+    BOCPDConfig,
+    ConstantHazard,
+    PoissonGamma,
+)
+
+model = BOCPD(
+    ConstantHazard(mean_run_length=50),
+    cfg=BOCPDConfig(max_run_length=200),
+    likelihood=PoissonGamma(shape0=2.0, rate0=3.0),
+)
+result = model.run(counts)
+```
+
+Event-time segmentation does not have a direct Bayesian Blocks counterpart in
+BOCPD. Use the sliced Poisson process detector for repeated event-time periods,
+or retain the existing implementation for unbinned event-time Bayesian Blocks.
 
 ## Plotting
 

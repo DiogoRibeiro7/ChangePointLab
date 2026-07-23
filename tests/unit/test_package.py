@@ -12,6 +12,8 @@ def test_main_imports():
         "BOCPDAlertConfig",
         "BOCPDConfig",
         "BOCPDResult",
+        "BetaBernoulli",
+        "PoissonGamma",
         "ConstantHazard",
         "BoostedBoundaryHazard",
         "ScheduledHazard",

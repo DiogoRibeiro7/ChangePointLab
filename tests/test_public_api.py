@@ -41,6 +41,13 @@ def test_top_level_exports_work_on_tiny_inputs():
     assert bocpd.boundary_convention == "time_index"
     assert bocpd.cp_prob.shape == (6,)
 
+    counts = cpl.BOCPD(
+        cpl.ConstantHazard(mean_run_length=4),
+        cpl.BOCPDConfig(max_run_length=8, prune_epsilon=0.0),
+        likelihood=cpl.PoissonGamma(shape0=2.0, rate0=3.0),
+    ).run(np.array([0, 1, 3], dtype=int))
+    assert counts.cp_prob.shape == (3,)
+
     edivisive = cpl.EDivisive(min_size=2, R=9, seed=0).fit_predict(
         np.array([0.0, 0.0, 0.1, 1.0, 1.1, 1.2])
     )

@@ -13,8 +13,8 @@ Design goals
 This file defines:
 - ConjugateLikelihood (abstract interface)
 - BetaBernoulli (fully implemented)
-- PoissonGamma (skeleton)
-- GaussianNIW (skeleton)
+- PoissonGamma (fully implemented for scalar nonnegative counts)
+- GaussianNIW (experimental placeholder; not documented as supported)
 
 Notes
 -----
@@ -34,7 +34,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Tuple, Protocol
+import math
+from typing import Any, Mapping, Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -111,6 +112,31 @@ class ConjugateLikelihood(ABC):
         -------
         mean : ArrayF, shape (R,)
         """
+        ...
+
+    @abstractmethod
+    def update_cp_missing(self) -> None:
+        """Reset r=0 to the fresh prior when the observation is missing."""
+        ...
+
+    @abstractmethod
+    def update_growth_missing(self) -> None:
+        """Shift sufficient statistics for a missing observation without adding data."""
+        ...
+
+    @abstractmethod
+    def clone(self) -> ConjugateLikelihood:
+        """Return an unfitted likelihood with the same hyperparameters."""
+        ...
+
+    @abstractmethod
+    def state_dict(self) -> dict[str, Any]:
+        """Return a JSON-compatible likelihood state."""
+        ...
+
+    @abstractmethod
+    def load_state_dict(self, state: Mapping[str, Any]) -> None:
+        """Restore a likelihood state produced by :meth:`state_dict`."""
         ...
 
 
@@ -220,6 +246,47 @@ class BetaBernoulli(ConjugateLikelihood):
         β[1:] += (1.0 - xi)
         # Note: α[0], β[0] are left for update_cp(x_t) to set.
 
+    def update_cp_missing(self) -> None:
+        """Reset r=0 to the fresh Beta prior for a missing observation."""
+        if self.stats is None:
+            raise RuntimeError("Call init_stats(R) before update_cp_missing().")
+        self.stats.alpha[0] = self.alpha0
+        self.stats.beta[0] = self.beta0
+
+    def update_growth_missing(self) -> None:
+        """Shift run-length statistics without adding a Bernoulli outcome."""
+        if self.stats is None:
+            raise RuntimeError("Call init_stats(R) before update_growth_missing().")
+        self.stats.alpha[1:] = self.stats.alpha[:-1]
+        self.stats.beta[1:] = self.stats.beta[:-1]
+
+    def clone(self) -> BetaBernoulli:
+        """Return an unfitted Beta-Bernoulli likelihood with the same prior."""
+        return BetaBernoulli(self.alpha0, self.beta0)
+
+    def state_dict(self) -> dict[str, Any]:
+        """Return a JSON-compatible Beta-Bernoulli state."""
+        if self.stats is None:
+            raise RuntimeError("Call init_stats(R) before state_dict().")
+        return {
+            "kind": "BetaBernoulli",
+            "alpha0": self.alpha0,
+            "beta0": self.beta0,
+            "alpha": self.stats.alpha.tolist(),
+            "beta": self.stats.beta.tolist(),
+        }
+
+    def load_state_dict(self, state: Mapping[str, Any]) -> None:
+        """Restore a Beta-Bernoulli state."""
+        if state.get("kind") != "BetaBernoulli":
+            raise ValueError("state kind does not match BetaBernoulli.")
+        self.alpha0 = float(state["alpha0"])
+        self.beta0 = float(state["beta0"])
+        self.stats = BetaBernoulliStats(
+            alpha=np.asarray(state["alpha"], dtype=float),
+            beta=np.asarray(state["beta"], dtype=float),
+        )
+
 
 # ============================== Poisson–Gamma ===========================
 
@@ -270,15 +337,34 @@ class PoissonGamma(ConjugateLikelihood):
             rate=np.full(R, self.rate0, dtype=float),
         )
 
+    @staticmethod
+    def _coerce_count(x_t) -> int:
+        value = float(x_t)
+        if not np.isfinite(value) or value < 0.0 or not value.is_integer():
+            raise ValueError("PoissonGamma observations must be finite nonnegative integers.")
+        return int(value)
+
+    @staticmethod
+    def _log_predictive(count: int, shape: ArrayF, rate: ArrayF) -> ArrayF:
+        return (
+            np.vectorize(math.lgamma)(count + shape)
+            - np.vectorize(math.lgamma)(shape)
+            - math.lgamma(count + 1.0)
+            + shape * np.log(rate / (rate + 1.0))
+            + count * np.log(1.0 / (rate + 1.0))
+        )
+
     def predictive_prob(self, x_t, /) -> ArrayF:
         if self.stats is None:
             raise RuntimeError("Call init_stats(R) before predictive_prob().")
-        # TODO: Implement the closed-form Poisson–Gamma predictive pmf for integer x_t.
-        # For now, raise to make the placeholder explicit.
-        raise NotImplementedError("PoissonGamma.predictive_prob is not yet implemented.")
+        count = self._coerce_count(x_t)
+        return np.exp(self._log_predictive(count, self.stats.shape, self.stats.rate))
 
     def prior_predictive_prob(self, x_t, /) -> float:
-        raise NotImplementedError("PoissonGamma.prior_predictive_prob is not yet implemented.")
+        count = self._coerce_count(x_t)
+        shape = np.array([self.shape0], dtype=float)
+        rate = np.array([self.rate0], dtype=float)
+        return float(np.exp(self._log_predictive(count, shape, rate))[0])
 
     def predictive_mean(self) -> ArrayF:
         if self.stats is None:
@@ -289,18 +375,57 @@ class PoissonGamma(ConjugateLikelihood):
     def update_cp(self, x_t) -> None:
         if self.stats is None:
             raise RuntimeError("Call init_stats(R) before update_cp().")
-        # TODO: For integer count x_t >= 0:
-        #   shape[0] = shape0 + x_t
-        #   rate[0]  = rate0  + 1
-        raise NotImplementedError("PoissonGamma.update_cp is not yet implemented.")
+        count = self._coerce_count(x_t)
+        self.stats.shape[0] = self.shape0 + count
+        self.stats.rate[0] = self.rate0 + 1.0
 
     def update_growth(self, x_t) -> None:
         if self.stats is None:
             raise RuntimeError("Call init_stats(R) before update_growth().")
-        # TODO:
-        #   shape[1:] = shape[:-1] + x_t
-        #   rate[1:]  = rate[:-1]  + 1
-        raise NotImplementedError("PoissonGamma.update_growth is not yet implemented.")
+        count = self._coerce_count(x_t)
+        self.stats.shape[1:] = self.stats.shape[:-1] + count
+        self.stats.rate[1:] = self.stats.rate[:-1] + 1.0
+
+    def update_cp_missing(self) -> None:
+        """Reset r=0 to the fresh Gamma prior for a missing observation."""
+        if self.stats is None:
+            raise RuntimeError("Call init_stats(R) before update_cp_missing().")
+        self.stats.shape[0] = self.shape0
+        self.stats.rate[0] = self.rate0
+
+    def update_growth_missing(self) -> None:
+        """Shift run-length statistics without adding a count."""
+        if self.stats is None:
+            raise RuntimeError("Call init_stats(R) before update_growth_missing().")
+        self.stats.shape[1:] = self.stats.shape[:-1]
+        self.stats.rate[1:] = self.stats.rate[:-1]
+
+    def clone(self) -> PoissonGamma:
+        """Return an unfitted Poisson-Gamma likelihood with the same prior."""
+        return PoissonGamma(self.shape0, self.rate0)
+
+    def state_dict(self) -> dict[str, Any]:
+        """Return a JSON-compatible Poisson-Gamma state."""
+        if self.stats is None:
+            raise RuntimeError("Call init_stats(R) before state_dict().")
+        return {
+            "kind": "PoissonGamma",
+            "shape0": self.shape0,
+            "rate0": self.rate0,
+            "shape": self.stats.shape.tolist(),
+            "rate": self.stats.rate.tolist(),
+        }
+
+    def load_state_dict(self, state: Mapping[str, Any]) -> None:
+        """Restore a Poisson-Gamma state."""
+        if state.get("kind") != "PoissonGamma":
+            raise ValueError("state kind does not match PoissonGamma.")
+        self.shape0 = float(state["shape0"])
+        self.rate0 = float(state["rate0"])
+        self.stats = PoissonGammaStats(
+            shape=np.asarray(state["shape"], dtype=float),
+            rate=np.asarray(state["rate"], dtype=float),
+        )
 
 
 # ============================== Gaussian–NIW ============================
@@ -386,4 +511,21 @@ class GaussianNIW(ConjugateLikelihood):
     def update_growth(self, x_t) -> None:
         # TODO: Shift r -> r+1 and apply NIW posterior update with x_t to all grown states.
         raise NotImplementedError("GaussianNIW.update_growth is not yet implemented.")
+
+    def update_cp_missing(self) -> None:
+        raise NotImplementedError("GaussianNIW.update_cp_missing is not yet implemented.")
+
+    def update_growth_missing(self) -> None:
+        raise NotImplementedError(
+            "GaussianNIW.update_growth_missing is not yet implemented."
+        )
+
+    def clone(self) -> GaussianNIW:
+        return GaussianNIW(self.m0.copy(), self.kappa0, self.nu0, self.Psi0.copy())
+
+    def state_dict(self) -> dict[str, Any]:
+        raise NotImplementedError("GaussianNIW.state_dict is not yet implemented.")
+
+    def load_state_dict(self, state: Mapping[str, Any]) -> None:
+        raise NotImplementedError("GaussianNIW.load_state_dict is not yet implemented.")
 

@@ -1,6 +1,10 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- Added scalar Poisson-Gamma BOCPD likelihood support, explicit likelihood
+  injection, batch streaming updates, missing-observation handling, and
+  checkpoint/resume state dictionaries.
 
 ## [0.1.11] - 2026-07-23
 ### Changed

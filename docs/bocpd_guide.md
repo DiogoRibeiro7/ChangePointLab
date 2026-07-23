@@ -123,8 +123,7 @@ The Beta prior parameters control the initial beliefs about the Bernoulli probab
 
 `BOCPD.run(...)` updates the online run-length posterior. With the default
 configuration, `cp_prob[t]` is the canonical unscaled posterior probability
-`P(r_t = 0 | x_1:t)` under the configured hazard and Beta-Bernoulli predictive
-model.
+`P(r_t = 0 | x_1:t)` under the configured hazard and likelihood model.
 
 Changepoint alerts are extracted after inference. Use `BOCPDAlertConfig` to set
 an explicit `probability_threshold`, optional local-peak filtering, optional
@@ -135,6 +134,27 @@ stored run-length posterior.
 `cp_scale` is deprecated. Values other than `1.0` preserve legacy boosted
 behavior for comparison runs, but the resulting `cp_prob` is a compatibility
 score and diagnostics mark it as not calibrated.
+
+## Likelihoods and Streaming State
+
+The supported BOCPD likelihoods are:
+
+- `BetaBernoulli(alpha0, beta0)` for binary streams.
+- `PoissonGamma(shape0, rate0)` for scalar nonnegative integer count streams.
+
+Pass a likelihood instance to `BOCPD(..., likelihood=...)`. `reset()` clones the
+selected likelihood and therefore preserves the chosen model family. `run(...)`
+resets before processing a full batch; `update(...)` and `update_many(...)`
+continue from the current online state.
+
+Missing observations are explicit: `None` and all-NaN numeric values advance the
+run-length transition without updating likelihood sufficient statistics. Timestamps
+and irregular exposure are not part of the BOCPD likelihood contract; encode each
+observation on the intended time grid before calling `update` or use a method with
+exposure support for event times.
+
+Use `state_dict()` and `load_state_dict(...)` to checkpoint and resume a stream
+with the same hazard, configuration, and likelihood family.
 
 ### Time-Scale Considerations
 
