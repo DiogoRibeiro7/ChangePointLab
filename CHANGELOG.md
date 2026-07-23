@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.1.10] - 2026-07-23
 ### Added
 - Added a dedicated sliced Poisson process detector for repeated event-time
   periods, including B-spline IHPP segment costs, PELT optimization, exposure

@@ -31,7 +31,7 @@ Severity levels:
 
 | ID | Status | Evidence |
 | --- | --- | --- |
-| RR-001 | Resolved before this audit | `pyproject.toml`, runtime `__version__`, CFF, and `.zenodo.json` are aligned at `0.1.9`. |
+| RR-001 | Resolved before this audit | `pyproject.toml`, runtime `__version__`, CFF, and `.zenodo.json` are aligned at `0.1.10`. |
 | RR-002 | Resolved before this audit | `setup.py` now delegates to `setup()` and no longer duplicates metadata. |
 | RR-003 | Partially resolved | CI now has a `quality` job and builds distributions, but type/lint scope remains deliberately narrow. |
 | RR-004 | Partially resolved | Runtime dependencies are declared in `pyproject.toml`; `requirements.txt` still duplicates them. |
