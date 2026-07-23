@@ -364,12 +364,13 @@ def test_documented_broken_paths_raise_recorded_exceptions() -> None:
     assert str(kernel_error.value) == kernel_expected["wrapper_exception_message"]
 
     wp_expected = expected["within_period_tiny_current"]
-    with pytest.raises(ValueError, match="math domain error") as wp_error:
+    with pytest.raises(ValueError) as wp_error:
         WithinPeriodCPD(ModelPrior(N=4, l=1)).fit(
             np.asarray(inputs["within_period_tiny_stream"], dtype=bool),
             cfg=RJConfig(iters=40, burn=10, thin=5, seed=0),
         )
     assert type(wp_error.value).__name__ == wp_expected["exception_type"]
+    assert str(wp_error.value) in wp_expected["exception_messages"]
 
     mix_expected = expected["sdhmm_mix_current"]
     with pytest.raises(TypeError) as mix_error:

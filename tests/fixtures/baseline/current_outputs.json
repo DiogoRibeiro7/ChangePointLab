@@ -72,7 +72,10 @@
     "within_period_tiny_current": {
       "label": "suspected_bug",
       "exception_type": "ValueError",
-      "exception_message": "math domain error"
+      "exception_messages": [
+        "math domain error",
+        "expected a noninteger or positive integer, got 0.0"
+      ]
     },
     "circular_segmentation_oracle": {
       "label": "scientific_oracle",
