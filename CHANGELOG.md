@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.1.8] - 2026-07-23
 ### Added
 - Added within-period RJMCMC diagnostics for acceptance rate and proposal move
   counts.
