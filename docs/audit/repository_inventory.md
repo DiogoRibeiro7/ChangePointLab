@@ -296,9 +296,9 @@ Commands run during this audit:
 - `pkgutil.walk_packages(changepoint_lab.__path__)` found 64 importable package modules.
 - Subprocess import sweep: all core modules import; `changepoint_lab.examples.edivisive_example`, `hsmm_example`, `kcp_example`, and `kcp_rff_example` timed out on import; `changepoint_lab.examples.sdhmm_mix_vi_example` failed on import with `TypeError: 'tuple' object does not support item assignment`.
 - CLI help checks passed for `toolkit.cpd_cli`, `changepoint_lab.cli.bocpd_cli`, and `changepoint_lab.algorithms.bayesian.within_period.cli`.
-- Editable install in a clean virtual environment succeeded and imported `changepoint_lab.__version__ == "0.1.11"`.
+- Editable install in a clean virtual environment succeeded and imported `changepoint_lab.__version__ == "0.1.12"`.
 - `python -m build` succeeded and produced wheel and sdist.
-- Wheel installation in a clean virtual environment succeeded and imported `changepoint_lab.__version__ == "0.1.11"`.
+- Wheel installation in a clean virtual environment succeeded and imported `changepoint_lab.__version__ == "0.1.12"`.
 
 Minimal public smoke calls:
 
@@ -340,7 +340,7 @@ not obsolete files by content alone:
 - Canonical import package: `changepoint_lab`
 - Canonical distribution name in `pyproject.toml`: `changepoint-lab`
 - Historical names to treat as legacy or stale: `cp-ss-toolkit`, `changepoint-toolkit`, `changepoint_toolkit`
-- Current version in package metadata, runtime, CFF, and Zenodo JSON: `0.1.11`
+- Current version in package metadata, runtime, CFF, and Zenodo JSON: `0.1.12`
 
 No tracked generated build artifacts were present before validation. Build
 commands created local `build/`, `dist/`, and `changepoint_lab.egg-info/`
