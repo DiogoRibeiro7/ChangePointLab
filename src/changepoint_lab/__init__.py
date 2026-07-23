@@ -30,7 +30,7 @@ from .algorithms.state_space.sdhmm_mix_vi import (
 )
 from .core.datatypes import ChangePointResult
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 __all__ = [
     "__version__",

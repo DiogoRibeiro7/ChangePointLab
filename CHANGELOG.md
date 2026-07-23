@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.1.3] - 2026-07-23
 ### Added
 - Added scientific method traceability and claim-audit documentation.
 - Added deterministic baseline fixtures and characterization tests for public
