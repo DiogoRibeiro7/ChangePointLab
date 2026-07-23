@@ -1,15 +1,87 @@
 import warnings
 
+import numpy as np
 import pytest
 
 
-def test_top_level_exports():
+def _hsmm_loglik() -> np.ndarray:
+    from changepoint_lab.algorithms.state_space.emissions.gaussian_diag import (
+        GaussianDiagParams,
+        gaussian_diag_loglik,
+    )
+
+    obs = np.array([0.0, 0.1, 1.0, 1.1])
+    params = GaussianDiagParams(
+        mu=np.array([[0.0], [1.0]]),
+        var=np.array([[0.2], [0.2]]),
+    )
+    return gaussian_diag_loglik(obs.reshape(-1, 1), params)
+
+
+def test_top_level_exports_work_on_tiny_inputs():
     import changepoint_lab as cpl
-    assert hasattr(cpl, "PELT")
-    assert hasattr(cpl, "BOCPD")
-    assert hasattr(cpl, "EDivisive")
-    assert hasattr(cpl, "HSMM")
-    assert hasattr(cpl, "KernelCPD")
+    from changepoint_lab.algorithms.bayesian.within_period import ModelPrior, RJConfig
+    from changepoint_lab.algorithms.optimization.pelt import NormalMeanKnownVar
+
+    pelt = cpl.PELT(
+        cost_fn=NormalMeanKnownVar(sigma2=1.0),
+        penalty=1.0,
+        min_seg_len=2,
+    ).fit_predict(np.array([0.0, 0.0, 0.0, 4.0, 4.0, 4.0]))
+    assert isinstance(pelt, cpl.SegmentationResult)
+    assert pelt.method_name == "pelt"
+
+    bocpd = cpl.BOCPD(
+        cpl.ConstantHazard(mean_run_length=4),
+        cpl.BOCPDConfig(max_run_length=8, prune_epsilon=0.0, cp_scale=1.0),
+    ).fit_predict(np.array([0, 0, 0, 1, 1, 1]))
+    assert isinstance(bocpd, cpl.OnlineProbabilityResult)
+    assert bocpd.cp_prob.shape == (6,)
+
+    edivisive = cpl.EDivisive(min_size=2, R=9, seed=0).fit_predict(
+        np.array([0.0, 0.0, 0.1, 1.0, 1.1, 1.2])
+    )
+    assert isinstance(edivisive, cpl.SegmentationResult)
+
+    kernel = cpl.KernelCPD(penalty=0.1).fit_predict(
+        np.array([[0.0], [0.0], [1.0], [1.0]])
+    )
+    assert isinstance(kernel, cpl.SegmentationResult)
+
+    prior = ModelPrior(N=20, l=5)
+    cfg = RJConfig(iters=20, burn=5, thin=5, seed=0)
+    within = cpl.WithinPeriodCPD(prior, cfg=cfg).fit_predict(
+        np.array([0, 1, 0, 1] * 5, dtype=bool)
+    )
+    assert isinstance(within, cpl.PosteriorSampleResult)
+
+    hsmm_params = cpl.HSMMParams(
+        pi=np.array([1.0, 0.0]),
+        A=np.array([[0.0, 1.0], [1.0, 0.0]]),
+        duration=("poisson", cpl.PoissonDur(lam=np.array([2.0, 2.0]))),
+    )
+    hsmm = cpl.HSMM(
+        cpl.HSMMConfig(K=2, Dmax=3, max_em_iters=1, learn_durations=False, seed=0),
+        hsmm_params,
+    ).fit_predict(_hsmm_loglik())
+    assert isinstance(hsmm, cpl.LatentStateResult)
+
+    comps = np.array(
+        [
+            [0.8, 0.2],
+            [0.7, 0.3],
+            [0.2, 0.8],
+            [0.1, 0.9],
+        ],
+        dtype=float,
+    )
+    sdhmm = cpl.SDHMM(cpl.SDHMMConfig(K=2, max_iter=2, min_iter=1, seed=0)).fit_predict(comps)
+    assert isinstance(sdhmm, cpl.LatentStateResult)
+
+    mix = cpl.SDHMMMixVI(
+        cpl.SDHMMMixVIConfig(K=2, M=1, max_iter=2, min_iter=1, seed=0)
+    ).fit_predict(comps)
+    assert isinstance(mix, cpl.LatentStateResult)
 
 
 def test_deprecated_imports_warn():

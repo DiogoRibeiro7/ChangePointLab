@@ -61,11 +61,11 @@ def main() -> None:
         "map_run_length"
     ]
 
-    with np.testing.assert_raises(AttributeError) as kernel_error:
-        KernelCPD(penalty=0.1).fit_predict(np.asarray(inputs["kernel_points"], dtype=float))
-    assert str(kernel_error.exception) == expected["kernel_cpd_current"][
-        "wrapper_exception_message"
-    ]
+    kernel_res = KernelCPD(penalty=0.1).fit_predict(
+        np.asarray(inputs["kernel_points"], dtype=float)
+    )
+    assert type(kernel_res).__name__ == expected["kernel_cpd_current"]["wrapper_result_type"]
+    assert kernel_res.indices.tolist() == expected["kernel_cpd_current"]["wrapper_indices"]
 
     obs = np.asarray(inputs["hsmm_observations"], dtype=float)
     emission_params = GaussianDiagParams(
@@ -86,7 +86,7 @@ def main() -> None:
     assert states.tolist() == expected["hsmm_core_oracle"]["states"]
     assert durations.tolist() == expected["hsmm_core_oracle"]["durations_by_end"]
 
-    assert cpl.__version__ == "0.1.2"
+    assert cpl.__version__ == "0.1.4"
     print("installed baseline ok")
 
 

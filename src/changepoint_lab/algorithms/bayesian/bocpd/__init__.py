@@ -11,7 +11,7 @@ from .core import (
     Hazard,
     ScheduledHazard,
 )
-from ....core.datatypes import ChangePointResult
+from ....core.datatypes import OnlineProbabilityResult
 from ..._base import BaseDetector
 
 
@@ -23,7 +23,11 @@ class BOCPD(_BOCPD, BaseDetector):
         self._result = super().run(x)
         return self
 
-    def predict(self, x: np.ndarray | None = None) -> ChangePointResult:
+    def get_params(self) -> dict[str, object]:
+        """Return constructor parameters for the estimator-style wrapper."""
+        return {"hazard": self.hazard, "cfg": self.cfg}
+
+    def predict(self, x: np.ndarray | None = None) -> OnlineProbabilityResult:
         if x is not None:
             return self.fit(x).predict()
         if not hasattr(self, "_result"):
@@ -33,7 +37,15 @@ class BOCPD(_BOCPD, BaseDetector):
             "cp_prob": self._result.cp_prob,
             "map_run_length": self._result.map_run_length,
         }
-        return ChangePointResult(indices=cps, metadata=meta)
+        return OnlineProbabilityResult(
+            indices=cps,
+            method_name="bocpd",
+            boundary_convention="time_index",
+            cp_prob=self._result.cp_prob,
+            map_run_length=self._result.map_run_length,
+            pred_mean=self._result.pred_mean,
+            metadata=meta,
+        )
 
 
 def plot_run_length_heatmap(*args, **kwargs):

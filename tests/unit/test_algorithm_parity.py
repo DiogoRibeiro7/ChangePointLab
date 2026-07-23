@@ -52,5 +52,8 @@ def test_hsmm_parity():
     res_new = model_new.fit_predict(loglik)
     model_old = HSMM(cfg, hsmm_params)
     states_old, durs_old = model_old.decode_viterbi(loglik)
-    cps_old = np.cumsum(durs_old)[:-1]
+    segment_ends = np.flatnonzero(durs_old > 0) + 1
+    cps_old = segment_ends[segment_ends < len(durs_old)]
     assert res_new.indices.tolist() == cps_old.tolist()
+    assert res_new.states.tolist() == states_old.tolist()
+    assert res_new.segment_durations.tolist() == durs_old.tolist()

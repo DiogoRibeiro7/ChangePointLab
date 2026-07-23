@@ -11,7 +11,7 @@ import math
 import numpy as np
 from numpy.typing import NDArray
 
-from ...core.datatypes import ChangePointResult
+from ...core.datatypes import LatentStateResult
 from .._base import BaseDetector
 
 # Scientific traceability:
@@ -378,9 +378,10 @@ class _SDHMMMixVI:
             self.eta = eta0 + N_jm
 
             # (3) emissions: for each (j,m), ascend ELBO with weights w_{tjm} = gamma_tj * r_tjm
+            params_next = [list(row) for row in self.params]
             for j in range(K):
                 for m in range(M):
-                    comp = self.params[j][m]
+                    comp = params_next[j][m]
                     wt = gamma[:, j] * r[:, j, m]  # (T,)
                     # normalize weights for numerical stability of steps (objective is linear in weights)
                     scale = wt.sum() + 1e-12
@@ -402,10 +403,8 @@ class _SDHMMMixVI:
                         beta /= beta.sum()
 
                     # commit
-                    self.params[j] = tuple(
-                        SDMixParams(alpha=alpha, beta=beta) if mm == m else self.params[j][mm]
-                        for mm in range(M)
-                    )
+                    params_next[j][m] = SDMixParams(alpha=alpha, beta=beta)
+            self.params = tuple(tuple(row) for row in params_next)
 
             # ----- stopping -----
             if it + 1 >= self.cfg.min_iter:
@@ -497,7 +496,7 @@ class SDHMMMixVI(_SDHMMMixVI, BaseDetector):
         self._X = X
         return self
 
-    def predict(self, X: ArrayF | None = None) -> ChangePointResult:
+    def predict(self, X: ArrayF | None = None) -> LatentStateResult:
         if X is not None:
             return self.fit(X).predict()
         if not hasattr(self, "_X"):
@@ -505,7 +504,12 @@ class SDHMMMixVI(_SDHMMMixVI, BaseDetector):
         states = super().viterbi_states(self._X)
         cps = np.flatnonzero(np.diff(states)) + 1
         meta = {"states": states, "result": self.result_}
-        return ChangePointResult(indices=cps, metadata=meta)
+        return LatentStateResult(
+            indices=cps,
+            method_name="sdhmm_mix_vi",
+            states=states,
+            metadata=meta,
+        )
 
 
 __all__ = [

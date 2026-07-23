@@ -256,7 +256,9 @@ Declared console entry points:
 
 Top-level stable exports from `changepoint_lab.__all__`:
 
-- Version and result type: `__version__`, `ChangePointResult`
+- Version and result types: `__version__`, `ChangePointResult`,
+  `SegmentationResult`, `OnlineProbabilityResult`, `PosteriorSampleResult`,
+  `LatentStateResult`, `ModelSelectionResult`
 - PELT: `PELT`, `pelt`, `gram_rbf`, `kcp_penalized`, `kcp_select_bic`
 - BOCPD: `BOCPD`, `BOCPDConfig`, `BOCPDResult`, `Hazard`, `ConstantHazard`, `BoostedBoundaryHazard`, `ScheduledHazard`
 - Within-period: `WithinPeriodCPD`
@@ -277,9 +279,9 @@ Observed compatibility issue: `changepoint_lab.bocpd` is documented in
 | Within-period RJMCMC | `algorithms/bayesian/within_period/*` | `WithinPeriodCPD`, `WithinPeriodCore`, `RJConfig`, `ModelPrior`, CLI | Taylor et al. within-period method expected; detailed balance not yet verified | Boolean/event sequence over repeated period; returns posterior samples and modal circular changepoints | Circular bin indices modulo `N` | Uses `np.random.seed` and `random.seed`, plus module-level random calls | Interoperability, examples, CLI | Uses global RNG state; prior/proposal math requires scientific audit; API is easy to miscall (`ModelPrior` uses `l`, not `min_seg_len`) |
 | Sliced Poisson process | Not visible as public implementation | None found | Martínez-Hernández and Killick (2024) expected by project roadmap | Not implemented as stable public API | Not applicable | Not applicable | No public tests found | Missing method relative to research-program claims |
 | E-Divisive | `algorithms/nonparametric/edivisive.py`, `edivisive_core.py` | `EDivisive`, `edivisive` | Matteson & James (2014) expected | Numeric sequence/matrix; returns recursive split result and labels | Interior split indices | Uses seeded RNG for permutation/bootstrap paths | Memmap, parity, interoperability, examples | Needs independent energy-statistic and permutation oracle validation |
-| Kernel CPD / exact KCP | `algorithms/kernel/kcp.py`, `kcp_core.py`, `bandwidth_cv.py` | `KernelCPD`, `gram_rbf`, `kcp_penalized`, `kcp_select_bic` | Kernel changepoint references need registry entry | Numeric matrix or precomputed prefix depending on layer; returns `KCPResult`/`ChangePointResult` | Interior split indices | Mostly deterministic | Segment-bounds, KCP package tests | `KernelCPD` default path fails because `gram_rbf` returns a tuple while `kcp_penalized` expects a prefix object |
+| Kernel CPD / exact KCP | `algorithms/kernel/kcp.py`, `kcp_core.py`, `bandwidth_cv.py` | `KernelCPD`, `gram_rbf`, `kcp_penalized`, `kcp_select_bic` | Kernel changepoint references need registry entry | Numeric matrix or precomputed prefix depending on layer; returns `KCPResult`/`SegmentationResult` | Interior split indices intended; low-level terminal-boundary bug remains open | Mostly deterministic | Segment-bounds, KCP package tests | `KernelCPD` default path now executes; low-level KCP/RFF backtracking still needs boundary correction |
 | RFF KCP | `algorithms/kernel/kcp_rff.py`, `rff_variants.py` | Lower-level RFF helpers and CLI adapters | RFF approximation should cite Rahimi & Recht plus KCP source | Numeric matrix; approximate kernel segmentation | Interior split indices | Uses explicit seed in several paths | KCP package tests, performance tests | Exact/RFF parity and randomness policy need oracle tests |
-| HSMM | `algorithms/state_space/hsmm.py`, `hsmm_core.py`, emissions | `HSMM`, `HSMMConfig`, `HSMMParams`, `PoissonDur`, `NegBinDur` | Yu (2010) expected for HSMM inference | Emission log-likelihood matrix; returns state/duration metadata and changepoints | Wrapper uses cumulative decoded durations | Uses `np.random.default_rng(cfg.seed)` | Duration cache, emission model, parity tests | Wrapper changepoint derivation needs independent validation against duration semantics |
+| HSMM | `algorithms/state_space/hsmm.py`, `hsmm_core.py`, emissions | `HSMM`, `HSMMConfig`, `HSMMParams`, `PoissonDur`, `NegBinDur` | Yu (2010) expected for HSMM inference | Emission log-likelihood matrix; returns `LatentStateResult` with decoded states, duration-end markers, and changepoints | Wrapper uses nonzero decoded duration-end markers | Uses `np.random.default_rng(cfg.seed)` | Duration cache, emission model, parity tests | Broader duration semantics still need independent validation |
 | SD-HMM | `algorithms/state_space/sdhmm.py` | `SDHMM`, `SDHMMConfig`, `SDHMMResult` | Code comment cites Manouchehri & Bouguila (Sensors 2023); needs formal registry | Compositional/proportional matrix; returns state changes | State transition indices from Viterbi diff | Uses `np.random.default_rng(cfg.seed)` | Numerical stability, examples, unit tests | Scaled-Dirichlet gradients and defaults need independent validation |
 | SD-HMM Mix VI | `algorithms/state_space/sdhmm_mix_vi.py` | `SDHMMMixVI`, config/result | Needs formal source and derivation record | Compositional matrix; returns state/component metadata | State transition indices from Viterbi diff | Uses `np.random.default_rng(cfg.seed)` | Some tests indirectly; example import fails | Packaged example fails at import; VI math/oracles absent |
 | Emission helpers | `algorithms/state_space/emissions/*` | Gaussian diagonal/full and AR helpers | Standard Gaussian/AR specifications implied | Labels/responsibilities or model inputs; returns parameters/log-likelihoods | Per-observation state labels | Some helpers accept seed; utilities still use global RNG | `tests/unit/test_hsmm/test_emission_models.py` | Full oracle coverage and RNG policy still incomplete |
@@ -294,9 +296,9 @@ Commands run during this audit:
 - `pkgutil.walk_packages(changepoint_lab.__path__)` found 64 importable package modules.
 - Subprocess import sweep: all core modules import; `changepoint_lab.examples.edivisive_example`, `hsmm_example`, `kcp_example`, and `kcp_rff_example` timed out on import; `changepoint_lab.examples.sdhmm_mix_vi_example` failed on import with `TypeError: 'tuple' object does not support item assignment`.
 - CLI help checks passed for `toolkit.cpd_cli`, `changepoint_lab.cli.bocpd_cli`, and `changepoint_lab.algorithms.bayesian.within_period.cli`.
-- Editable install in a clean virtual environment succeeded and imported `changepoint_lab.__version__ == "0.1.2"`.
+- Editable install in a clean virtual environment succeeded and imported `changepoint_lab.__version__ == "0.1.4"`.
 - `python -m build` succeeded and produced wheel and sdist.
-- Wheel installation in a clean virtual environment succeeded and imported `changepoint_lab.__version__ == "0.1.2"`.
+- Wheel installation in a clean virtual environment succeeded and imported `changepoint_lab.__version__ == "0.1.4"`.
 
 Minimal public smoke calls:
 
@@ -308,7 +310,7 @@ Minimal public smoke calls:
 | `edivisive(...)` | Passed |
 | `BOCPD(...).fit_predict(...)` | Passed |
 | `WithinPeriodCPD(...).fit_predict(...)` | Failed in the audit harness because `ModelPrior` does not accept `min_seg_len`; the actual field is `l` |
-| `KernelCPD(penalty=1.0).fit_predict(...)` | Failed with `AttributeError: 'tuple' object has no attribute 'K'` |
+| `KernelCPD(penalty=1.0).fit_predict(...)` | Passed wrapper execution; low-level boundary output remains under audit |
 | legacy `changepoint_lab.bocpd` | Failed with `AttributeError` |
 
 ## Empty or Marker Files
@@ -338,7 +340,7 @@ not obsolete files by content alone:
 - Canonical import package: `changepoint_lab`
 - Canonical distribution name in `pyproject.toml`: `changepoint-lab`
 - Historical names to treat as legacy or stale: `cp-ss-toolkit`, `changepoint-toolkit`, `changepoint_toolkit`
-- Current version in package metadata, runtime, CFF, and Zenodo JSON: `0.1.2`
+- Current version in package metadata, runtime, CFF, and Zenodo JSON: `0.1.4`
 
 No tracked generated build artifacts were present before validation. Build
 commands created local `build/`, `dist/`, and `changepoint_lab.egg-info/`

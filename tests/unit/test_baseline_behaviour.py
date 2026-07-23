@@ -340,7 +340,10 @@ def test_state_space_and_periodic_baselines() -> None:
         wrapper_params,
     ).fit_predict(L)
     wrapper_expected = expected["hsmm_wrapper_current"]
+    assert type(hsmm_wrapper).__name__ == wrapper_expected["result_type"]
     assert hsmm_wrapper.indices.tolist() == wrapper_expected["indices"]
+    assert hsmm_wrapper.states.tolist() == wrapper_expected["states"]
+    assert hsmm_wrapper.segment_durations.tolist() == wrapper_expected["durations_by_end"]
     assert sorted(hsmm_wrapper.metadata) == wrapper_expected["metadata_keys"]
 
     compositions = np.asarray(inputs["sdhmm_compositions"], dtype=float)
@@ -358,10 +361,12 @@ def test_documented_broken_paths_raise_recorded_exceptions() -> None:
     expected = _load_expected()
 
     kernel_expected = expected["kernel_cpd_current"]
-    with pytest.raises(AttributeError, match="tuple.*K") as kernel_error:
-        KernelCPD(penalty=0.1).fit_predict(np.asarray(inputs["kernel_points"], dtype=float))
-    assert type(kernel_error.value).__name__ == kernel_expected["wrapper_exception_type"]
-    assert str(kernel_error.value) == kernel_expected["wrapper_exception_message"]
+    kernel_wrapper = KernelCPD(penalty=0.1).fit_predict(
+        np.asarray(inputs["kernel_points"], dtype=float)
+    )
+    assert type(kernel_wrapper).__name__ == kernel_expected["wrapper_result_type"]
+    assert kernel_wrapper.indices.tolist() == kernel_expected["wrapper_indices"]
+    assert sorted(kernel_wrapper.metadata) == kernel_expected["wrapper_metadata_keys"]
 
     wp_expected = expected["within_period_tiny_current"]
     with pytest.raises(ValueError) as wp_error:
@@ -373,12 +378,13 @@ def test_documented_broken_paths_raise_recorded_exceptions() -> None:
     assert str(wp_error.value) in wp_expected["exception_messages"]
 
     mix_expected = expected["sdhmm_mix_current"]
-    with pytest.raises(TypeError) as mix_error:
-        SDHMMMixVI(cpl.SDHMMMixVIConfig(K=2, M=1, max_iter=2, min_iter=1, seed=0)).fit_predict(
-            np.asarray(inputs["sdhmm_compositions"], dtype=float)
-        )
-    assert mix_expected["exception_type"] == "TypeError"
-    assert str(mix_error.value) == mix_expected["exception_message"]
+    mix_result = SDHMMMixVI(
+        cpl.SDHMMMixVIConfig(K=2, M=1, max_iter=2, min_iter=1, seed=0)
+    ).fit_predict(np.asarray(inputs["sdhmm_compositions"], dtype=float))
+    assert type(mix_result).__name__ == mix_expected["result_type"]
+    assert mix_result.indices.tolist() == mix_expected["indices"]
+    assert mix_result.states.tolist() == mix_expected["states"]
+    assert sorted(mix_result.metadata) == mix_expected["metadata_keys"]
 
     legacy_expected = expected["legacy_current"]
     with warnings.catch_warnings(record=True) as caught:

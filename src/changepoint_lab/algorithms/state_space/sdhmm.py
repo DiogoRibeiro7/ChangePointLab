@@ -11,7 +11,7 @@ import math
 import numpy as np
 from numpy.typing import NDArray
 
-from ...core.datatypes import ChangePointResult
+from ...core.datatypes import LatentStateResult
 from .._base import BaseDetector
 
 # Scientific traceability:
@@ -444,7 +444,7 @@ class SDHMM(_SDHMM, BaseDetector):
         self._X = X
         return self
 
-    def predict(self, X: ArrayF | None = None) -> ChangePointResult:
+    def predict(self, X: ArrayF | None = None) -> LatentStateResult:
         if X is not None:
             return self.fit(X).predict()
         if not hasattr(self, "_X"):
@@ -452,7 +452,12 @@ class SDHMM(_SDHMM, BaseDetector):
         states = super().viterbi(self._X)
         cps = np.flatnonzero(np.diff(states)) + 1
         meta = {"states": states, "result": self.result_}
-        return ChangePointResult(indices=cps, metadata=meta)
+        return LatentStateResult(
+            indices=cps,
+            method_name="sdhmm",
+            states=states,
+            metadata=meta,
+        )
 
 
 __all__ = ["SDHMM", "SDHMMConfig", "SDHMMResult", "SDParams"]

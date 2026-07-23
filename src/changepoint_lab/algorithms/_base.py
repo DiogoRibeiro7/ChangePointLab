@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 import numpy as np
 
@@ -26,6 +27,14 @@ class BaseDetector(ABC):
         """Fit the model and immediately predict on the same data."""
         self._validate_input(x)
         return self.fit(x).predict()
+
+    def get_params(self) -> dict[str, Any]:
+        """Return public constructor parameters for estimator-style wrappers."""
+        return {
+            name: value
+            for name, value in vars(self).items()
+            if not name.startswith("_")
+        }
 
     # minimal input validation
     def _validate_input(self, x: ArrayLike) -> None:

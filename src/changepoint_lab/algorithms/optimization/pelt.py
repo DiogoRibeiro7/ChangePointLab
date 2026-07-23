@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
-from ...core.datatypes import ChangePointResult
+from ...core.datatypes import ChangePointResult, SegmentationResult
 from .._base import BaseDetector
 from .cost_functions import (
     BetaBinomialCost,
@@ -171,7 +171,7 @@ class PELT(BaseDetector):
         self._result = pelt(x, self.cost_fn, penalty=self.penalty, min_seg_len=self.min_seg_len)
         return self
 
-    def predict(self, x: np.ndarray | None = None) -> ChangePointResult:
+    def predict(self, x: np.ndarray | None = None) -> SegmentationResult:
         if x is not None:
             return self.fit(x).predict()
         if self._result is None:
@@ -181,7 +181,15 @@ class PELT(BaseDetector):
             "labels": self._result.labels,
             "costs_per_segment": self._result.costs_per_segment,
         }
-        return ChangePointResult(indices=cps, score=self._result.total_cost, metadata=meta)
+        return SegmentationResult(
+            indices=cps,
+            score=self._result.total_cost,
+            labels=self._result.labels,
+            method_name="pelt",
+            objective_orientation="minimize",
+            costs_per_segment=self._result.costs_per_segment,
+            metadata=meta,
+        )
 
 
 def pelt_detect(

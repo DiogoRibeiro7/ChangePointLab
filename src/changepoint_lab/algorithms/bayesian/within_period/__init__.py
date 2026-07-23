@@ -5,7 +5,7 @@ from typing import Sequence
 
 import numpy as np
 
-from ....core.datatypes import ChangePointResult
+from ....core.datatypes import PosteriorSampleResult
 from ..._base import BaseDetector
 
 from .within_period_cpd import (
@@ -44,7 +44,7 @@ class WithinPeriodCPD(BaseDetector):
         self._result = self._model.fit(x_arr, cfg=cfg, init=init)
         return self
 
-    def predict(self, x: Sequence[int | bool] | None = None) -> ChangePointResult:
+    def predict(self, x: Sequence[int | bool] | None = None) -> PosteriorSampleResult:
         if x is not None:
             return self.fit(x).predict()
         if self._result is None:
@@ -55,7 +55,14 @@ class WithinPeriodCPD(BaseDetector):
             "samples_tau": self._result.samples_tau,
             "log_posteriors": self._result.log_posteriors,
         }
-        return ChangePointResult(indices=cps, metadata=meta)
+        return PosteriorSampleResult(
+            indices=cps,
+            method_name="within_period",
+            samples=tuple(tuple(sample) for sample in self._result.samples_tau),
+            log_posteriors=self._result.log_posteriors,
+            changepoint_hist=self._result.changepoint_hist,
+            metadata=meta,
+        )
 
     def __getattr__(self, name: str):
         if self._model is not None and hasattr(self._model, name):

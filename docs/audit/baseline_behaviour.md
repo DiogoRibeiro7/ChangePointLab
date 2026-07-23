@@ -25,10 +25,10 @@ outputs live in `tests/fixtures/baseline/current_outputs.json`.
 | `BOCPD` | `compatibility` | Beta-Bernoulli run records `cp_prob`, MAP run lengths, predictive means, posterior shape, wrapper indices, and metadata keys. |
 | `EDivisive` | `compatibility` | Tiny deterministic fixture with `R=9` and `seed=0` currently returns no accepted split. |
 | `WithinPeriodCPD` | `compatibility` | Seeded small periodic binary fixture records three kept samples and mode `()`. |
-| `KernelCPD` | `suspected_bug` | Wrapper raises `AttributeError: 'tuple' object has no attribute 'K'` because `gram_rbf` returns `(K, gamma)` while the wrapper passes it directly to `kcp_penalized`. |
-| `HSMM` | `suspected_bug` | Core Viterbi oracle gives changepoint `[2]`; wrapper currently reports `[0, 2, 2]` from sparse duration-end indicators. |
+| `KernelCPD` | `suspected_bug` | Wrapper now executes and returns a typed segmentation result, but the low-level KCP path still emits terminal changepoint `[4]` on the tiny oracle where `[2]` is expected. |
+| `HSMM` | `scientific_oracle` | Core Viterbi oracle gives changepoint `[2]`; wrapper now extracts `[2]` from sparse duration-end indicators. |
 | `SDHMM` | `compatibility` | Tiny compositional fixture records states `[1, 1, 0, 0]` and changepoint `[2]`. |
-| `SDHMMMixVI` | `suspected_bug` | Tiny fixture raises `TypeError: 'tuple' object does not support item assignment`. |
+| `SDHMMMixVI` | `compatibility` | Tiny fixture now completes and returns states `[1, 1, 0, 0]` with changepoint `[2]`; scientific validation remains pending. |
 
 ## Low-Level Entry Points
 
@@ -52,13 +52,8 @@ global state for the frozen fixtures.
 
 The following current outputs may change under a planned correctness fix:
 
-- `KernelCPD` wrapper should stop raising and should not pass a `(K, gamma)`
-  tuple where a prefix object is expected.
 - KCP/RFF low-level backtracking should not emit terminal changepoints equal to
   `n`.
-- HSMM wrapper should convert sparse per-end duration indicators into segment
-  durations before computing changepoints.
-- `SDHMMMixVI` should update immutable parameter tuples safely.
 - Within-period RJMCMC should avoid global RNG and should handle small valid
   circular cases without `math domain error`.
 

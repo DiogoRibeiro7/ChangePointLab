@@ -7,9 +7,15 @@ ChangePointLab and expose it through the public API.
 
 1. Place the implementation under an appropriate subfolder of
    `src/changepoint_lab/algorithms/`.
-2. Inherit from `BaseDetector` defined in `algorithms/_base.py`.
-3. Return a `ChangePointResult` from `predict` and support `fit`, `predict`
-   and `fit_predict`.
+2. Inherit from `BaseDetector` defined in `algorithms/_base.py` when the method
+   is an offline estimator.
+3. Return the narrowest typed result object from `predict` and support `fit`,
+   `predict`, `fit_predict`, and `get_params` where applicable.
+
+Use `SegmentationResult` for offline segmentation, `OnlineProbabilityResult`
+for online probability traces, `PosteriorSampleResult` for sampling methods, and
+`LatentStateResult` for decoded state paths. Keep `metadata` for optional
+extension details only; essential outputs should have typed fields.
 
 ## 2. Register public symbols
 

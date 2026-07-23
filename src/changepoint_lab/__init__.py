@@ -28,7 +28,18 @@ from .algorithms.state_space.sdhmm_mix_vi import (
     SDHMMMixVIConfig,
     SDHMMMixVIResult,
 )
-from .core.datatypes import ChangePointResult
+from .core.datatypes import (
+    ChangePointResult,
+    LatentStateDecoder,
+    LatentStateResult,
+    ModelSelectionResult,
+    OfflineDetector,
+    OnlineDetector,
+    OnlineProbabilityResult,
+    PosteriorSampleResult,
+    PosteriorSampler,
+    SegmentationResult,
+)
 
 __version__ = "0.1.4"
 
@@ -62,6 +73,15 @@ __all__ = [
     "kcp_penalized", 
     "kcp_select_bic", 
     "ChangePointResult", 
+    "SegmentationResult",
+    "OnlineProbabilityResult",
+    "PosteriorSampleResult",
+    "LatentStateResult",
+    "ModelSelectionResult",
+    "OfflineDetector",
+    "OnlineDetector",
+    "LatentStateDecoder",
+    "PosteriorSampler",
 ]
 
 # Attach compatibility layer (lazy attribute fallback + deprecations)

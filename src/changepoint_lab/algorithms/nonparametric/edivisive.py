@@ -7,7 +7,7 @@ import numpy as np
 from .edivisive_core import EDivisiveResult
 from .edivisive_core import edivisive as _edivisive
 
-from ...core.datatypes import ChangePointResult
+from ...core.datatypes import SegmentationResult
 from .._base import BaseDetector
 
 
@@ -27,14 +27,19 @@ class EDivisive(BaseDetector):
         )
         return self
 
-    def predict(self, x: np.ndarray | None = None) -> ChangePointResult:
+    def predict(self, x: np.ndarray | None = None) -> SegmentationResult:
         if x is not None:
             return self.fit(x).predict()
         if self._result is None:
             raise RuntimeError("Call fit before predict.")
         cps = np.array(self._result.change_points, dtype=int)
         meta = {"labels": self._result.labels, "splits": self._result.splits}
-        return ChangePointResult(indices=cps, metadata=meta)
+        return SegmentationResult(
+            indices=cps,
+            labels=self._result.labels,
+            method_name="edivisive",
+            metadata=meta,
+        )
 
 
 __all__ = ["EDivisive"]

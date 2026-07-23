@@ -223,7 +223,7 @@
       ],
       "documentation_paths": ["docs/api/kcp.rst", "docs/cpd.md"],
       "reproduction_artifact": "No independent KCP oracle yet.",
-      "deviations": ["Current top-level KernelCPD wrapper is documented as broken by the audit."],
+      "deviations": ["Low-level KCP backtracking can still emit terminal changepoints on the frozen tiny fixture."],
       "extensions": ["Bandwidth selection helpers"],
       "verification_status": "characterized_only",
       "mysense_connection": "Flexible nonparametric offline comparison method."
@@ -270,7 +270,7 @@
       ],
       "documentation_paths": ["docs/api/hsmm.rst", "docs/guide/state_space_methods.md"],
       "reproduction_artifact": "No independent duration-semantics oracle yet.",
-      "deviations": ["Wrapper changepoints are derived from decoded duration cumulative sums."],
+      "deviations": ["Wrapper changepoints are derived from nonzero decoded duration-end markers."],
       "extensions": ["Poisson and negative-binomial duration helpers", "Gaussian and AR emission helpers"],
       "verification_status": "partially_verified",
       "mysense_connection": "State-duration baseline for activity-regime workflows."

@@ -1,6 +1,17 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- Added typed public result contracts for segmentation, online probability,
+  posterior-sampling, latent-state, and model-selection outputs.
+- Added behavior tests for all stable top-level estimator exports.
+
+### Fixed
+- Fixed `KernelCPD.fit_predict` so the wrapper builds a kernel prefix before
+  calling the core KCP routine.
+- Fixed HSMM wrapper changepoints by extracting nonzero duration-end markers.
+- Fixed `SDHMMMixVI.fit_predict` parameter updates that assigned into immutable
+  tuples.
 
 ## [0.1.4] - 2026-07-23
 ### Changed
