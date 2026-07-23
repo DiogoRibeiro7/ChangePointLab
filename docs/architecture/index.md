@@ -1,11 +1,11 @@
 # Architecture
 
-ChangePointLab groups code into a single `changepoint_lab/` package with clear
-responsibilities for each subfolder. The layout below shows the main
-directories and their roles.
+ChangePointLab uses a `src/` layout with one import package,
+`changepoint_lab`. The layout below shows the main package directories and
+their roles.
 
 ```
-changepoint_lab/
+src/changepoint_lab/
 ├── algorithms/                        # All algorithms live here (single parent)
 │   ├── _base.py                       # Abstract interfaces, shared mixins for algorithms
 │   ├── bayesian/
@@ -61,13 +61,12 @@ changepoint_lab/
 │   ├── __init__.py
 │   └── comparison.py                  # Reproducible comparisons across algorithms
 │
-├── tests/                             # (Repository-level tests; not installed)
-│   └── ...                            # Unit/integration tests mirroring new structure
-│
 ├── __init__.py                        # Clean public API; re-exports major classes/functions
 ├── _compat.py                         # Compatibility shims for old import paths
 └── py.typed                           # PEP 561 type marker
 ```
+
+Repository-level tests live under `tests/` and are not included in the wheel.
 
 ## Rationale
 
@@ -75,3 +74,5 @@ changepoint_lab/
 - **`core/`** hosts shared types and mechanics, reducing duplication and avoiding circular imports.
 - **`common/` vs `visualization/`** keeps low-level helpers separate from user-facing plotting.
 - Shipping a `py.typed` marker advertises type information to downstream users.
+- The `src/` layout prevents accidental imports from the repository root during
+  local development.

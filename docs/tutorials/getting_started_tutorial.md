@@ -18,7 +18,7 @@ Detecting these changes helps segment time series into homogeneous regions, iden
 ```bash
 git clone https://github.com/DiogoRibeiro7/ChangePointLab
 cd ChangePointLab
-pip install -e .
+poetry install
 ```
 
 ## A Simple Example: COVID-19 Impact on Stock Prices

@@ -1,13 +1,13 @@
 [build-system]
-requires = ["setuptools>=64", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "changepoint-lab"
 version = "0.1.2"
 description = "ChangePointLab: a unified Python toolkit for changepoint detection in time series."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<4.0"
 license = "MIT"
 authors = [
   { name = "Diogo Ribeiro", email = "dfr@esmad.ipp.pt" }
@@ -28,29 +28,17 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Artificial Intelligence"
 ]
 dependencies = [
-  "numpy>=1.21",
+  "numpy>=1.21,<2.3",
   "pandas>=1.5",
   "matplotlib>=3.3"
 ]
 
 [project.optional-dependencies]
 plot = ["matplotlib>=3.3"]
-dev = [
-  "build>=1.2",
-  "coverage>=7",
-  "pdoc>=15",
-  "pydocstyle>=6",
-  "pytest>=7",
-  "pytest-cov>=4",
-  "ruff>=0.3",
-  "sphinx>=7",
-  "mypy>=1.6",
-  "types-setuptools"
-]
 
 [project.scripts]
-cpd = "toolkit.cpd_cli:main"
-cpd-cli = "toolkit.cpd_cli:main"
+cpd = "changepoint_lab.cli.cpd_cli:main"
+cpd-cli = "changepoint_lab.cli.cpd_cli:main"
 bocpd-cli = "changepoint_lab.cli.bocpd_cli:main"
 within-period-cli = "changepoint_lab.algorithms.bayesian.within_period.cli:main"
 
@@ -61,13 +49,41 @@ Issues = "https://github.com/DiogoRibeiro7/ChangePointLab/issues"
 Documentation = "https://github.com/DiogoRibeiro7/ChangePointLab/tree/main/docs"
 Changelog = "https://github.com/DiogoRibeiro7/ChangePointLab/blob/main/CHANGELOG.md"
 
-# ---- setuptools config -------------------------------------------------------
-[tool.setuptools]
-py-modules = []
-include-package-data = true
+[tool.poetry]
+packages = [{ include = "changepoint_lab", from = "src" }]
+include = [
+  { path = "src/changepoint_lab/py.typed", format = ["sdist", "wheel"] }
+]
+exclude = [
+  "**/__pycache__/**",
+  "**/*.pyc",
+  "docs/_build/**",
+  "examples/**",
+  "paper/**",
+  "papers/**",
+  "prompts/**",
+  "scripts/**",
+  "tests/**"
+]
 
-[tool.setuptools.packages.find]
-include = ["changepoint_lab*", "toolkit*"]
+[tool.poetry.group.plot.dependencies]
+matplotlib = ">=3.3"
+
+[tool.poetry.group.docs.dependencies]
+pdoc = ">=15"
+sphinx = ">=7"
+
+[tool.poetry.group.bench.dependencies]
+pytest = ">=7"
+
+[tool.poetry.group.dev.dependencies]
+coverage = ">=7"
+mypy = ">=1.6"
+pydocstyle = ">=6"
+pytest = ">=7"
+pytest-cov = ">=4"
+ruff = ">=0.3"
+types-setuptools = "*"
 
 [tool.ruff]
 line-length = 100
@@ -81,8 +97,8 @@ ignore = []
 [tool.mypy]
 python_version = "3.10"
 files = [
-  "changepoint_lab/core/datatypes.py",
-  "changepoint_lab/algorithms/_base.py"
+  "src/changepoint_lab/core/datatypes.py",
+  "src/changepoint_lab/algorithms/_base.py"
 ]
 follow_imports = "skip"
 warn_unused_ignores = true
@@ -103,8 +119,7 @@ add_ignore = [
 [tool.pytest.ini_options]
 addopts = "-q"
 python_files = ["test_*.py", "*_test.py"]
-pythonpath = ["."]
 markers = [
-    "integration: integration tests requiring external resources",
-    "slow: long-running tests"
+  "integration: integration tests requiring external resources",
+  "slow: long-running tests"
 ]

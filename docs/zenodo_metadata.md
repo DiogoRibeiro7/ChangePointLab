@@ -17,15 +17,15 @@ Supported by internal research funds from ESMAD - Instituto Politécnico do Port
 
 ## Technical Specifications and System Requirements
 - **Programming language:** Python ≥3.10
-- **Runtime dependencies:** NumPy ≥1.21
-- **Optional packages:** Matplotlib for plotting
+- **Runtime dependencies:** NumPy ≥1.21, pandas ≥1.5, Matplotlib ≥3.3
+- **Dependency workflow:** Poetry-managed `pyproject.toml` and lock file
 - **Operating systems:** Platform independent (tested on Linux, macOS, Windows)
 
 ## Installation
 ```bash
 git clone https://github.com/DiogoRibeiro7/ChangePointLab
 cd ChangePointLab
-pip install -e .
+poetry install
 ```
 
 ## Usage

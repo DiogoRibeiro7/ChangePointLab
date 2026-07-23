@@ -26,10 +26,10 @@ Install from source:
 ```bash
 git clone https://github.com/DiogoRibeiro7/ChangePointLab
 cd ChangePointLab
-pip install -e .
+poetry install
 ```
 
-Requires Python 3.10 or later.
+Requires Python 3.10 or later. Development installs use `poetry install --with dev,docs,bench`.
 
 ## Quick Start
 

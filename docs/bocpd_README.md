@@ -23,7 +23,7 @@ Key innovations:
 git clone https://github.com/DiogoRibeiro7/ChangePointLab.git
 cd ChangePointLab
 
-pip install -e ".[dev]"
+poetry install --with dev,docs
 ```
 
 ## Dependencies
@@ -87,7 +87,7 @@ bocpd-cli --demo --days 14 --period 96
 - [Parameter Selection Guide](https://github.com/DiogoRibeiro7/ChangePointLab/blob/main/docs/parameters/bocpd_parameters.md)
 - [API Reference](https://github.com/DiogoRibeiro7/ChangePointLab/blob/main/docs/api/bocpd.rst)
 - [Examples](https://github.com/DiogoRibeiro7/ChangePointLab/tree/main/examples)
-- [CLI Reference](https://github.com/DiogoRibeiro7/ChangePointLab/blob/main/changepoint_lab/cli/bocpd_cli.py)
+- [CLI Reference](https://github.com/DiogoRibeiro7/ChangePointLab/blob/main/src/changepoint_lab/cli/bocpd_cli.py)
 
 ## How to Cite
 

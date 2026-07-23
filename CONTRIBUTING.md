@@ -13,7 +13,8 @@ This document summarises the development workflow and coding conventions.
 ## Testing
 
 - Use **pytest** for unit tests. Every feature or bug fix requires accompanying tests.
-- Run the full test suite before submitting a pull request: `pytest`.
+- Install developer dependencies with `poetry install --with dev,docs,bench`.
+- Run the full test suite before submitting a pull request: `poetry run pytest`.
 
 ## BaseDetector interface
 
@@ -34,7 +35,7 @@ Use this table to decide where helpers belong:
 ## Pull requests
 
 1. Create a feature branch off the main repository.
-2. Run formatting, type checking, and tests.
+2. Run formatting, type checking, and tests through Poetry.
 3. Ensure documentation and examples use `from changepoint_lab import ...` imports.
 4. Submit the pull request with a clear description of the change.
 

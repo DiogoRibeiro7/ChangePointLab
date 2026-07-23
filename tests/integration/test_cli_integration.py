@@ -1,5 +1,4 @@
 import json
-import os
 import subprocess
 import sys
 import numpy as np
@@ -7,23 +6,12 @@ import xml.etree.ElementTree as ET
 import pytest
 from pathlib import Path
 
-STUB_CODE = """import matplotlib.pyplot as plt
-
-def plot_edivisive_result(data, result, columns, axes=None):
-    if axes is None:
-        _, axes = plt.subplots(2, 1)
-    return axes
-"""
-
-
 def _run_cli(csv_path: Path, out_dir: Path, tmp_path: Path, extra_args=None):
     extra_args = extra_args or []
-    env = os.environ.copy()
-    env["PYTHONPATH"] = f"{tmp_path}:{env.get('PYTHONPATH', '')}"
     cmd = [
         sys.executable,
         "-m",
-        "toolkit.cpd_cli",
+        "changepoint_lab.cli.cpd_cli",
         "--input",
         str(csv_path),
         "--output",
@@ -34,12 +22,11 @@ def _run_cli(csv_path: Path, out_dir: Path, tmp_path: Path, extra_args=None):
         "--min-size",
         "2",
     ] + list(extra_args)
-    return subprocess.run(cmd, env=env, capture_output=True, text=True)
+    return subprocess.run(cmd, capture_output=True, text=True)
 
 
 @pytest.mark.integration
 def test_cli_edges(tmp_path: Path):
-    (tmp_path / "edivisive_plotting.py").write_text(STUB_CODE)
     csv_path = tmp_path / "counts.csv"
     csv_path.write_text("count\n1\n2\n3\n4\n5\n6\n")
     out_dir = tmp_path / "out"
@@ -54,15 +41,12 @@ def test_cli_edges(tmp_path: Path):
 
 @pytest.mark.integration
 def test_cli_random_profile(tmp_path: Path):
-    (tmp_path / "edivisive_plotting.py").write_text(STUB_CODE)
     csv_path = tmp_path / "rand.csv"
     rng = np.random.default_rng(0)
     counts = rng.poisson(1.0, size=20)
     csv_path.write_text("count\n" + "\n".join(str(int(c)) for c in counts) + "\n")
     out_dir = tmp_path / "out"
     profile_path = tmp_path / "run.cprof"
-    env = os.environ.copy()
-    env["PYTHONPATH"] = f"{tmp_path}:{env.get('PYTHONPATH', '')}"
     cmd = [
         sys.executable,
         "-m",
@@ -70,7 +54,7 @@ def test_cli_random_profile(tmp_path: Path):
         "-o",
         str(profile_path),
         "-m",
-        "toolkit.cpd_cli",
+        "changepoint_lab.cli.cpd_cli",
         "--input",
         str(csv_path),
         "--output",
@@ -81,14 +65,13 @@ def test_cli_random_profile(tmp_path: Path):
         "--min-size",
         "2",
     ]
-    res = subprocess.run(cmd, env=env, capture_output=True, text=True)
+    res = subprocess.run(cmd, capture_output=True, text=True)
     assert res.returncode == 0, res.stderr
     assert profile_path.exists() and profile_path.stat().st_size > 0
 
 
 @pytest.mark.integration
 def test_cli_export_formats(tmp_path: Path):
-    (tmp_path / "edivisive_plotting.py").write_text(STUB_CODE)
     csv_path = tmp_path / "counts.csv"
     csv_path.write_text("count\n0\n1\n0\n1\n0\n1\n")
     out_dir = tmp_path / "out"

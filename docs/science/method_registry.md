@@ -8,16 +8,16 @@ before scientific behavior is changed.
 
 | ID | Method | Source status | Primary citations | Stable package symbols | Code paths | Verification |
 | --- | --- | --- | --- | --- | --- | --- |
-| `pelt` | Pruned Exact Linear Time | adaptation | `killick_2012` | `PELT` | `changepoint_lab/algorithms/optimization/pelt.py`; `changepoint_lab/algorithms/optimization/cost_functions.py` | partially_verified |
-| `bocpd_beta_bernoulli` | Bayesian Online Changepoint Detection, Beta-Bernoulli path | adaptation | `adams_mackay_2007` | `BOCPD`, `BOCPDConfig`, `BOCPDResult`, hazards | `changepoint_lab/algorithms/bayesian/bocpd/core.py`; `changepoint_lab/algorithms/bayesian/bocpd/likelihoods.py`; `changepoint_lab/algorithms/bayesian/bocpd/__init__.py` | characterized_only |
-| `within_period_rjmcmc` | Within-period changepoint detection | adaptation | `taylor_2021` | `WithinPeriodCPD` | `changepoint_lab/algorithms/bayesian/within_period/` | unverified |
+| `pelt` | Pruned Exact Linear Time | adaptation | `killick_2012` | `PELT` | `src/changepoint_lab/algorithms/optimization/pelt.py`; `src/changepoint_lab/algorithms/optimization/cost_functions.py` | partially_verified |
+| `bocpd_beta_bernoulli` | Bayesian Online Changepoint Detection, Beta-Bernoulli path | adaptation | `adams_mackay_2007` | `BOCPD`, `BOCPDConfig`, `BOCPDResult`, hazards | `src/changepoint_lab/algorithms/bayesian/bocpd/core.py`; `src/changepoint_lab/algorithms/bayesian/bocpd/likelihoods.py`; `src/changepoint_lab/algorithms/bayesian/bocpd/__init__.py` | characterized_only |
+| `within_period_rjmcmc` | Within-period changepoint detection | adaptation | `taylor_2021` | `WithinPeriodCPD` | `src/changepoint_lab/algorithms/bayesian/within_period/` | unverified |
 | `sliced_poisson_process` | Sliced Poisson process changepoint detection | not_implemented | `martinez_hernandez_killick_2024` | None | None | not_implemented |
-| `edivisive` | E-Divisive energy-statistic changepoint detection | adaptation | `matteson_james_2014` | `EDivisive`, `edivisive` | `changepoint_lab/algorithms/nonparametric/edivisive.py`; `changepoint_lab/algorithms/nonparametric/edivisive_core.py` | partially_verified |
-| `kernel_cpd` | Kernel changepoint detection | adaptation | `harchaoui_bach_2008`, `arlot_celisse_harchaoui_2019` | `KernelCPD`, `gram_rbf`, `kcp_penalized`, `kcp_select_bic` | `changepoint_lab/algorithms/kernel/kcp.py`; `changepoint_lab/algorithms/kernel/kcp_core.py`; `changepoint_lab/algorithms/kernel/bandwidth_cv.py` | characterized_only |
-| `rff_kernel_cpd` | Random Fourier feature kernel changepoint detection | extension | `rahimi_recht_2007`, `harchaoui_bach_2008` | None | `changepoint_lab/algorithms/kernel/kcp_rff.py`; `changepoint_lab/algorithms/kernel/rff_variants.py` | partially_verified |
-| `hsmm` | Hidden semi-Markov model | adaptation | `yu_2010` | `HSMM`, `HSMMConfig`, `HSMMParams`, `PoissonDur` | `changepoint_lab/algorithms/state_space/hsmm.py`; `changepoint_lab/algorithms/state_space/hsmm_core.py` | partially_verified |
-| `sd_hmm` | Scaled-Dirichlet HMM | adaptation | `manouchehri_bouguila_2023` | `SDHMM`, `SDHMMConfig`, `SDHMMResult` | `changepoint_lab/algorithms/state_space/sdhmm.py` | characterized_only |
-| `sd_hmm_mix_vi` | Scaled-Dirichlet mixture VI HMM | extension | `manouchehri_bouguila_2023` | `SDHMMMixVI`, `SDHMMMixVIConfig`, `SDHMMMixVIResult` | `changepoint_lab/algorithms/state_space/sdhmm_mix_vi.py` | unverified |
+| `edivisive` | E-Divisive energy-statistic changepoint detection | adaptation | `matteson_james_2014` | `EDivisive`, `edivisive` | `src/changepoint_lab/algorithms/nonparametric/edivisive.py`; `src/changepoint_lab/algorithms/nonparametric/edivisive_core.py` | partially_verified |
+| `kernel_cpd` | Kernel changepoint detection | adaptation | `harchaoui_bach_2008`, `arlot_celisse_harchaoui_2019` | `KernelCPD`, `gram_rbf`, `kcp_penalized`, `kcp_select_bic` | `src/changepoint_lab/algorithms/kernel/kcp.py`; `src/changepoint_lab/algorithms/kernel/kcp_core.py`; `src/changepoint_lab/algorithms/kernel/bandwidth_cv.py` | characterized_only |
+| `rff_kernel_cpd` | Random Fourier feature kernel changepoint detection | extension | `rahimi_recht_2007`, `harchaoui_bach_2008` | None | `src/changepoint_lab/algorithms/kernel/kcp_rff.py`; `src/changepoint_lab/algorithms/kernel/rff_variants.py` | partially_verified |
+| `hsmm` | Hidden semi-Markov model | adaptation | `yu_2010` | `HSMM`, `HSMMConfig`, `HSMMParams`, `PoissonDur` | `src/changepoint_lab/algorithms/state_space/hsmm.py`; `src/changepoint_lab/algorithms/state_space/hsmm_core.py` | partially_verified |
+| `sd_hmm` | Scaled-Dirichlet HMM | adaptation | `manouchehri_bouguila_2023` | `SDHMM`, `SDHMMConfig`, `SDHMMResult` | `src/changepoint_lab/algorithms/state_space/sdhmm.py` | characterized_only |
+| `sd_hmm_mix_vi` | Scaled-Dirichlet mixture VI HMM | extension | `manouchehri_bouguila_2023` | `SDHMMMixVI`, `SDHMMMixVIConfig`, `SDHMMMixVIResult` | `src/changepoint_lab/algorithms/state_space/sdhmm_mix_vi.py` | unverified |
 
 ## Citation Identifiers
 

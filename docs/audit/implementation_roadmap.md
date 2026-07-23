@@ -32,7 +32,7 @@ Exit criteria:
 ## Phase 2: Packaging and API Contract
 
 1. Decide whether to keep setuptools or migrate to Poetry and `src/` layout.
-2. Make `pyproject.toml` the only dependency source; retire or generate
+2. Make `pyproject.toml` the only dependency source and retire
    `requirements.txt`.
 3. Define public result contracts with typed domain objects, not primary
    `dict[str, Any]` outputs.

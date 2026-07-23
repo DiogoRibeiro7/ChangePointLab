@@ -91,7 +91,7 @@ def test_cli_entry_points():
     modules = [
         "changepoint_lab.cli.bocpd_cli",
         "changepoint_lab.algorithms.bayesian.within_period.cli",
-        "toolkit.cpd_cli",
+        "changepoint_lab.cli.cpd_cli",
     ]
     for mod in modules:
         result = subprocess.run(

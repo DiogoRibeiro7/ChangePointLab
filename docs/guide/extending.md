@@ -6,7 +6,7 @@ ChangePointLab and expose it through the public API.
 ## 1. Create the detector
 
 1. Place the implementation under an appropriate subfolder of
-   `changepoint_lab/algorithms/`.
+   `src/changepoint_lab/algorithms/`.
 2. Inherit from `BaseDetector` defined in `algorithms/_base.py`.
 3. Return a `ChangePointResult` from `predict` and support `fit`, `predict`
    and `fit_predict`.

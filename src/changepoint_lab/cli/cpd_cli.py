@@ -1,24 +1,24 @@
 # cpd_cli.py
 # MIT License
 """
-Universal CLI wrapper for Change-Point & State-Space Toolkit
+Universal CLI wrapper for ChangePointLab
 Supports all methods with CSV I/O, plotting, and result export.
 
 Examples:
     # E-Divisive multivariate CPD
-    python cpd_cli.py edivisive --input data.csv --columns x,y,z --output results/
+    cpd-cli --input data.csv --output results/ edivisive --columns x,y,z
 
     # Kernel CPD with RBF
-    python cpd_cli.py kcp --input data.csv --kernel rbf --output results/
+    cpd-cli --input data.csv --output results/ kcp --columns x,y --kernel rbf
 
     # RFF KCP for large datasets
-    python cpd_cli.py rff-kcp --input data.csv --n-features 512 --output results/
+    cpd-cli --input data.csv --output results/ rff-kcp --columns x,y --n-features 512
 
     # HSMM with Gaussian emissions
-    python cpd_cli.py hsmm --input data.csv --n-states 3 --emission gaussian --output results/
+    cpd-cli --input data.csv --output results/ hsmm --columns x,y --n-states 3
 
     # Within-period CPD for daily patterns
-    python cpd_cli.py within-period --input activity.csv --bin-minutes 15 --output results/
+    cpd-cli --input activity.csv --output results/ within-period --bin-minutes 15
 """
 
 import argparse
@@ -308,7 +308,10 @@ def run_hsmm(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 
     # Build emission model
     if args.emission == "gaussian_diag":
-        from gaussian_diag import estimate_by_kmeanspp, gaussian_diag_loglik
+        from changepoint_lab.algorithms.state_space.emissions.gaussian_diag import (
+            estimate_by_kmeanspp,
+            gaussian_diag_loglik,
+        )
 
         em = estimate_by_kmeanspp(data, args.n_states, n_init=5)
         loglik = gaussian_diag_loglik(data, em)
@@ -461,7 +464,7 @@ def run_within_period(args) -> Tuple[Dict[str, Any], Dict[str, plt.Figure]]:
 def create_parser() -> argparse.ArgumentParser:
     """Create the main argument parser with subcommands."""
     parser = argparse.ArgumentParser(
-        description="Change-Point & State-Space Toolkit CLI",
+        description="ChangePointLab CLI",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 

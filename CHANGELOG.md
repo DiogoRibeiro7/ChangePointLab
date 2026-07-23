@@ -9,6 +9,12 @@
 ### Changed
 - Replaced unsupported benchmark, citation, and publication-scope claims with
   evidence-first status notes.
+- Migrated packaging to Poetry with a `src/changepoint_lab` layout and
+  package-local CLI entry points.
+
+### Removed
+- Removed duplicate `setup.py` and `requirements.txt` packaging paths.
+- Removed the obsolete `toolkit` package from the distribution.
 
 ## [0.1.1] - 2026-07-23
 ### Fixed

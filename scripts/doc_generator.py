@@ -846,22 +846,22 @@ python -m cli --load out/run.npz --plot-only --outdir out_plots
 # Run from command line:
 
 # Bayesian Blocks for events
-    python cpd_cli.py edivisive --input data.csv --columns x,y --output results/
+    cpd-cli edivisive --input data.csv --columns x,y --output results/
 
 # E-Divisive multivariate CPD
-python cpd_cli.py edivisive --input data.csv --columns x,y,z --output results/
+cpd-cli edivisive --input data.csv --columns x,y,z --output results/
 
 # Kernel CPD with RBF
-python cpd_cli.py kcp --input data.csv --kernel rbf --output results/
+cpd-cli kcp --input data.csv --kernel rbf --output results/
 
 # RFF KCP for large datasets
-python cpd_cli.py rff-kcp --input data.csv --n-features 512 --output results/
+cpd-cli rff-kcp --input data.csv --n-features 512 --output results/
 
 # HSMM with Gaussian emissions
-python cpd_cli.py hsmm --input data.csv --n-states 3 --emission gaussian --output results/
+cpd-cli hsmm --input data.csv --n-states 3 --emission gaussian --output results/
 
 # Within-period CPD for daily patterns
-python cpd_cli.py within-period --input activity.csv --bin-minutes 15 --output results/
+cpd-cli within-period --input activity.csv --bin-minutes 15 --output results/
 """,
             # Default example for other modules
             "default": """

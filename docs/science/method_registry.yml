@@ -99,8 +99,8 @@
       "relationship_to_source": "adaptation",
       "implemented_equations_or_algorithms": ["dynamic programming recursion", "PELT pruning condition", "AIC/BIC penalty helpers"],
       "code_paths": [
-        "changepoint_lab/algorithms/optimization/pelt.py",
-        "changepoint_lab/algorithms/optimization/cost_functions.py"
+        "src/changepoint_lab/algorithms/optimization/pelt.py",
+        "src/changepoint_lab/algorithms/optimization/cost_functions.py"
       ],
       "public_api": ["changepoint_lab.PELT", "changepoint_lab.algorithms.optimization.pelt.pelt", "changepoint_lab.algorithms.optimization.pelt.pelt_detect"],
       "tests": [
@@ -123,9 +123,9 @@
       "relationship_to_source": "adaptation",
       "implemented_equations_or_algorithms": ["run-length posterior recursion", "hazard-weighted growth and changepoint mass", "Beta-Bernoulli conjugate updates"],
       "code_paths": [
-        "changepoint_lab/algorithms/bayesian/bocpd/core.py",
-        "changepoint_lab/algorithms/bayesian/bocpd/likelihoods.py",
-        "changepoint_lab/algorithms/bayesian/bocpd/__init__.py"
+        "src/changepoint_lab/algorithms/bayesian/bocpd/core.py",
+        "src/changepoint_lab/algorithms/bayesian/bocpd/likelihoods.py",
+        "src/changepoint_lab/algorithms/bayesian/bocpd/__init__.py"
       ],
       "public_api": ["changepoint_lab.BOCPD", "changepoint_lab.ConstantHazard", "changepoint_lab.BoostedBoundaryHazard", "bocpd-cli"],
       "tests": [
@@ -148,10 +148,10 @@
       "relationship_to_source": "adaptation",
       "implemented_equations_or_algorithms": ["circular changepoint state", "Beta-binomial segment marginal likelihood", "Dirichlet-multinomial excess-length prior", "birth, move, and death proposals"],
       "code_paths": [
-        "changepoint_lab/algorithms/bayesian/within_period/__init__.py",
-        "changepoint_lab/algorithms/bayesian/within_period/within_period_cpd.py",
-        "changepoint_lab/algorithms/bayesian/within_period/posterior_predictive.py",
-        "changepoint_lab/algorithms/bayesian/within_period/samplers/tempering.py"
+        "src/changepoint_lab/algorithms/bayesian/within_period/__init__.py",
+        "src/changepoint_lab/algorithms/bayesian/within_period/within_period_cpd.py",
+        "src/changepoint_lab/algorithms/bayesian/within_period/posterior_predictive.py",
+        "src/changepoint_lab/algorithms/bayesian/within_period/samplers/tempering.py"
       ],
       "public_api": ["changepoint_lab.WithinPeriodCPD", "within-period-cli"],
       "tests": ["tests/integration/test_methods_interoperability.py", "tests/integration/test_cli_integration.py"],
@@ -187,8 +187,8 @@
       "relationship_to_source": "adaptation",
       "implemented_equations_or_algorithms": ["energy-distance split statistic", "recursive divisive segmentation", "permutation and block-resampling p-values"],
       "code_paths": [
-        "changepoint_lab/algorithms/nonparametric/edivisive.py",
-        "changepoint_lab/algorithms/nonparametric/edivisive_core.py"
+        "src/changepoint_lab/algorithms/nonparametric/edivisive.py",
+        "src/changepoint_lab/algorithms/nonparametric/edivisive_core.py"
       ],
       "public_api": ["changepoint_lab.EDivisive", "changepoint_lab.edivisive"],
       "tests": [
@@ -211,13 +211,13 @@
       "relationship_to_source": "adaptation",
       "implemented_equations_or_algorithms": ["kernel segment cost", "penalized dynamic programming", "BIC-style model selection"],
       "code_paths": [
-        "changepoint_lab/algorithms/kernel/kcp.py",
-        "changepoint_lab/algorithms/kernel/kcp_core.py",
-        "changepoint_lab/algorithms/kernel/bandwidth_cv.py"
+        "src/changepoint_lab/algorithms/kernel/kcp.py",
+        "src/changepoint_lab/algorithms/kernel/kcp_core.py",
+        "src/changepoint_lab/algorithms/kernel/bandwidth_cv.py"
       ],
       "public_api": ["changepoint_lab.KernelCPD", "changepoint_lab.gram_rbf", "changepoint_lab.kcp_penalized", "changepoint_lab.kcp_select_bic"],
       "tests": [
-        "changepoint_lab/tests/test_kcp/test_bandwidth_cv.py",
+        "tests/unit/test_kcp/test_bandwidth_cv.py",
         "tests/unit/test_kcp_segment_bounds.py",
         "tests/unit/test_algorithm_parity.py"
       ],
@@ -236,12 +236,12 @@
       "relationship_to_source": "extension",
       "implemented_equations_or_algorithms": ["RBF random Fourier map", "feature-prefix segment cost", "approximate KCP dynamic programming"],
       "code_paths": [
-        "changepoint_lab/algorithms/kernel/kcp_rff.py",
-        "changepoint_lab/algorithms/kernel/rff_variants.py"
+        "src/changepoint_lab/algorithms/kernel/kcp_rff.py",
+        "src/changepoint_lab/algorithms/kernel/rff_variants.py"
       ],
       "public_api": ["changepoint_lab.algorithms.kernel.kcp_rff"],
       "tests": [
-        "changepoint_lab/tests/test_kcp/test_rff_variants.py",
+        "tests/unit/test_kcp/test_rff_variants.py",
         "tests/unit/test_performance.py"
       ],
       "documentation_paths": ["docs/cpd.md"],
@@ -259,8 +259,8 @@
       "relationship_to_source": "adaptation",
       "implemented_equations_or_algorithms": ["explicit-duration forward-backward", "duration M-step", "Viterbi decoding"],
       "code_paths": [
-        "changepoint_lab/algorithms/state_space/hsmm.py",
-        "changepoint_lab/algorithms/state_space/hsmm_core.py"
+        "src/changepoint_lab/algorithms/state_space/hsmm.py",
+        "src/changepoint_lab/algorithms/state_space/hsmm_core.py"
       ],
       "public_api": ["changepoint_lab.HSMM", "changepoint_lab.HSMMConfig", "changepoint_lab.PoissonDur"],
       "tests": [
@@ -282,7 +282,7 @@
       "citation_ids": ["manouchehri_bouguila_2023"],
       "relationship_to_source": "adaptation",
       "implemented_equations_or_algorithms": ["scaled-Dirichlet log density", "forward-backward", "MAP gradient emission updates", "Viterbi decoding"],
-      "code_paths": ["changepoint_lab/algorithms/state_space/sdhmm.py"],
+      "code_paths": ["src/changepoint_lab/algorithms/state_space/sdhmm.py"],
       "public_api": ["changepoint_lab.SDHMM", "changepoint_lab.SDHMMConfig"],
       "tests": ["tests/unit/test_numerical_stability.py", "tests/unit/test_algorithm_parity.py"],
       "documentation_paths": ["docs/api/sdhmm.rst", "docs/guide/state_space_methods.md"],
@@ -299,7 +299,7 @@
       "citation_ids": ["manouchehri_bouguila_2023"],
       "relationship_to_source": "extension",
       "implemented_equations_or_algorithms": ["per-state scaled-Dirichlet mixtures", "variational mixture responsibilities", "Dirichlet mixture-weight update", "state forward-backward"],
-      "code_paths": ["changepoint_lab/algorithms/state_space/sdhmm_mix_vi.py"],
+      "code_paths": ["src/changepoint_lab/algorithms/state_space/sdhmm_mix_vi.py"],
       "public_api": ["changepoint_lab.SDHMMMixVI", "changepoint_lab.SDHMMMixVIConfig"],
       "tests": ["tests/unit/test_numerical_stability.py"],
       "documentation_paths": ["docs/api/sdhmm.rst", "docs/guide/state_space_methods.md"],

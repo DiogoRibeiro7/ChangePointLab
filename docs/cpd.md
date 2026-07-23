@@ -5,7 +5,8 @@ The former `cpd` package has been split into dedicated modules:
 - `WithinPeriodCPD` – within-period change-point detection
 - `algorithms.kernel` – kernel change-point detection and RFF helpers
 - `hsmm` – state-space emissions
-- `toolkit` – shared CLI and API glue
+- `cli` – package-local command-line entry points
+- `common.api_harmonizer` – internal adapter registry
 - `common` – utilities, I/O, plotting, and diagnostics
 
 This file exists for historical context only.

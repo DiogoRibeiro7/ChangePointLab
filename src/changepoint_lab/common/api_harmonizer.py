@@ -1,7 +1,7 @@
 # api_harmonizer.py
 # MIT License
 """
-API Harmonizer for the Change-Point & State-Space Toolkit.
+API Harmonizer for ChangePointLab.
 
 This utility provides adapter functions to standardize the interfaces
 across different modules, ensuring consistent return types and parameter
