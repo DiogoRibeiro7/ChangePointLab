@@ -4,12 +4,17 @@
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Tuple, TypedDict
+from typing import Any, Optional, Sequence, TYPE_CHECKING, Tuple, TypedDict
 
 import numpy as np
 from numpy.typing import NDArray
-import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
+
+from changepoint_lab._optional import require_matplotlib_pyplot
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+else:
+    Axes = Any
 
 # Reuse the Tau type alias from your model file if you prefer:
 Tau = Tuple[int, ...]
@@ -121,6 +126,7 @@ def plot_changepoint_posterior_mass(
         raise ValueError("normalize must be 'per-sample' or 'sum-1'.")
 
     x = np.arange(N)
+    plt = require_matplotlib_pyplot("within-period plotting")
 
     if ax is None:
         _, ax = plt.subplots(figsize=(10, 3.2))
@@ -185,6 +191,7 @@ def plot_pointwise_bands(
         raise ValueError("pw['median'], ['lower'], ['upper'] must be 1-D arrays of equal shape.")
     N = median.size
     x = np.arange(N)
+    plt = require_matplotlib_pyplot("within-period plotting")
 
     if ax is None:
         _, ax = plt.subplots(figsize=(10, 3.2))
@@ -231,6 +238,7 @@ def plot_posterior_num_segments(
     probs = np.asarray(probs, dtype=float)
     if m_values.size != probs.size:
         raise ValueError("m_values and probs must have the same length.")
+    plt = require_matplotlib_pyplot("within-period plotting")
 
     if ax is None:
         _, ax = plt.subplots(figsize=(6, 3))

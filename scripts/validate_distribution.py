@@ -104,6 +104,11 @@ def validate_dist(dist_dir: Path, root: Path) -> None:
     for line in expected_metadata:
         if line not in metadata:
             raise AssertionError(f"missing wheel metadata line: {line}")
+    for line in metadata.splitlines():
+        if line.startswith("Requires-Dist: matplotlib") and "extra == \"plot\"" not in line:
+            raise AssertionError(f"matplotlib must be plot-optional: {line}")
+        if line.startswith("Requires-Dist: pandas") and "extra == \"data\"" not in line:
+            raise AssertionError(f"pandas must be data-optional: {line}")
 
     parser = configparser.ConfigParser()
     parser.read_string(entry_points)

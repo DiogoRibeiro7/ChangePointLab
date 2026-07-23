@@ -13,7 +13,7 @@ This document summarises the development workflow and coding conventions.
 ## Testing
 
 - Use **pytest** for unit tests. Every feature or bug fix requires accompanying tests.
-- Install developer dependencies with `poetry install --with dev,docs,bench`.
+- Install developer dependencies with `poetry install --with dev,docs --extras "plot data"`.
 - Run the full test suite before submitting a pull request: `poetry run pytest`.
 
 ## BaseDetector interface

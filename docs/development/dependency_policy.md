@@ -1,0 +1,79 @@
+# Dependency policy
+
+Date: 2026-07-23
+
+## Supported compatibility matrix
+
+ChangePointLab supports Python 3.10 through 3.14 for core imports and core
+NumPy-based algorithms.
+
+| Layer | Supported range | Validation |
+| --- | --- | --- |
+| Python | 3.10, 3.11, 3.12, 3.13, 3.14 | CI test matrix |
+| NumPy on Python <3.14 | `>=1.21,<2.3` | Python 3.10 minimum job uses NumPy 1.21.6 |
+| NumPy on Python >=3.14 | `>=2.3` | Python 3.14 newest job uses current compatible NumPy |
+| Plotting extra | Matplotlib `>=3.3` | Full test matrix installs `plot` |
+| Data extra | pandas `>=1.5` | Full test matrix installs `data` |
+
+The core package must import and run without Matplotlib or pandas installed.
+
+## Dependency classification
+
+| Package | Classification | Declared in |
+| --- | --- | --- |
+| NumPy | Runtime core | `[project].dependencies` |
+| Matplotlib | Optional plotting | `[project.optional-dependencies].plot` |
+| pandas | Optional CSV time-binning/data I/O | `[project.optional-dependencies].data` |
+| Sphinx, pdoc, NetworkX | Documentation | `[tool.poetry.group.docs.dependencies]` |
+| pytest | Test execution | `[tool.poetry.group.dev.dependencies]` |
+| coverage, pytest-cov, Ruff, Mypy, pydocstyle, types-setuptools, tomli | Development quality gates | `[tool.poetry.group.dev.dependencies]` |
+| LibCST | Development migration helper | `[tool.poetry.group.dev.dependencies]` |
+| pip-audit, pip-licenses | Manual supply-chain checks | `[tool.poetry.group.dev.dependencies]` |
+
+Examples and tutorials may require `plot` and `data`, but those extras must not
+be imported by core package initialization.
+
+The Poetry `bench` group is intentionally present but empty until a
+benchmark-only dependency is introduced.
+
+## Optional import rules
+
+- Core modules may import NumPy at module import time.
+- Plotting modules must import Matplotlib lazily through
+  `changepoint_lab._optional.require_matplotlib_pyplot`.
+- CSV/data-frame I/O must import pandas lazily through
+  `changepoint_lab._optional.require_pandas`.
+- Optional dependency failures must mention the missing package and the
+  installation extra.
+
+## Local validation commands
+
+```bash
+poetry install --with dev,docs --extras "plot data"
+poetry check --lock
+poetry run ruff check .
+poetry run mypy
+poetry run pydocstyle src/changepoint_lab
+poetry run pytest
+poetry build
+poetry run python scripts/validate_distribution.py dist
+```
+
+Manual dependency review commands:
+
+```bash
+poetry run pip-licenses --format=markdown
+poetry run pip-audit
+```
+
+These audit commands may need network access or current vulnerability data and
+are not part of the normal unit test suite.
+
+## Update policy
+
+1. Add new runtime dependencies only when a NumPy-only implementation is not
+   practical for the stable public path.
+2. Put feature-specific dependencies behind extras and lazy imports.
+3. Update this policy, `pyproject.toml`, CI, and the distribution validator in
+   the same change.
+4. Run both minimum and newest compatibility jobs before release.

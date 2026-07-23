@@ -6,10 +6,16 @@ from __future__ import annotations
 
 import numpy as np
 from numpy.typing import NDArray
-import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
+from typing import TYPE_CHECKING, Any
+
+from changepoint_lab._optional import require_matplotlib_pyplot
 
 from ...algorithms.kernel.kcp_core import KCPResult, KCPModelSel
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+else:
+    Axes = Any
 
 
 def plot_segments_1d(
@@ -23,6 +29,7 @@ def plot_segments_1d(
     Overlay a 1D series with vertical lines at fitted edges.
     For multivariate X, pass a 1D projection (e.g., first PC) here.
     """
+    plt = require_matplotlib_pyplot("KCP plotting")
     if ax is None:
         _, ax = plt.subplots(figsize=(10, 3))
     n = x.size
@@ -45,6 +52,7 @@ def plot_model_scree(
     """
     Scree plot of unpenalized costs and penalized criterion across m.
     """
+    plt = require_matplotlib_pyplot("KCP plotting")
     if ax is None:
         _, ax = plt.subplots(figsize=(6, 3))
     m = np.arange(1, sel.costs_m.size + 1)

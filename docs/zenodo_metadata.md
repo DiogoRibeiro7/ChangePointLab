@@ -17,7 +17,8 @@ Supported by internal research funds from ESMAD - Instituto Politécnico do Port
 
 ## Technical Specifications and System Requirements
 - **Programming language:** Python ≥3.10
-- **Runtime dependencies:** NumPy ≥1.21, pandas ≥1.5, Matplotlib ≥3.3
+- **Runtime dependencies:** NumPy
+- **Optional packages:** Matplotlib for plotting, pandas for CSV time-binning/data I/O
 - **Dependency workflow:** Poetry-managed `pyproject.toml` and lock file
 - **Operating systems:** Platform independent (tested on Linux, macOS, Windows)
 

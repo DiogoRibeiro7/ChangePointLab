@@ -6,8 +6,14 @@ from __future__ import annotations
 
 import numpy as np
 from numpy.typing import NDArray
-import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
+from typing import TYPE_CHECKING, Any
+
+from changepoint_lab._optional import require_matplotlib_pyplot
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+else:
+    Axes = Any
 
 
 def plot_run_length_heatmap(
@@ -33,6 +39,7 @@ def plot_run_length_heatmap(
     """
     if R.ndim != 2:
         raise ValueError("R must be 2-D (T x (R+1)).")
+    plt = require_matplotlib_pyplot("BOCPD plotting")
     if ax is None:
         _, ax = plt.subplots(figsize=(10, 4))
     im = ax.imshow(R.T, aspect="auto", origin="lower", interpolation="nearest", vmax=vmax)
@@ -64,6 +71,7 @@ def plot_cp_probability(
     """
     if cp_prob.ndim != 1:
         raise ValueError("cp_prob must be 1-D.")
+    plt = require_matplotlib_pyplot("BOCPD plotting")
     if ax is None:
         _, ax = plt.subplots(figsize=(10, 2.5))
     ax.plot(np.arange(cp_prob.size), cp_prob, linewidth=1.5)

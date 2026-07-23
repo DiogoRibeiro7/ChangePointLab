@@ -25,7 +25,7 @@ jobs:
       - name: Install Poetry
         run: python -m pip install --upgrade pip poetry
       - name: Install dependencies
-        run: poetry install --with dev,docs,bench
+        run: poetry install --with dev,docs
       - name: Ruff critical checks
         run: poetry run ruff check .
       - name: Mypy configured checks
@@ -45,7 +45,7 @@ jobs:
       MPLBACKEND: Agg
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -54,7 +54,7 @@ jobs:
       - name: Install Poetry
         run: python -m pip install --upgrade pip poetry
       - name: Install dependencies
-        run: poetry install --with dev,bench
+        run: poetry install --with dev --extras "plot data"
       - name: Unit tests
         run: poetry run coverage run -m pytest -m "not slow" tests/unit
       - name: Integration tests
@@ -112,6 +112,49 @@ jobs:
       - name: Install Poetry
         run: python -m pip install --upgrade pip poetry
       - name: Install dependencies
-        run: poetry install --with dev
+        run: poetry install --with dev --extras "plot data"
       - name: Numerical stability tests
         run: poetry run pytest tests/unit
+
+  compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - label: oldest
+            python-version: "3.10"
+            numpy-spec: "numpy==1.21.6"
+          - label: newest
+            python-version: "3.14"
+            numpy-spec: "numpy>=2.3"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install core dependency set
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "${{ matrix.numpy-spec }}"
+          python -m pip install --no-deps -e .
+      - name: Core smoke without optional extras
+        run: |
+          python - <<'PY'
+          import importlib.util
+          import numpy as np
+          import changepoint_lab as cpl
+          from changepoint_lab.algorithms.optimization.pelt import (
+              NormalMeanVarUnknown,
+              bic_penalty,
+          )
+
+          assert importlib.util.find_spec("matplotlib") is None
+          assert importlib.util.find_spec("pandas") is None
+          assert cpl.__version__
+          x = np.r_[np.zeros(6), np.ones(6)]
+          cost = NormalMeanVarUnknown()
+          cost.precompute(x)
+          result = cpl.PELT(cost_fn=cost, penalty=bic_penalty(2, len(x))).fit_predict(x)
+          assert result.indices.ndim == 1
+          assert cpl.edivisive(x.reshape(-1, 1), min_size=2, R=3, resample="iid").change_points is not None
+          PY

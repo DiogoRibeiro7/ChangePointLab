@@ -6,10 +6,16 @@ from __future__ import annotations
 
 import numpy as np
 from numpy.typing import NDArray
-import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
+from typing import TYPE_CHECKING, Any
+
+from changepoint_lab._optional import require_matplotlib_pyplot
 
 from ...algorithms.nonparametric.edivisive_core import EDivisiveResult
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+else:
+    Axes = Any
 
 
 def plot_scree_edivisive(
@@ -21,6 +27,7 @@ def plot_scree_edivisive(
     """
     Simple scree-style plot: bar chart of accepted test statistics (descending), annotated with p-values.
     """
+    plt = require_matplotlib_pyplot("E-Divisive plotting")
     if ax is None:
         _, ax = plt.subplots(figsize=(6, 3))
     if not result.splits:
@@ -64,6 +71,7 @@ def plot_segments_1d(
     Quick 1D overlay: plot the signal x with vertical lines at accepted changepoints.
     For multivariate data, pass a 1-D projection (e.g., first PC) for visualization.
     """
+    plt = require_matplotlib_pyplot("E-Divisive plotting")
     if ax is None:
         _, ax = plt.subplots(figsize=(10, 3))
     n = x.size

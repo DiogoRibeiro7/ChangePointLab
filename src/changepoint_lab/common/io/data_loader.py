@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import datetime as dt
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, TYPE_CHECKING, Tuple, Union
 
 import numpy as np
-import pandas as pd
 from numpy.typing import NDArray
+
+from changepoint_lab._optional import require_pandas
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 def load_binary_from_csv(
@@ -60,6 +64,7 @@ def load_binary_from_csv(
     time_bins : pd.DatetimeIndex, optional
         Bin edges as a tz-aware (if timezone given) or naive index.
     """
+    pd = require_pandas("CSV time-binning")
     if bin_minutes <= 0 or bin_minutes > 1440 or 1440 % bin_minutes != 0:
         raise ValueError(
             f"bin_minutes must be a positive divisor of 1440, got {bin_minutes}"

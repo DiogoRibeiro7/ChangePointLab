@@ -23,13 +23,13 @@ Key innovations:
 git clone https://github.com/DiogoRibeiro7/ChangePointLab.git
 cd ChangePointLab
 
-poetry install --with dev,docs
+poetry install --with dev,docs --extras "plot data"
 ```
 
 ## Dependencies
-- numpy >= 1.20.0
-- matplotlib >= 3.5.0
-- pandas >= 1.3.0
+- NumPy
+- Optional: Matplotlib for plots
+- Optional: pandas for CSV time-binning
 
 ## Basic Usage
 

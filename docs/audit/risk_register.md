@@ -46,6 +46,7 @@ Severity levels:
 | RR-009 | Resolved | Importable package code now lives under `src/changepoint_lab`, `setup.py` and `requirements.txt` were removed, and dependency metadata is centralized in Poetry-managed `pyproject.toml`. |
 | RR-010 | Resolved | Runnable package examples and package-local KCP tests were moved out of the wheel package tree. |
 | RR-011 | Resolved | Former `toolkit` entry points now target package-local CLI modules under `changepoint_lab.cli`. |
+| RR-012 | Resolved | Core runtime dependencies are now NumPy-only; Matplotlib and pandas are optional extras with lazy import errors and CI coverage. |
 
 ## Blockers Before External Scientific Readiness
 

@@ -11,7 +11,6 @@ from .core import (
     Hazard,
     ScheduledHazard,
 )
-from .plotting import plot_run_length_heatmap, plot_cp_probability
 from ....core.datatypes import ChangePointResult
 from ..._base import BaseDetector
 
@@ -35,6 +34,20 @@ class BOCPD(_BOCPD, BaseDetector):
             "map_run_length": self._result.map_run_length,
         }
         return ChangePointResult(indices=cps, metadata=meta)
+
+
+def plot_run_length_heatmap(*args, **kwargs):
+    """Plot a BOCPD run-length posterior if the plotting extra is installed."""
+    from .plotting import plot_run_length_heatmap as _plot_run_length_heatmap
+
+    return _plot_run_length_heatmap(*args, **kwargs)
+
+
+def plot_cp_probability(*args, **kwargs):
+    """Plot BOCPD changepoint probabilities if the plotting extra is installed."""
+    from .plotting import plot_cp_probability as _plot_cp_probability
+
+    return _plot_cp_probability(*args, **kwargs)
 
 
 __all__ = [

@@ -9,8 +9,8 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
-import matplotlib.pyplot as plt
 
+from changepoint_lab._optional import require_matplotlib_pyplot
 from changepoint_lab.algorithms.bayesian.bocpd import (
     BOCPD,
     BOCPDConfig,
@@ -18,10 +18,6 @@ from changepoint_lab.algorithms.bayesian.bocpd import (
     ConstantHazard,
     Hazard,
     ScheduledHazard,
-)
-from changepoint_lab.algorithms.bayesian.bocpd.plotting import (
-    plot_run_length_heatmap,
-    plot_cp_probability,
 )
 from changepoint_lab.common.io.data_loader import load_binary_from_csv
 
@@ -155,6 +151,12 @@ def main() -> None:
     res = model.run(x.astype(bool))
 
     # ---- Save plots ----
+    plt = require_matplotlib_pyplot("bocpd-cli plots")
+    from changepoint_lab.algorithms.bayesian.bocpd.plotting import (
+        plot_cp_probability,
+        plot_run_length_heatmap,
+    )
+
     args.outdir.mkdir(parents=True, exist_ok=True)
     if res.run_length_posterior is not None:
         plot_run_length_heatmap(res.run_length_posterior, title="Run-length posterior (BOCPD)")

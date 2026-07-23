@@ -28,13 +28,13 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Artificial Intelligence"
 ]
 dependencies = [
-  "numpy>=1.21,<2.3",
-  "pandas>=1.5",
-  "matplotlib>=3.3"
+  "numpy>=1.21,<2.3; python_version < '3.14'",
+  "numpy>=2.3; python_version >= '3.14'"
 ]
 
 [project.optional-dependencies]
 plot = ["matplotlib>=3.3"]
+data = ["pandas>=1.5"]
 
 [project.scripts]
 cpd = "changepoint_lab.cli.cpd_cli:main"
@@ -66,23 +66,27 @@ exclude = [
   "tests/**"
 ]
 
-[tool.poetry.group.plot.dependencies]
-matplotlib = ">=3.3"
-
 [tool.poetry.group.docs.dependencies]
+networkx = ">=3"
 pdoc = ">=15"
 sphinx = ">=7"
 
+[tool.poetry.group.bench]
+optional = true
+
 [tool.poetry.group.bench.dependencies]
-pytest = ">=7"
 
 [tool.poetry.group.dev.dependencies]
 coverage = ">=7"
+libcst = ">=1.0"
 mypy = ">=1.6"
+pip-audit = ">=2.7"
+pip-licenses = ">=5"
 pydocstyle = ">=6"
 pytest = ">=7"
 pytest-cov = ">=4"
 ruff = ">=0.3"
+tomli = { version = ">=2", python = "<3.11" }
 types-setuptools = "*"
 
 [tool.ruff]

@@ -33,8 +33,8 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import numpy as np
-import matplotlib.pyplot as plt
 
+from changepoint_lab._optional import require_matplotlib_pyplot
 # Local modules
 from .within_period_cpd import ModelPrior, RJConfig, Tau, WithinPeriodCore
 from . import WithinPeriodCPD
@@ -73,6 +73,7 @@ def _save_all_plots(
       - pointwise_bands.png  (with optional empirical overlay)
       - posterior_m.png
     """
+    plt = require_matplotlib_pyplot("within-period-cli plots")
     outdir.mkdir(parents=True, exist_ok=True)
 
     # Pointwise summary from samples
