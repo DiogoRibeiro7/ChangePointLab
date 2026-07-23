@@ -93,11 +93,11 @@
   "methods": [
     {
       "id": "pelt",
-      "name": "Pruned Exact Linear Time",
+      "name": "PELT / exact penalized segmentation",
       "stable_package_symbols": ["PELT"],
       "citation_ids": ["killick_2012"],
       "relationship_to_source": "adaptation",
-      "implemented_equations_or_algorithms": ["dynamic programming recursion", "PELT pruning condition", "AIC/BIC penalty helpers"],
+      "implemented_equations_or_algorithms": ["penalized dynamic programming recursion", "exact candidate retention for bundled costs", "AIC/BIC penalty helpers in deviance units"],
       "code_paths": [
         "src/changepoint_lab/algorithms/optimization/pelt.py",
         "src/changepoint_lab/algorithms/optimization/cost_functions.py"
@@ -105,12 +105,13 @@
       "public_api": ["changepoint_lab.PELT", "changepoint_lab.algorithms.optimization.pelt.pelt", "changepoint_lab.algorithms.optimization.pelt.pelt_detect"],
       "tests": [
         "tests/unit/test_algorithm_parity.py",
+        "tests/unit/test_pelt_cost_oracles.py",
         "tests/unit/test_pelt_result_fields.py",
         "tests/integration/test_methods_interoperability.py"
       ],
       "documentation_paths": ["README.md", "docs/api/pelt.rst", "docs/guide/optimization_methods.md"],
-      "reproduction_artifact": "No independent paper oracle yet; current tests are package characterization and interoperability tests.",
-      "deviations": ["Cost functions are a local typed interface.", "Penalty choice is caller-controlled.", "Concave-penalty wrapper is exploratory."],
+      "reproduction_artifact": "Independent exhaustive optimal-partitioning oracle in tests/unit/test_pelt_cost_oracles.py covers Gaussian known-variance, Gaussian unknown-variance, and beta-binomial costs on small deterministic, exhaustive, and random cases.",
+      "deviations": ["Cost functions are a local typed interface.", "Penalty choice is caller-controlled.", "AIC/BIC helpers are in Gaussian deviance units.", "The K pruning constant is retained for compatibility but exact candidate retention is used for bundled costs.", "Concave-penalty wrapper is approximate."],
       "extensions": ["Normal and beta-binomial costs", "sklearn-like wrapper returning ChangePointResult"],
       "verification_status": "partially_verified",
       "mysense_connection": "General offline segmentation baseline for event-count workflows."

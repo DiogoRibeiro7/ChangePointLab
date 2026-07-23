@@ -12,11 +12,11 @@ This note compares real-time detection with batch segmentation.
 | Latency | Immediate | After full data seen |
 | Accuracy | Depends on hazard | Optimal (given model) |
 | Memory | Constant | Grows with data |
-| Complexity | O(T) | PELT O(T), E-Divisive O(T^2) |
+| Complexity | O(T) for fixed BOCPD run-length cap | PELT O(T^2) current exact candidate retention, E-Divisive O(T^2) |
 
 ## Streaming Considerations
 - Update hazards to reflect expected changepoint frequency
-- Use pruning or windowing to limit memory
+- Use posterior pruning or a fixed run-length cap to limit BOCPD memory
 - Evaluate detection delay vs. false alarm rate
 
 ## Hybrid Approaches

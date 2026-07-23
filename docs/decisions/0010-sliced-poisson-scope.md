@@ -21,8 +21,9 @@ Implement the faithful baseline as an unmarked IHPP sliced Poisson detector:
 - event times are repeated periods on `[0, period)`;
 - optional exposure intervals represent observed windows;
 - segment cost is optimized minus twice IHPP log-likelihood;
-- PELT is used with `K=0` because a split cannot worsen optimized
-  log-likelihood;
+- the shared PELT interface is used for the across-period additive objective;
+  its `K` argument is currently compatibility-only because exact candidate
+  retention is used for bundled costs;
 - marked sensors are available only through an explicit independent-by-mark
   helper.
 

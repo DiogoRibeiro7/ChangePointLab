@@ -10,16 +10,16 @@
       "metadata_keys": ["costs_per_segment", "labels"]
     },
     "pelt_unknown_variance_current": {
-      "label": "compatibility",
-      "change_points": [],
-      "total_cost": 25.3450285652,
-      "labels": [0, 0, 0, 0, 0, 0],
+      "label": "scientific_oracle",
+      "change_points": [3],
+      "total_cost": -154.3505380291,
+      "labels": [0, 0, 0, 1, 1, 1],
       "metadata_keys": ["costs_per_segment", "labels"]
     },
     "pelt_concave_current": {
-      "label": "compatibility",
-      "change_points": [],
-      "total_cost": 25.3450285652
+      "label": "scientific_oracle",
+      "change_points": [3],
+      "total_cost": -154.3505380291
     },
     "bocpd_beta_bernoulli_current": {
       "label": "compatibility",

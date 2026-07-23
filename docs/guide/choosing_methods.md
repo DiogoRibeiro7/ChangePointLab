@@ -34,7 +34,7 @@ graph TD
 | Method | Strengths | Limitations | When to Use | Computational Complexity |
 |--------|-----------|-------------|-------------|--------------------------|
 | **BOCPD** | • Online/streaming detection<br>• Uncertainty quantification<br>• Probabilistic output | • Requires distribution assumptions<br>• Parameter sensitivity<br>• Less optimal for batch analysis | • Real-time monitoring<br>• When immediate alerts are needed<br>• When uncertainty matters | O(RT) time, O(R) space<br>R = max run length |
-| **PELT** | • Exact global optimum<br>• Linear time complexity<br>• Multiple cost functions | • Requires full data<br>• Distribution assumptions<br>• No uncertainty measures | • Offline historical analysis<br>• When exact segmentation matters<br>• With known distribution models | O(T) time and space<br>(with pruning) |
+| **PELT** | • Exact global optimum<br>• Multiple cost functions<br>• Clear penalty objective | • Requires full data<br>• Distribution assumptions<br>• No uncertainty measures | • Offline historical analysis<br>• When exact segmentation matters<br>• With known distribution models | O(T²) current exact candidate retention; pruning-dependent linear behavior is not claimed |
 | **E-Divisive** | • No distribution assumptions<br>• Handles multivariate data<br>• Robust to outliers | • Computationally intensive<br>• Requires permutation testing<br>• Less sensitive to small shifts | • Complex multivariate data<br>• When assumptions uncertain<br>• For detecting distribution changes | O(T²) time, O(T) space |
 | **HSMM** | • State interpretation<br>• Duration modeling<br>• Handles recurrent patterns | • EM convergence issues<br>• Parameter selection<br>• Sensitive to initialization | • When states have meaning<br>• For regime identification<br>• With recurrent patterns | O(T·K·D²) time<br>K = states, D = max duration |
 | **KCP** | • Flexible nonlinear boundaries<br>• Handles complex relationships<br>• Model selection tools | • Kernel/bandwidth selection<br>• Quadratic complexity<br>• Memory intensive | • Complex nonlinear data<br>• Feature-rich time series<br>• When relationships matter | O(T²) naive, O(T) with RFF |
@@ -50,7 +50,7 @@ graph TD
 ### Statistical Properties
 
 * **Known Gaussian data**: PELT with Normal cost functions
-* **Binary/count data**: BOCPD with Beta-Binomial, PELT with Binomial cost
+* **Binary/count data**: BOCPD with Beta-Bernoulli or Poisson-Gamma; PELT with `BetaBinomialCost` for binary streams
 * **Heavy-tailed data**: E-Divisive, KCP with robust kernel
 * **Multivariate data**: E-Divisive, KCP, multivariate HSMM
 
@@ -71,8 +71,8 @@ graph TD
 
 ### PELT
 
-* **Cost function**: Match to data distribution (Gaussian, Poisson, Binomial)
-* **Penalty**: AIC (more sensitive), BIC (more conservative), or custom based on expected CP frequency
+* **Cost function**: Match to data distribution (`NormalMeanKnownVar`, `NormalMeanVarUnknown`, or `BetaBinomialCost`)
+* **Penalty**: AIC/BIC helpers for Gaussian deviance costs, or custom penalties on the selected cost scale
 * **Min segment length**: Set based on domain knowledge about minimum meaningful segment duration
 
 ### E-Divisive

@@ -6,7 +6,7 @@ Efficiency determines feasibility on large datasets. This guide summarizes compl
 | Method | Time | Memory |
 |--------|------|--------|
 | BOCPD | O(T) | O(R) run-length | 
-| PELT | O(T) (with pruning) | O(T) |
+| PELT | O(T^2) current exact candidate retention; pruning-dependent O(T) not claimed | O(T) |
 | E-Divisive | O(T^2) | O(T) |
 | HMM/HSMM | O(ST) | O(ST) |
 | SD-HMM | O(STK) | O(STK) |
@@ -16,7 +16,9 @@ Efficiency determines feasibility on large datasets. This guide summarizes compl
 - Use **vectorized likelihoods** and **NumPy** broadcasting
 - Enable **numba**/C extensions for inner loops
 - For BOCPD, truncate run-length support
-- For PELT, tune penalty to reduce candidate set
+- For PELT, tune penalty and minimum segment length for scientific validity;
+  current exact candidate retention prioritizes objective correctness over
+  pruning speed claims
 - Sample subsequences for E-Divisive on extremely long signals
 
 ## Flowchart

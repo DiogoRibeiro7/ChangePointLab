@@ -435,9 +435,9 @@ class SlicedPoissonCPD:
                 "penalty": penalty,
                 "penalty_mode": self.config.penalty,
                 "optimization_failures": failures,
-                "pelt_pruning_condition": (
-                    "Cost is optimized minus twice log-likelihood; splitting a segment cannot "
-                    "increase the optimized negative log-likelihood, so PELT uses K=0."
+                "pelt_objective": (
+                    "Cost is optimized minus twice log-likelihood and passed through the shared "
+                    "exact PELT objective; K is retained only as a compatibility argument."
                 ),
             },
             provenance={

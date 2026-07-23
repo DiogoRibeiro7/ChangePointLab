@@ -24,9 +24,9 @@ each segment is represented by an open uniform B-spline basis:
    result = SlicedPoissonCPD(cfg).fit_predict(periods)
 
 The segment cost is minus twice the optimized inhomogeneous Poisson
-log-likelihood. This additive objective is passed through the existing PELT
-implementation with ``K=0`` because allowing a split cannot increase the
-optimized negative log-likelihood.
+log-likelihood. This additive objective is passed through the shared PELT
+interface. The optimizer currently uses exact candidate retention for bundled
+costs, so ``K`` is retained only as a compatibility argument.
 
 Exposure intervals
 ------------------

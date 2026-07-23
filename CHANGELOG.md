@@ -1,6 +1,13 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- Corrected PELT candidate handling so bundled costs match exhaustive
+  optimal-partitioning oracles under minimum segment constraints.
+
+### Changed
+- Documented PELT penalty units, exact candidate-retention behavior, and
+  concave-penalty approximation limits.
 
 ## [0.1.12] - 2026-07-23
 ### Added

@@ -1,26 +1,33 @@
 # PELT Parameter Selection
 
-Pruned Exact Linear Time (PELT) optimizes a cost plus penalty objective.
+PELT optimizes a cost plus changepoint penalty objective over half-open
+right-exclusive segments.
 
 ## Cost Function Choice
-- **NormalMeanKnownVar**: for Gaussian data with known variance.
-- **NormalMeanVarUnknown**: handles unknown variance.
-- **Binary Segmentation**: adapt cost to binomial or custom likelihoods.
+- **NormalMeanKnownVar**: Gaussian profile deviance with known variance.
+- **NormalMeanVarUnknown**: Gaussian profile deviance with optimized segment
+  variance; length-one segments have infinite cost.
+- **BetaBinomialCost**: negative log marginalized Bernoulli likelihood with a
+  Beta prior.
 - **Guideline**: match cost to data distribution; mismatch reduces accuracy.
 
 ## Penalty Parameter
-- **AIC**: $2k$ favors recall.
-- **BIC**: $k \log n$ favors precision.
+- **AIC**: $2k$ in deviance units; matches the Gaussian costs.
+- **BIC**: $k \log n$ in deviance units; matches the Gaussian costs.
 - **Manual**: `pen=np.log(n)*variance` for domain-specific tuning.
 - **Sensitivity**: Too small over-segments, too large misses changes.
+- **Marginal costs**: tune penalties directly for `BetaBinomialCost`; the
+  Gaussian AIC/BIC helpers are not on the same likelihood scale.
 
 ## Minimum Segment Length
 - **Purpose**: Avoids spurious short segments.
 - **Recommendation**: Set to expected shortest meaningful regime.
 
 ## Pruning Constant
-- **Controls** early termination of candidate changepoints.
-- **Typical Range**: 0–10; larger values increase runtime but may improve accuracy.
+- **Status**: retained for compatibility on the low-level `pelt(..., K=...)`
+  API, but exact candidate retention is used for bundled costs.
+- **Complexity**: assume $O(n^2)$ time unless a future benchmarked pruning path
+  is enabled for the specific cost and minimum segment rule.
 
 ## Parameter Summary
 | Parameter | Typical Range | Default | Notes |
@@ -28,7 +35,7 @@ Pruned Exact Linear Time (PELT) optimizes a cost plus penalty objective.
 | Cost function | n/a | NormalMeanVarUnknown | Choose according to data |
 | Penalty | 0.5–10×$\log n$ | BIC | Tradeoff of over/under segmentation |
 | Min segment length | 1–50 | 1 | Domain knowledge driven |
-| Pruning constant | 0–10 | 5 | Larger = slower, more accurate |
+| Pruning constant | n/a | ignored | Retained for compatibility; exact candidate retention is used |
 
 ## Example: Penalty Sensitivity
 ```python
@@ -48,5 +55,6 @@ Increasing penalty reduces detected changepoints; plotting F1 vs. penalty helps 
 
 ## Tuning
 - Grid-search penalty with cross-validation.
-- Compare different cost functions via AIC/BIC scores.
+- Compare Gaussian cost functions via AIC/BIC scores; tune marginal-likelihood
+  costs on their own scale.
 

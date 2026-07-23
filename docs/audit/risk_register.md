@@ -53,11 +53,12 @@ Severity levels:
 | RR-021 | Partially resolved | Sliced Poisson process changepoint detection is now exposed as a dedicated API with B-spline IHPP segment costs, PELT optimization, exposure intervals, independent marked fitting, simulations, diagnostics, and focused tests. |
 | RR-022 | Partially resolved | BOCPD now defaults to the unscaled run-length posterior, moves changepoint alerts into `BOCPDAlertConfig`, deprecates `cp_scale`, and includes hand-computed, independent-recursion, normalization, alert-policy, and approximation diagnostics tests. Broader likelihood support remains pending. |
 | RR-023 | Partially resolved | BOCPD now accepts explicit likelihood instances, preserves them across `reset()`, implements scalar `PoissonGamma`, supports `update_many`, missing-observation transitions, and checkpoint/resume state dictionaries. Gaussian/Student-t BOCPD remains unsupported. |
+| RR-024 | Partially resolved | PELT now matches an independent exhaustive optimal-partitioning oracle for bundled Gaussian known-variance, Gaussian unknown-variance, and beta-binomial costs on small deterministic, exhaustive, and random cases. Penalty units and current exact candidate-retention behavior are documented; external-library parity remains unavailable in the local environment. |
 
 ## Blockers Before External Scientific Readiness
 
 1. Fix or document broken public compatibility paths such as legacy `bocpd`.
 2. Establish method-to-source traceability and claim audit.
 3. Freeze current behavior with golden characterization tests before correcting scientific algorithms.
-4. Add independent oracles for PELT, BOCPD, within-period RJMCMC, KCP/RFF, E-Divisive, HSMM, and SD-HMM.
+4. Add independent oracles for within-period RJMCMC, KCP/RFF, E-Divisive, HSMM, and SD-HMM.
 5. Replace unsupported docs and paper claims with executable evidence.

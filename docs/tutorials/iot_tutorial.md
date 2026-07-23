@@ -19,7 +19,8 @@ series = raw.resample("1min").mean().interpolate("time").ffill()
 
 ## Detecting Activity Patterns and Anomalies
 - **BOCPD** with a `ScheduledHazard` to capture daily routines
-- **PELT** with a Poisson cost for event counts (e.g., door openings)
+- **BOCPD** with `PoissonGamma` for scalar event counts such as door openings
+- **PELT** with `BetaBinomialCost` for offline binary event indicators
 - **E‑Divisive** for multivariate bursts across sensors
 
 ## Multi‑Sensor Fusion for Changepoint Detection

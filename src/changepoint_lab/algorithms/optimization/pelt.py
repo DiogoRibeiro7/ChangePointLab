@@ -53,8 +53,19 @@ def pelt(
     min_seg_len: int = 1,
     K: float = 0.0,
 ) -> PELTResult:
-    """Pruned Exact Linear Time changepoint detection."""
+    """Return the exact minimum of segment costs plus changepoint penalties.
+
+    The objective is ``sum(segment_costs) + penalty * n_changepoints`` over
+    half-open segments whose lengths are at least ``min_seg_len``. The ``K``
+    pruning constant is retained for API compatibility; current default
+    execution keeps all candidates to preserve exactness for every bundled cost
+    and minimum-segment constraint.
+    """
     y_arr = np.asarray(y, dtype=float)
+    if y_arr.ndim != 1:
+        raise ValueError("y must be a one-dimensional sequence.")
+    if not np.all(np.isfinite(y_arr)):
+        raise ValueError("y must contain only finite values.")
     n = int(y_arr.size)
     if n == 0:
         return PELTResult(
@@ -69,6 +80,7 @@ def pelt(
         raise ValueError("min_seg_len must be in [1, n].")
     if not np.isfinite(penalty) or penalty < 0:
         raise ValueError("penalty must be non-negative and finite.")
+    _ = K  # Retained for API compatibility; exact candidate retention ignores pruning.
 
     cost_fn.precompute(y_arr)
 
@@ -81,10 +93,12 @@ def pelt(
     for t in range(min_seg_len, n + 1):
         cost_cache = {}
         eligible: list[int] = []
+        ineligible: list[int] = []
         best_val = float("inf")
         best_tau = -1
         for tau in R:
             if t - tau < min_seg_len:
+                ineligible.append(tau)
                 continue
             c = cost_fn.cost(tau, t)
             cost_cache[tau] = c
@@ -97,16 +111,10 @@ def pelt(
         prev[t] = best_tau
 
         tau_new = t + 1 - min_seg_len
-        prune_candidates = eligible.copy()
-        if 0 <= tau_new <= n:
-            c_new = cost_fn.cost(tau_new, t)
-            cost_cache[tau_new] = c_new
-            prune_candidates.append(tau_new)
-
-        new_R = deque()
-        for tau in prune_candidates:
-            if F[tau] + cost_cache[tau] + K <= F[t] + 1e-12:
-                new_R.append(tau)
+        new_R = deque(ineligible)
+        new_R.extend(eligible)
+        if 0 <= tau_new <= n and tau_new not in new_R:
+            new_R.append(tau_new)
         R = new_R
 
     cps: list[int] = []
@@ -148,6 +156,7 @@ def pelt_concave_penalty(
     K: float = 0.0,
     max_iter: int = 20,
 ) -> PELTResult:
+    """Iteratively approximate a concave penalty by local linear penalties."""
     m_old = -1
     m_hat = 1
     res: PELTResult | None = None

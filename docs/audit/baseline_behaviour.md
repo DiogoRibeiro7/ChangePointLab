@@ -35,8 +35,8 @@ outputs live in `tests/fixtures/baseline/current_outputs.json`.
 | Surface | Status | Baseline |
 | --- | --- | --- |
 | `pelt` with `NormalMeanKnownVar` | `scientific_oracle` | Independent exhaustive segmentation over all changepoint subsets confirms `[3]`. |
-| `pelt` with `NormalMeanVarUnknown` | `compatibility` | Current fixture returns no changepoint and score `25.3450285652`. |
-| `pelt_concave_penalty` | `compatibility` | Current fixture returns no changepoint and score `25.3450285652`. |
+| `pelt` with `NormalMeanVarUnknown` | `scientific_oracle` | Exact optimal partitioning now matches an independent brute-force oracle and returns changepoint `[3]` with score `-154.3505380291`. |
+| `pelt_concave_penalty` | `scientific_oracle` | The local-linear penalty iteration delegates to the corrected exact PELT objective and returns changepoint `[3]` with score `-154.3505380291` on the fixture. |
 | `kcp_penalized`, `kcp_fixed_m`, `kcp_select_bic` | `compatibility` | Exact KCP backtracking returns right-exclusive changepoint `[2]` with edges `[0, 2, 4]` on the tiny oracle. |
 | `rff_kcp_penalized` | `compatibility` | RFF KCP backtracking drops the terminal endpoint and returns `[2]` on the deterministic tiny fixture. |
 | within-period circular validity | `scientific_oracle` | Exhaustive enumeration for `N=6`, `l=2` is stored in fixtures and compared to implementation validity checks. |

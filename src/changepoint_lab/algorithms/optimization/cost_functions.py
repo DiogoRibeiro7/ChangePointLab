@@ -19,7 +19,11 @@ class SegmentCost(Protocol):
 
 @dataclass
 class NormalMeanKnownVar(SegmentCost):
-    """Gaussian mean shifts with known variance."""
+    """Gaussian mean shifts with known variance.
+
+    The returned segment cost is the profile deviance, i.e. twice the negative
+    Gaussian log-likelihood after optimizing the segment mean.
+    """
 
     sigma2: float
     _sum: Optional[ArrayF] = None
@@ -43,7 +47,12 @@ class NormalMeanKnownVar(SegmentCost):
 
 @dataclass
 class NormalMeanVarUnknown(SegmentCost):
-    """Gaussian mean/variance shifts with unknown parameters."""
+    """Gaussian mean/variance shifts with unknown parameters.
+
+    The returned segment cost is the profile deviance, i.e. twice the negative
+    Gaussian log-likelihood after optimizing the segment mean and variance.
+    Segments of length one have undefined variance and return infinity.
+    """
 
     eps: float = 1e-12
     _sum: Optional[ArrayF] = None
@@ -67,7 +76,12 @@ class NormalMeanVarUnknown(SegmentCost):
 
 @dataclass
 class BetaBinomialCost(SegmentCost):
-    """Bernoulli segments with Beta prior, marginalized."""
+    """Bernoulli segments with a marginalized Beta prior.
+
+    The returned segment cost is the negative log Beta-binomial marginal
+    likelihood. It is not on the Gaussian deviance scale used by the AIC/BIC
+    penalty helpers.
+    """
 
     alpha: float = 1.0
     beta: float = 1.0
@@ -93,12 +107,12 @@ def _log_beta(a: float, b: float) -> float:
 
 
 def bic_penalty(params_per_segment: int, n: int) -> float:
-    """Schwarz (BIC) penalty per changepoint."""
+    """Schwarz (BIC) penalty per changepoint in deviance units."""
     return params_per_segment * math.log(max(2, n))
 
 
 def aic_penalty(params_per_segment: int) -> float:
-    """AIC penalty per changepoint."""
+    """AIC penalty per changepoint in deviance units."""
     return 2.0 * params_per_segment
 
 

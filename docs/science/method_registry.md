@@ -8,7 +8,7 @@ before scientific behavior is changed.
 
 | ID | Method | Source status | Primary citations | Stable package symbols | Code paths | Verification |
 | --- | --- | --- | --- | --- | --- | --- |
-| `pelt` | Pruned Exact Linear Time | adaptation | `killick_2012` | `PELT` | `src/changepoint_lab/algorithms/optimization/pelt.py`; `src/changepoint_lab/algorithms/optimization/cost_functions.py` | partially_verified |
+| `pelt` | PELT / exact penalized segmentation | adaptation | `killick_2012` | `PELT` | `src/changepoint_lab/algorithms/optimization/pelt.py`; `src/changepoint_lab/algorithms/optimization/cost_functions.py` | partially_verified |
 | `bocpd_beta_bernoulli` | Bayesian Online Changepoint Detection, Beta-Bernoulli and Poisson-Gamma paths | adaptation | `adams_mackay_2007` | `BOCPD`, `BOCPDConfig`, `BOCPDAlertConfig`, `BOCPDResult`, `BetaBernoulli`, `PoissonGamma`, hazards | `src/changepoint_lab/algorithms/bayesian/bocpd/core.py`; `src/changepoint_lab/algorithms/bayesian/bocpd/likelihoods.py`; `src/changepoint_lab/algorithms/bayesian/bocpd/__init__.py` | partially_verified |
 | `within_period_rjmcmc` | Within-period changepoint detection | adaptation | `taylor_2021` | `WithinPeriodCPD` | `src/changepoint_lab/algorithms/bayesian/within_period/`; `scripts/run_within_period_reproduction.py` | partially_verified |
 | `sliced_poisson_process` | Sliced Poisson process changepoint detection | adaptation | `martinez_hernandez_killick_2024` | `SlicedPoissonCPD`, `SlicedPoissonConfig`, `EventPeriod` | `src/changepoint_lab/algorithms/point_process/sliced_poisson.py` | partially_verified |
