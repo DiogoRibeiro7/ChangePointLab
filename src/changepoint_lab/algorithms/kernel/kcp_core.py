@@ -107,18 +107,62 @@ class KernelPrefix:
     K_ps2d: ArrayF          # (n, n) inclusive 2D prefix sums of K
 
 
+def validate_kernel_matrix(
+    K: ArrayF,
+    *,
+    symmetry_tol: float = 1e-8,
+    diagonal_tol: float = 1e-8,
+    psd_tol: float = 1e-8,
+    psd_check_max_n: int = 512,
+    max_bytes: int | None = None,
+) -> ArrayF:
+    """Validate and return a dense Gram matrix for exact kernel CPD."""
+    K = np.asarray(K, dtype=float)
+    if K.ndim != 2 or K.shape[0] != K.shape[1]:
+        raise ValueError("K must be a square (n x n) array.")
+    if max_bytes is not None and K.nbytes > max_bytes:
+        raise MemoryError(
+            f"Gram matrix requires {K.nbytes} bytes, exceeding max_bytes={max_bytes}."
+        )
+    if not np.all(np.isfinite(K)):
+        raise ValueError("K must contain only finite values.")
+    if not np.allclose(K, K.T, rtol=symmetry_tol, atol=symmetry_tol):
+        raise ValueError("K must be symmetric within the configured tolerance.")
+    diagonal = np.diag(K)
+    if not np.all(diagonal >= -diagonal_tol):
+        raise ValueError("K must have a non-negative diagonal within tolerance.")
+    if K.shape[0] <= psd_check_max_n:
+        min_eval = float(np.linalg.eigvalsh(K).min(initial=0.0))
+        if min_eval < -psd_tol:
+            raise ValueError("K must be positive semidefinite within the configured tolerance.")
+    return K
+
+
 def _prefix2d_inclusive(M: ArrayF) -> ArrayF:
     return M.cumsum(axis=0).cumsum(axis=1)
 
 
-def build_kernel_prefix(K: ArrayF) -> KernelPrefix:
+def build_kernel_prefix(
+    K: ArrayF,
+    *,
+    symmetry_tol: float = 1e-8,
+    diagonal_tol: float = 1e-8,
+    psd_tol: float = 1e-8,
+    psd_check_max_n: int = 512,
+    max_bytes: int | None = None,
+) -> KernelPrefix:
     """
     Build prefix structures from a Gram matrix K.
     """
-    K = np.asarray(K, dtype=float)
+    K = validate_kernel_matrix(
+        K,
+        symmetry_tol=symmetry_tol,
+        diagonal_tol=diagonal_tol,
+        psd_tol=psd_tol,
+        psd_check_max_n=psd_check_max_n,
+        max_bytes=max_bytes,
+    )
     n = K.shape[0]
-    if K.ndim != 2 or K.shape[1] != n:
-        raise ValueError("K must be a square (n x n) array.")
     diag_ps = np.concatenate([[0.0], np.cumsum(np.diag(K))])
     K_ps2d = _prefix2d_inclusive(K)
     return KernelPrefix(K=K, diag_ps=diag_ps, K_ps2d=K_ps2d)

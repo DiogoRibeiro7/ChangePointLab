@@ -37,7 +37,7 @@ graph TD
 | **PELT** | • Exact global optimum<br>• Multiple cost functions<br>• Clear penalty objective | • Requires full data<br>• Distribution assumptions<br>• No uncertainty measures | • Offline historical analysis<br>• When exact segmentation matters<br>• With known distribution models | O(T²) current exact candidate retention; pruning-dependent linear behavior is not claimed |
 | **E-Divisive** | • No distribution assumptions<br>• Handles multivariate data<br>• Robust to outliers | • Computationally intensive<br>• Requires permutation testing<br>• Less sensitive to small shifts | • Complex multivariate data<br>• When assumptions uncertain<br>• For detecting distribution changes | O(T²) time, O(T) space |
 | **HSMM** | • State interpretation<br>• Duration modeling<br>• Handles recurrent patterns | • EM convergence issues<br>• Parameter selection<br>• Sensitive to initialization | • When states have meaning<br>• For regime identification<br>• With recurrent patterns | O(T·K·D²) time<br>K = states, D = max duration |
-| **KCP** | • Flexible nonlinear boundaries<br>• Handles complex relationships<br>• Model selection tools | • Kernel/bandwidth selection<br>• Quadratic complexity<br>• Memory intensive | • Complex nonlinear data<br>• Feature-rich time series<br>• When relationships matter | O(T²) naive, O(T) with RFF |
+| **KCP** | • Flexible nonlinear boundaries<br>• Handles complex relationships<br>• Model selection tools | • Kernel/bandwidth selection<br>• Dense exact path is quadratic memory<br>• RFF path is approximate | • Complex nonlinear data<br>• Feature-rich time series<br>• When relationships matter | Exact dense Gram path is O(T²) memory plus DP cost; RFF avoids dense Gram storage but still uses DP over candidate segment endpoints |
 
 ## Data Characteristics Guide
 
@@ -91,6 +91,7 @@ graph TD
 
 * **Kernel**: RBF for smooth nonlinear boundaries, linear for simpler relationships
 * **Bandwidth**: Use cross-validation or information criteria; controls flexibility
+* **Exact/RFF mode**: Exact mode validates a dense Gram matrix; RFF mode exposes feature count, seed, and bandwidth metadata and should be treated as an approximation
 * **Penalty/segments**: Select via BIC-style criterion or cross-validation
 
 ## Example Scenarios

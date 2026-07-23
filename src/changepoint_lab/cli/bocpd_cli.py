@@ -154,7 +154,7 @@ def main() -> None:
     res = model.run(x.astype(bool))
 
     # ---- Save plots ----
-    plt = require_matplotlib_pyplot("bocpd-cli plots")
+    plt = require_matplotlib_pyplot("bocpd-cli plots", backend="Agg")
     from changepoint_lab.algorithms.bayesian.bocpd.plotting import (
         plot_cp_probability,
         plot_run_length_heatmap,

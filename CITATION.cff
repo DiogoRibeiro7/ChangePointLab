@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use ChangePointLab, please cite the archived release."
 title: "ChangePointLab: A Unified Python Toolkit for Changepoint Detection"
-version: "0.1.13"
+version: "0.1.14"
 date-released: 2026-07-23
 authors:
   - family-names: Ribeiro

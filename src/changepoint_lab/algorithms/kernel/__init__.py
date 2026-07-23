@@ -2,11 +2,13 @@ from .kcp_core import *
 from .kcp_rff import *
 from .bandwidth_cv import *
 from .rff_variants import *
+from .kcp import KernelCPD, KernelMatrix
 
 __all__ = [
     # Core KCP
-    "KCPResult", "gram_rbf", "gram_linear", "kcp_penalized", "kcp_select_bic",
-    "kcp_fixed_m", "build_kernel_prefix", "kernel_segment_cost",
+    "KernelCPD", "KernelMatrix", "KCPResult", "gram_rbf", "gram_linear",
+    "kcp_penalized", "kcp_select_bic", "kcp_fixed_m", "build_kernel_prefix",
+    "kernel_segment_cost",
     # RFF
     "RFFConfig", "rbf_rff_map", "build_feature_prefix", "rff_kcp_penalized",
     "rff_kcp_fixed_m", "FeaturePrefix", "RFFKCPResult",

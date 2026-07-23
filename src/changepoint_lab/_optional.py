@@ -19,8 +19,16 @@ def import_optional(module: str, *, package: str, extra: str, feature: str) -> M
         raise
 
 
-def require_matplotlib_pyplot(feature: str) -> ModuleType:
+def require_matplotlib_pyplot(feature: str, *, backend: str | None = None) -> ModuleType:
     """Return ``matplotlib.pyplot`` for optional plotting features."""
+    if backend is not None:
+        matplotlib = import_optional(
+            "matplotlib",
+            package="matplotlib",
+            extra="plot",
+            feature=feature,
+        )
+        matplotlib.use(backend, force=True)
     return import_optional(
         "matplotlib.pyplot",
         package="matplotlib",

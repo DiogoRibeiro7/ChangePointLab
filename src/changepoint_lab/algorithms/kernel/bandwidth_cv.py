@@ -32,6 +32,24 @@ class BandwidthCVConfig:
     scoring: str = "likelihood"  # 'likelihood', 'mse', 'custom'
     seed: Optional[int] = None
 
+    def __post_init__(self) -> None:
+        valid_methods = {"kfold", "timeseries", "loo"}
+        valid_search = {"grid", "random", "adaptive_grid"}
+        valid_scoring = {"likelihood", "changepoint", "mse", "custom"}
+        if self.method not in valid_methods:
+            raise ValueError(f"method must be one of {sorted(valid_methods)}.")
+        if self.cv_folds < 2:
+            raise ValueError("cv_folds must be >= 2.")
+        if self.search_strategy not in valid_search:
+            raise ValueError(f"search_strategy must be one of {sorted(valid_search)}.")
+        if self.n_candidates < 1:
+            raise ValueError("n_candidates must be >= 1.")
+        lo, hi = self.sigma_range
+        if lo <= 0 or hi <= lo:
+            raise ValueError("sigma_range must be positive and increasing.")
+        if self.scoring not in valid_scoring:
+            raise ValueError(f"scoring must be one of {sorted(valid_scoring)}.")
+
 
 @dataclass
 class CVResult:
@@ -135,10 +153,6 @@ def _kfold_split(
     fold_sizes = np.full(k, n // k, dtype=int)
     fold_sizes[: n % k] += 1
 
-    splits = []
-    start = 0
-    for fold_size in fold_sizes:
-        test_idx = indices[start : start + fold_size]
     splits = []
     start = 0
     for fold_size in fold_sizes:
@@ -251,17 +265,21 @@ def _compute_changepoint_score(
 
         # Use a moderate penalty
         penalty = np.log(X_train.shape[0])
-        result_train = kcp_penalized(prefix_train, gamma=penalty, min_size=5, method="op")
+        min_size_train = min(5, max(1, X_train.shape[0]))
+        result_train = kcp_penalized(prefix_train, gamma=penalty, min_size=min_size_train, method="op")
+        if not np.isfinite(result_train.total_cost):
+            return -np.inf
 
         # Evaluate on test data
         K_test, _ = gram_rbf(X_test, sigma=sigma)
         prefix_test = build_kernel_prefix(K_test)
 
         # Score is negative cost (lower cost = better fit)
-        result_test = kcp_penalized(prefix_test, gamma=penalty, min_size=5, method="op")
+        min_size_test = min(5, max(1, X_test.shape[0]))
+        result_test = kcp_penalized(prefix_test, gamma=penalty, min_size=min_size_test, method="op")
 
         # Normalize by data size
-        score = -result_test.cost / X_test.shape[0]
+        score = -result_test.total_cost / X_test.shape[0]
 
         return score if np.isfinite(score) else -np.inf
 

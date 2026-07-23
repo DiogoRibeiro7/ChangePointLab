@@ -60,7 +60,18 @@
       "costs_per_segment": [0.0, 0.0],
       "wrapper_result_type": "SegmentationResult",
       "wrapper_indices": [2],
-      "wrapper_metadata_keys": ["costs", "edges", "kernel_gamma", "labels"]
+      "wrapper_metadata_keys": [
+        "approximation",
+        "costs",
+        "edges",
+        "grid_jump",
+        "kernel_gamma",
+        "kernel_metadata",
+        "labels",
+        "max_seg_len",
+        "method",
+        "min_size"
+      ]
     },
     "rff_kernel_current": {
       "label": "compatibility",

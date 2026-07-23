@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "changepoint-lab"
-version = "0.1.13"
+version = "0.1.14"
 description = "ChangePointLab: a unified Python toolkit for changepoint detection in time series."
 readme = "README.md"
 requires-python = ">=3.10,<4.0"

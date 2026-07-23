@@ -222,15 +222,16 @@
       ],
       "public_api": ["changepoint_lab.KernelCPD", "changepoint_lab.gram_rbf", "changepoint_lab.kcp_penalized", "changepoint_lab.kcp_select_bic"],
       "tests": [
+        "tests/unit/test_kernel_cpd_correctness.py",
         "tests/unit/test_kcp/test_bandwidth_cv.py",
         "tests/unit/test_kcp_segment_bounds.py",
         "tests/unit/test_algorithm_parity.py"
       ],
       "documentation_paths": ["docs/api/kcp.rst", "docs/cpd.md"],
-      "reproduction_artifact": "Tiny independent kernel oracle in tests/unit/test_kcp_segment_bounds.py.",
-      "deviations": ["Penalty and model-selection behavior still need broader independent validation."],
+      "reproduction_artifact": "Independent linear feature-space and RBF Gram brute-force oracles in tests/unit/test_kernel_cpd_correctness.py.",
+      "deviations": ["Penalty selection and large-scale bandwidth-selection behavior still need broader independent validation."],
       "extensions": ["Bandwidth selection helpers"],
-      "verification_status": "characterized_only",
+      "verification_status": "partially_verified",
       "mysense_connection": "Flexible nonparametric offline comparison method."
     },
     {
@@ -246,13 +247,14 @@
       ],
       "public_api": ["changepoint_lab.algorithms.kernel.kcp_rff"],
       "tests": [
+        "tests/unit/test_kernel_cpd_correctness.py",
         "tests/unit/test_kcp/test_rff_variants.py",
         "tests/unit/test_kcp_segment_bounds.py",
         "tests/unit/test_performance.py"
       ],
       "documentation_paths": ["docs/cpd.md"],
-      "reproduction_artifact": "No exact/RFF parity oracle yet.",
-      "deviations": ["Approximation layer, not a faithful exact KCP reproduction."],
+      "reproduction_artifact": "Exact RBF versus high-feature RFF convergence smoke in tests/unit/test_kernel_cpd_correctness.py.",
+      "deviations": ["Approximation layer; feature-count convergence is tested on small deterministic fixtures, not broad benchmarks."],
       "extensions": ["Orthogonal, quasi-Monte Carlo, compact-support, and adaptive RFF variants"],
       "verification_status": "partially_verified",
       "mysense_connection": "Scalability option for large event-derived feature matrices."

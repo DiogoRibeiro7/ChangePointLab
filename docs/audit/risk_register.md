@@ -30,7 +30,7 @@ Severity levels:
 
 | ID | Status | Evidence |
 | --- | --- | --- |
-| RR-001 | Resolved before this audit | `pyproject.toml`, runtime `__version__`, CFF, and `.zenodo.json` are aligned at `0.1.13`. |
+| RR-001 | Resolved before this audit | `pyproject.toml`, runtime `__version__`, CFF, and `.zenodo.json` are aligned at `0.1.14`. |
 | RR-002 | Resolved before this audit | `setup.py` now delegates to `setup()` and no longer duplicates metadata. |
 | RR-003 | Partially resolved | CI now has a `quality` job and builds distributions, but type/lint scope remains deliberately narrow. |
 | RR-004 | Partially resolved | Runtime dependencies are declared in `pyproject.toml`; `requirements.txt` still duplicates them. |
@@ -54,11 +54,12 @@ Severity levels:
 | RR-022 | Partially resolved | BOCPD now defaults to the unscaled run-length posterior, moves changepoint alerts into `BOCPDAlertConfig`, deprecates `cp_scale`, and includes hand-computed, independent-recursion, normalization, alert-policy, and approximation diagnostics tests. Broader likelihood support remains pending. |
 | RR-023 | Partially resolved | BOCPD now accepts explicit likelihood instances, preserves them across `reset()`, implements scalar `PoissonGamma`, supports `update_many`, missing-observation transitions, and checkpoint/resume state dictionaries. Gaussian/Student-t BOCPD remains unsupported. |
 | RR-024 | Partially resolved | PELT now matches an independent exhaustive optimal-partitioning oracle for bundled Gaussian known-variance, Gaussian unknown-variance, and beta-binomial costs on small deterministic, exhaustive, and random cases. Penalty units and current exact candidate-retention behavior are documented; external-library parity remains unavailable in the local environment. |
+| RR-025 | Partially resolved | Kernel CPD now validates dense Gram matrices, exposes exact/RFF controls through `KernelCPD`, retains kernel and approximation metadata, fixes changepoint bandwidth-CV scoring, and has independent linear/RBF/RFF oracle tests. Broader penalty-selection and large-scale approximation benchmarks remain pending. |
 
 ## Blockers Before External Scientific Readiness
 
 1. Fix or document broken public compatibility paths such as legacy `bocpd`.
 2. Establish method-to-source traceability and claim audit.
 3. Freeze current behavior with golden characterization tests before correcting scientific algorithms.
-4. Add independent oracles for within-period RJMCMC, KCP/RFF, E-Divisive, HSMM, and SD-HMM.
+4. Add independent oracles for E-Divisive, HSMM, and SD-HMM, and broaden existing within-period and KCP/RFF oracle coverage.
 5. Replace unsupported docs and paper claims with executable evidence.

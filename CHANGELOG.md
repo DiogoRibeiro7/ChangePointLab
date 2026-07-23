@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.1.14] - 2026-07-23
+### Added
+- Added exact/RFF KernelCPD correctness oracles, dense Gram validation, and
+  wrapper metadata for kernel/RFF approximation controls.
+
+### Fixed
+- Fixed KCP bandwidth cross-validation changepoint scoring so it uses
+  `KCPResult.total_cost` instead of falling back through invalid scores.
+
 ## [0.1.13] - 2026-07-23
 ### Fixed
 - Corrected PELT candidate handling so bundled costs match exhaustive

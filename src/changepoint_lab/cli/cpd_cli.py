@@ -32,6 +32,10 @@ import numpy as np
 from changepoint_lab._optional import require_matplotlib_pyplot
 
 
+def _require_cli_pyplot(feature: str):
+    return require_matplotlib_pyplot(feature, backend="Agg")
+
+
 def load_csv_data(
     filepath: str,
     columns: Optional[str] = None,
@@ -96,7 +100,7 @@ def save_results(
     method_name: str,
 ) -> None:
     """Save results, plots, and metadata to output directory."""
-    plt = require_matplotlib_pyplot("cpd-cli plot export")
+    plt = _require_cli_pyplot("cpd-cli plot export")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Save numerical results as NPZ
@@ -132,7 +136,7 @@ def save_results(
 
 def run_edivisive(args) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Run E-Divisive algorithm."""
-    plt = require_matplotlib_pyplot("cpd-cli E-Divisive plots")
+    plt = _require_cli_pyplot("cpd-cli E-Divisive plots")
     from changepoint_lab import edivisive
     from changepoint_lab.common.plotting.edivisive_plotting import (
         plot_segments_1d,
@@ -170,7 +174,7 @@ def run_edivisive(args) -> Tuple[Dict[str, Any], Dict[str, Any]]:
 
 def run_kcp(args) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Run Kernel Change-Point Detection."""
-    plt = require_matplotlib_pyplot("cpd-cli KCP plots")
+    plt = _require_cli_pyplot("cpd-cli KCP plots")
     from changepoint_lab.algorithms.kernel.kcp_core import (
         gram_rbf,
         gram_linear,
@@ -228,7 +232,7 @@ def run_kcp(args) -> Tuple[Dict[str, Any], Dict[str, Any]]:
 
 def run_rff_kcp(args) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Run RFF Kernel Change-Point Detection."""
-    plt = require_matplotlib_pyplot("cpd-cli RFF-KCP plots")
+    plt = _require_cli_pyplot("cpd-cli RFF-KCP plots")
     from changepoint_lab.algorithms.kernel.kcp_rff import (
         RFFConfig,
         rbf_rff_map,
@@ -301,7 +305,7 @@ def run_rff_kcp(args) -> Tuple[Dict[str, Any], Dict[str, Any]]:
 
 def run_hsmm(args) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Run Hidden Semi-Markov Model."""
-    plt = require_matplotlib_pyplot("cpd-cli HSMM plots")
+    plt = _require_cli_pyplot("cpd-cli HSMM plots")
     from changepoint_lab import HSMM, HSMMConfig, HSMMParams, PoissonDur
     from changepoint_lab.algorithms.state_space.emissions.gaussian_full import (
         GaussianFullEmissions,
@@ -384,7 +388,7 @@ def run_hsmm(args) -> Tuple[Dict[str, Any], Dict[str, Any]]:
 
 def run_within_period(args) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Run Within-Period Change-Point Detection."""
-    plt = require_matplotlib_pyplot("cpd-cli within-period plots")
+    plt = _require_cli_pyplot("cpd-cli within-period plots")
     from changepoint_lab.algorithms.bayesian.within_period import (
         ModelPrior,
         RJConfig,

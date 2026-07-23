@@ -101,8 +101,12 @@ def rbf_rff_map(
     if X_arr.ndim == 1:
         X_arr = X_arr[:, None]
     n, d = X_arr.shape
+    if not np.all(np.isfinite(X_arr)):
+        raise ValueError("X must contain only finite values.")
     if cfg.n_features < 1:
         raise ValueError("n_features must be >= 1.")
+    if cfg.subsample_for_bandwidth < 2:
+        raise ValueError("subsample_for_bandwidth must be >= 2.")
     rng = np.random.default_rng(cfg.seed)
 
     # Resolve gamma
@@ -118,6 +122,8 @@ def rbf_rff_map(
         gamma = _estimate_gamma_median_heuristic(
             X_arr, max_samples=cfg.subsample_for_bandwidth, rng=rng
         )
+    if not np.isfinite(gamma) or gamma <= 0.0:
+        raise ValueError("gamma must be a positive finite number.")
 
     # Sample RFF parameters
     # For k(x,y) = exp(-gamma ||x-y||^2), omega ~ N(0, 2*gamma I)
@@ -150,6 +156,8 @@ def build_feature_prefix(Z: ArrayF) -> FeaturePrefix:
     Z = np.asarray(Z, dtype=float)
     if Z.ndim != 2:
         raise ValueError("Z must be 2-D (n, D).")
+    if not np.all(np.isfinite(Z)):
+        raise ValueError("Z must contain only finite values.")
     n, D = Z.shape
     S = np.empty((n + 1, D), dtype=float)
     S[0] = 0.0
@@ -203,6 +211,8 @@ def rff_kcp_penalized(
     min_size: int = 1,
     method: str = "pelt",   # "pelt" or "op"
     grid_jump: int = 1,
+    rff_gamma: float | None = None,
+    max_seg_len: int | None = None,
 ) -> RFFKCPResult:
     """
     Penalized optimal partitioning (constant mean in RFF space):
@@ -213,14 +223,21 @@ def rff_kcp_penalized(
     - grid_jump>1:   evaluate only endpoints t in {k*grid_jump}; always includes n.
     """
     n = pref.S.shape[0] - 1
+    result_gamma = float("nan") if rff_gamma is None else float(rff_gamma)
     if n < 1:
         return RFFKCPResult(n=0, change_points=np.array([], dtype=int),
                             labels=np.array([], dtype=int), total_cost=0.0,
                             edges=np.array([0], dtype=int),
                             costs_per_segment=np.array([], dtype=float),
-                            rff_gamma=float("nan"), n_features=pref.S.shape[1])
+                            rff_gamma=result_gamma, n_features=pref.S.shape[1])
     if min_size < 1 or min_size > n:
         raise ValueError("min_size must be in [1, n].")
+    if grid_jump < 1:
+        raise ValueError("grid_jump must be >= 1.")
+    if max_seg_len is not None:
+        if max_seg_len < min_size or max_seg_len < 1:
+            raise ValueError("max_seg_len must be >= min_size and positive.")
+        max_seg_len = int(min(max_seg_len, n))
     if gamma_pen < 0 or not np.isfinite(gamma_pen):
         raise ValueError("gamma_pen must be non-negative and finite.")
     if method not in {"pelt", "op"}:
@@ -238,10 +255,11 @@ def rff_kcp_penalized(
 
     if method == "op":
         for t in grid:
+            i_min = 0 if max_seg_len is None else max(0, t - max_seg_len)
             i_max = t - min_size
-            if i_max < 0:
+            if i_max < i_min:
                 continue
-            idx = np.arange(0, i_max + 1, dtype=int)
+            idx = np.arange(i_min, i_max + 1, dtype=int)
             costs = np.fromiter((feature_segment_cost(pref, i, t) for i in idx), count=idx.size, dtype=float)
             vals = F[idx] + costs + gamma_pen
             k = int(np.argmin(vals))
@@ -251,7 +269,11 @@ def rff_kcp_penalized(
     else:
         R: List[int] = [0]
         for t in grid:
-            Rt = [i for i in R if (t - i) >= min_size]
+            Rt = [
+                i
+                for i in R
+                if (t - i) >= min_size and (max_seg_len is None or (t - i) <= max_seg_len)
+            ]
             if not Rt:
                 continue
             costs = np.fromiter((feature_segment_cost(pref, i, t) for i in Rt), count=len(Rt), dtype=float)
@@ -264,6 +286,8 @@ def rff_kcp_penalized(
             Rt_plus = Rt + [t - min_size]
             R = []
             for i in Rt_plus:
+                if max_seg_len is not None and (t - i) > max_seg_len:
+                    continue
                 if F[i] + feature_segment_cost(pref, i, t) <= F[t] + 1e-12:
                     R.append(i)
 
@@ -277,7 +301,7 @@ def rff_kcp_penalized(
         return RFFKCPResult(n=n, change_points=np.array([], dtype=int),
                             labels=np.zeros(n, dtype=int), total_cost=float(one),
                             edges=np.array([0, n], dtype=int), costs_per_segment=np.array([one], dtype=float),
-                            rff_gamma=float("nan"), n_features=pref.S.shape[1])
+                            rff_gamma=result_gamma, n_features=pref.S.shape[1])
     while t > 0:
         i = int(prev[t])
         segments_desc.append((i, t))
@@ -291,7 +315,7 @@ def rff_kcp_penalized(
     return RFFKCPResult(n=n, change_points=cps_array, labels=labels,
                         total_cost=float(F[n]), edges=edges,
                         costs_per_segment=np.asarray(costs_desc[::-1], dtype=float),
-                        rff_gamma=float("nan"), n_features=pref.S.shape[1])
+                        rff_gamma=result_gamma, n_features=pref.S.shape[1])
 
 
 # --------------------------- Fixed-m (segment neighborhood) ---------------------------

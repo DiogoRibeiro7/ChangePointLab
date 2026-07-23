@@ -17,7 +17,7 @@ from .algorithms.bayesian.bocpd import (
     extract_changepoint_alerts,
 )
 from .algorithms.bayesian.within_period import WithinPeriodCPD
-from .algorithms.kernel.kcp import KernelCPD
+from .algorithms.kernel.kcp import KernelCPD, KernelMatrix, RFFConfig
 from .algorithms.kernel.kcp_core import gram_rbf, kcp_penalized, kcp_select_bic
 from .algorithms.nonparametric.edivisive import EDivisive
 from .algorithms.nonparametric.edivisive_core import (
@@ -65,7 +65,7 @@ from .core.segmentation import (
 )
 from .core.random import choose_from_sequence, make_rng, spawn_rngs
 
-__version__ = "0.1.13"
+__version__ = "0.1.14"
 
 __all__ = [
     "__version__",
@@ -104,6 +104,8 @@ __all__ = [
     "SDHMMMixVIConfig",
     "SDHMMMixVIResult",
     "KernelCPD", 
+    "KernelMatrix",
+    "RFFConfig",
     "gram_rbf", 
     "kcp_penalized", 
     "kcp_select_bic", 

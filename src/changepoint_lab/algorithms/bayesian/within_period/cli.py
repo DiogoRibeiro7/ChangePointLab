@@ -73,7 +73,7 @@ def _save_all_plots(
       - pointwise_bands.png  (with optional empirical overlay)
       - posterior_m.png
     """
-    plt = require_matplotlib_pyplot("within-period-cli plots")
+    plt = require_matplotlib_pyplot("within-period-cli plots", backend="Agg")
     outdir.mkdir(parents=True, exist_ok=True)
 
     # Pointwise summary from samples
