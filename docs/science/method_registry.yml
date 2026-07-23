@@ -150,15 +150,17 @@
       "code_paths": [
         "src/changepoint_lab/algorithms/bayesian/within_period/__init__.py",
         "src/changepoint_lab/algorithms/bayesian/within_period/within_period_cpd.py",
+        "src/changepoint_lab/algorithms/bayesian/within_period/replication.py",
         "src/changepoint_lab/algorithms/bayesian/within_period/posterior_predictive.py",
-        "src/changepoint_lab/algorithms/bayesian/within_period/samplers/tempering.py"
+        "src/changepoint_lab/algorithms/bayesian/within_period/samplers/tempering.py",
+        "scripts/run_within_period_reproduction.py"
       ],
       "public_api": ["changepoint_lab.WithinPeriodCPD", "within-period-cli"],
-      "tests": ["tests/integration/test_methods_interoperability.py", "tests/integration/test_cli_integration.py", "tests/unit/test_randomness_reproducibility.py", "tests/unit/test_within_period_rjmcmc_math.py"],
-      "documentation_paths": ["docs/api/within_period.rst", "docs/parameters/within_period_parameters.md", "docs/development/within_period_rjmcmc.rst"],
-      "reproduction_artifact": "Tiny complete-state tests verify detailed balance, empirical stationary frequencies, non-unit pois_lambda effects, and rotation invariance.",
-      "deviations": ["Uses explicit Generator streams; seeded traces changed from legacy module-level RNG behavior.", "Implements binary periodic data with the uniform circular anchor marginalized as a constant."],
-      "extensions": ["Parallel tempering helper", "posterior predictive summaries"],
+      "tests": ["tests/integration/test_methods_interoperability.py", "tests/integration/test_cli_integration.py", "tests/unit/test_randomness_reproducibility.py", "tests/unit/test_within_period_rjmcmc_math.py", "tests/unit/test_within_period_replication.py"],
+      "documentation_paths": ["docs/api/within_period.rst", "docs/parameters/within_period_parameters.md", "docs/development/within_period_rjmcmc.rst", "docs/development/within_period_reproduction.rst"],
+      "reproduction_artifact": "Tiny complete-state tests verify detailed balance, empirical stationary frequencies, non-unit pois_lambda effects, and rotation invariance. The reproduction script generates deterministic paper-style synthetic scenarios and a MySense-style synthetic extension.",
+      "deviations": ["Uses explicit Generator streams; seeded traces changed from legacy module-level RNG behavior.", "Implements binary periodic data with the uniform circular anchor marginalized as a constant.", "The proprietary Taylor et al. case-study data are not bundled, so local artifacts report synthetic analogues and discrepancies."],
+      "extensions": ["Parallel tempering helper", "posterior predictive summaries", "Synthetic MySense-style multi-sensor reproduction example"],
       "verification_status": "partially_verified",
       "mysense_connection": "Direct implementation target for repeated daily home-activity sensor patterns."
     },

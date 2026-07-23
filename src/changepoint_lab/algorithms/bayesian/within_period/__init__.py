@@ -16,6 +16,16 @@ from .within_period_cpd import (
     Tau,
     WithinPeriodCore,
 )
+from .replication import (
+    PeriodicBernoulliScenario,
+    ReplicationProfile,
+    SensorSeries,
+    fit_scenario,
+    mysense_sensor_example,
+    paper_replication_scenarios,
+    simulate_periodic_bernoulli,
+    write_reproduction_artifacts,
+)
 from .samplers import PTConfig, parallel_tempering_fit
 
 
@@ -96,6 +106,14 @@ __all__ = [
     "Tau",
     "WithinPeriodCore",
     "MCMCResult",
+    "PeriodicBernoulliScenario",
+    "ReplicationProfile",
+    "SensorSeries",
+    "fit_scenario",
+    "mysense_sensor_example",
+    "paper_replication_scenarios",
+    "simulate_periodic_bernoulli",
+    "write_reproduction_artifacts",
     "PTConfig",
     "parallel_tempering_fit",
 ]

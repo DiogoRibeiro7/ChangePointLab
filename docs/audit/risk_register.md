@@ -24,6 +24,7 @@ Severity levels:
 | R-014 | Medium | Documentation | Root `README.md` previously contained `from bocpd.bocpd import BOCPD`. | Quickstart/migration examples can drift after package reorganization. | Keep executable-documentation checks aligned with current imports. |
 | R-015 | Medium | Scientific traceability | `docs/science/method_registry.yml` now maps methods to sources, deviations, and tests, but several methods remain below `verified`. | Scientific claims can still overstate evidence if verification status is ignored. | Add independent oracles before marking any method `verified`. |
 | R-016 | Low | Repository hygiene | Empty marker files are expected, but package `__init__.py` files are inconsistent about exports. | Discoverability and API boundaries are unclear. | Normalize package exports after public API contract decision. |
+| R-017 | Medium | Scientific reproducibility | Taylor et al. case-study sensor data are not bundled; `scripts/run_within_period_reproduction.py` generates synthetic analogues and records discrepancies. | Users may mistake synthetic MySense outputs for recreation of the proprietary case-study figures. | Keep paper-consistent and MySense-extension artifacts separated, and add real cached data only with license and checksum documentation. |
 
 ## Resolved or Partially Resolved Findings
 
@@ -48,6 +49,7 @@ Severity levels:
 | RR-017 | Resolved | Exact and RFF KCP backtracking now drops terminal endpoint `n` and returns validated right-exclusive interior boundaries; the tiny kernel oracle now reports `[2]` with edges `[0, 2, 4]`. |
 | RR-018 | Resolved | Production stochastic paths now use owned `numpy.random.Generator` streams instead of module-level RNG state; stochastic typed results expose provenance. |
 | RR-019 | Partially resolved | Within-period RJMCMC now uses an exact enumerated proposal kernel, includes `pois_lambda` in segment-count posterior comparisons, rejects invalid proposal weights, forbids singleton circular states, and has tiny-state detailed-balance/empirical-stationary tests. Full replication against published examples remains pending. |
+| RR-020 | Partially resolved | A one-command within-period reproduction workflow now generates paper-style synthetic scenarios, MySense-style synthetic sensor outputs, posterior summaries, diagnostics, prior sensitivity, and discrepancy notes; notebook execution is covered by tests. |
 
 ## Blockers Before External Scientific Readiness
 

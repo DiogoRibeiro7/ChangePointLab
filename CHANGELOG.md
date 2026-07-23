@@ -1,6 +1,10 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- Added a within-period reproduction workflow with paper-style synthetic
+  scenarios, a MySense-style generated sensor example, CSV/JSON/SVG artifact
+  output, and notebook execution coverage.
 
 ## [0.1.8] - 2026-07-23
 ### Added
