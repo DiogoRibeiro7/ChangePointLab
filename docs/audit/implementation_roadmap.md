@@ -9,7 +9,7 @@ cleanup, optimization, documentation polish, and release expansion.
 ## Phase 0: Guardrails Already in Place
 
 - Repository is public and default branch is `main`.
-- Latest verified release is `v0.1.4`.
+- Latest verified release is `v0.1.5`.
 - CI builds docs and distributions and runs tests on supported Python versions.
 - Local workflow notes remain untracked.
 

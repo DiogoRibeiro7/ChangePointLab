@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.1.5] - 2026-07-23
 ### Added
 - Added typed public result contracts for segmentation, online probability,
   posterior-sampling, latent-state, and model-selection outputs.
