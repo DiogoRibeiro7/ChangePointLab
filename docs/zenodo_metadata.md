@@ -1,7 +1,7 @@
 # Zenodo Metadata for ChangePointLab
 
 ## Abstract
-ChangePointLab is an open-source Python library that unifies several changepoint detection approaches behind a common package interface. The current package includes Bayesian Online Change Point Detection for Bernoulli streams, Pruned Exact Linear Time segmentation, energy-distance divisive algorithms, hidden Markov and semi-Markov models, state-dependent HMMs for compositional data, kernel-based methods, and within-period detectors for seasonal binary signals. Documentation, examples, tests, and command-line entry points support source-based installation and Zenodo archival releases.
+ChangePointLab is an open-source Python library that unifies several changepoint detection approaches behind a common package interface. The current package includes Bayesian Online Change Point Detection for Bernoulli and scalar count streams, PELT-style exact penalized segmentation, energy-distance divisive algorithms, hidden Markov and semi-Markov models, state-dependent HMMs for compositional data, kernel-based methods, within-period detectors for seasonal binary signals, and sliced Poisson process detection for repeated event-time periods. Documentation, examples, tests, and command-line entry points support source-based installation and Zenodo archival releases.
 
 ## Keywords
 changepoint detection; time series analysis; Bayesian online changepoint detection; PELT; energy statistics; hidden Markov model; hidden semi-Markov model; SD-HMM; within-period detection; anomaly detection; state-space models; online algorithms; offline algorithms; Python; open source; regime shift; compositional data; periodic signals; reproducible research

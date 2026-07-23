@@ -65,7 +65,7 @@ from .core.segmentation import (
 )
 from .core.random import choose_from_sequence, make_rng, spawn_rngs
 
-__version__ = "0.1.12"
+__version__ = "0.1.13"
 
 __all__ = [
     "__version__",

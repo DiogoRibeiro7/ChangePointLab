@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.1.13] - 2026-07-23
 ### Fixed
 - Corrected PELT candidate handling so bundled costs match exhaustive
   optimal-partitioning oracles under minimum segment constraints.
