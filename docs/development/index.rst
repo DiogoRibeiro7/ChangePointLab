@@ -6,3 +6,4 @@ Development Notes
 
    segmentation_semantics
    randomness_reproducibility
+   within_period_rjmcmc

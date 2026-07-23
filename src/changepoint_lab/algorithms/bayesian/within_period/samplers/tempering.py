@@ -9,7 +9,7 @@ from typing import List, Tuple, Optional, Sequence
 import numpy as np
 from numpy.typing import NDArray
 
-from .....core.random import choose_from_sequence, spawn_rngs
+from .....core.random import spawn_rngs
 
 # Types and model hooks
 Tau = Tuple[int, ...]
@@ -49,75 +49,18 @@ def _mh_step_with_temperature(
     Single Metropolis-Hastings step at temperature T using model's internal proposal mechanisms.
     Reuses the exact logic as in WithinPeriodCPD.fit, but scales acceptance by 1/T.
     """
-    N = model._N  # prepared by _prepare_counts
-    l = model._l
+    from ..within_period_cpd import RJConfig
 
-    def is_valid(t: Tau) -> bool:
-        # Reuse internal validator
-        from ..within_period_cpd import _is_valid_tau  # local import to avoid circulars when not needed elsewhere
-        return _is_valid_tau(t, N, l)
-
-    m = 1 if len(tau) == 0 else len(tau) + 1
+    cfg = RJConfig(seed=None)
     log_cur = model._log_posterior_tau(tau)
-
-    if m == 1:
-        cand_list = model._uniform_birth_targets_m1()
-        q_fwd = 1.0 / len(cand_list)
-        tau_prop = choose_from_sequence(cand_list, rng)
-        if tau_prop == ():
-            q_bwd = q_fwd
-        else:
-            death_cands = model._uniform_death_targets(tau_prop)
-            q_bwd = 1.0 / len(death_cands)
-    else:
-        # Use same move/birth/death mix as default RJConfig
-        move_prob = 0.5
-        birth_prob = 0.25
-        death_prob = 0.25
-        s = move_prob + birth_prob + death_prob
-        move_prob, birth_prob, death_prob = move_prob / s, birth_prob / s, death_prob / s
-        u = float(rng.random())
-
-        if u < move_prob:
-            j = int(rng.integers(0, len(tau)))
-            cand_list = model._uniform_move_targets(tau, j)
-            tau_prop = choose_from_sequence(cand_list, rng)
-            q_fwd = move_prob * (1.0 / len(tau)) * (1.0 / len(cand_list))
-            if tau_prop == tau:
-                q_bwd = q_fwd
-            else:
-                # approximate symmetric count
-                cand_back = model._uniform_move_targets(tau_prop, j if j < len(tau_prop) else 0)
-                q_bwd = move_prob * (1.0 / len(tau_prop)) * (1.0 / len(cand_back))
-
-        elif u < move_prob + birth_prob:
-            seg_idx = int(rng.integers(0, m))
-            cand_list = model._uniform_birth_targets(tau, seg_idx)
-            tau_prop = choose_from_sequence(cand_list, rng)
-            q_fwd = birth_prob * (1.0 / m) * (1.0 / len(cand_list))
-            if tau_prop == tau:
-                q_bwd = q_fwd
-            else:
-                death_cands = model._uniform_death_targets(tau_prop)
-                q_bwd = death_prob * (1.0 / len(tau_prop)) * (1.0 / len(death_cands))
-
-        else:
-            cand_list = model._uniform_death_targets(tau)
-            tau_prop = choose_from_sequence(cand_list, rng)
-            q_fwd = death_prob * (1.0 / len(tau)) * (1.0 / len(cand_list))
-            if tau_prop == tau:
-                q_bwd = q_fwd
-            else:
-                # approximate symmetric birth-proposal normalization
-                m_prop = len(tau_prop) + 1
-                total_birth = 0
-                for sidx in range(m_prop):
-                    total_birth += len(model._uniform_birth_targets(tau_prop, sidx))
-                q_bwd = birth_prob / max(1, total_birth)
+    step = model._sample_proposal(tau, cfg, rng)
+    tau_prop = step.tau
+    q_fwd = step.probability
+    q_bwd = model.proposal_probability(tau_prop, tau, cfg)
 
     log_prop = model._log_posterior_tau(tau_prop)
     log_alpha = ((log_prop - log_cur) / max(1e-12, T)) + math.log(q_bwd) - math.log(q_fwd)
-    if math.log(float(rng.random())) < min(0.0, log_alpha):
+    if step.kind != "stay" and math.log(float(rng.random())) < min(0.0, log_alpha):
         return tau_prop, log_prop
     return tau, log_cur
 

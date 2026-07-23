@@ -1,6 +1,15 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- Added within-period RJMCMC diagnostics for acceptance rate and proposal move
+  counts.
+- Added tiny-state within-period RJMCMC tests for detailed balance, empirical
+  stationary frequencies, `pois_lambda`, and rotation invariance.
+
+### Fixed
+- Corrected the within-period circular state representation, truncated Poisson
+  segment-count prior, and exact reverse proposal probability accounting.
 
 ## [0.1.7] - 2026-07-23
 ### Added

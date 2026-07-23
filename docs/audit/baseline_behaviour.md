@@ -24,7 +24,7 @@ outputs live in `tests/fixtures/baseline/current_outputs.json`.
 | `PELT` | `scientific_oracle` | Known-variance Gaussian fixture has changepoint `[3]`; independent brute force confirms the optimum. |
 | `BOCPD` | `compatibility` | Beta-Bernoulli run records `cp_prob`, MAP run lengths, predictive means, posterior shape, wrapper indices, and metadata keys. |
 | `EDivisive` | `compatibility` | Tiny deterministic fixture with `R=9` and `seed=0` currently returns no accepted split. |
-| `WithinPeriodCPD` | `compatibility` | Seeded small periodic binary fixture records three kept samples and mode `(6,)` under the explicit `Generator` policy. |
+| `WithinPeriodCPD` | `compatibility` | Seeded small periodic binary fixture records three kept samples under the exact circular RJMCMC kernel and no longer emits singleton circular states. |
 | `KernelCPD` | `compatibility` | Wrapper now executes and returns the right-exclusive interior changepoint `[2]` on the tiny kernel oracle. |
 | `HSMM` | `scientific_oracle` | Core Viterbi oracle gives changepoint `[2]`; wrapper now extracts `[2]` from sparse duration-end indicators. |
 | `SDHMM` | `compatibility` | Tiny compositional fixture records states `[1, 1, 0, 0]` and changepoint `[2]`. |
@@ -48,12 +48,8 @@ The baseline test suite verifies selected deterministic outputs across two fresh
 Python processes. This catches hidden dependence on process-local ordering or
 global state for the frozen fixtures.
 
-## Expected Future Changes
+## Corrective Changes Recorded
 
-The following current outputs may change under a planned correctness fix:
-
-- Within-period RJMCMC proposal accounting and posterior target validation
-  still need paper-derived or brute-force small-state oracles.
-
-Any future correction to these paths should update the compatibility fixtures
-and include migration notes where public outputs change.
+- Within-period RJMCMC proposal accounting now has brute-force tiny-state
+  detailed-balance tests, an explicit Poisson segment-count prior, and
+  compatibility fixture updates for the corrected circular state space.

@@ -9,13 +9,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Iterable, List, Optional, Sequence, Tuple, Dict
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 import math
 
 import numpy as np
 from numpy.typing import NDArray
 
-from ....core.random import choose_from_sequence, make_rng
+from ....core.random import make_rng
 
 
 # =========================
@@ -27,6 +27,15 @@ ArrayBool = NDArray[np.bool_]
 Tau = Tuple[
     int, ...
 ]  # Sorted tuple of changepoint positions in [0, N-1]; empty tuple means m=1 model.
+
+
+@dataclass(frozen=True)
+class ProposalStep:
+    """One discrete proposal outcome from the current RJMCMC state."""
+
+    tau: Tau
+    kind: str
+    probability: float
 
 
 # =========================
@@ -64,8 +73,6 @@ def _segment_lengths(tau: Tau, N: int) -> List[int]:
         return [N]
     # tau sorted increasing in [0, N-1]
     lens: List[int] = []
-    m = len(tau) + 1
-    # previous "boundary" is tau[i-1], with tau[-1] interpreted as tau[m-2] and wrapping from N
     prev = tau[-1]
     for t in tau:
         d = _mod_distance(prev, t, N)
@@ -81,11 +88,31 @@ def _is_valid_tau(tau: Tau, N: int, l: int) -> bool:
     """
     if l < 1 or N < 1:
         return False
+    if any(t < 0 or t >= N for t in tau):
+        return False
+    if tuple(sorted(set(tau))) != tau:
+        return False
+    if len(tau) == 1:
+        return False
+    m = _segment_count(tau)
+    if m > N // l:
+        return False
     try:
         lens = _segment_lengths(tau, N)
     except Exception:
         return False
     return all(L >= l for L in lens)
+
+
+def _segment_count(tau: Tau) -> int:
+    """Return the number of circular segments represented by tau."""
+    return 1 if len(tau) == 0 else len(tau)
+
+
+def _logsumexp(values: Sequence[float]) -> float:
+    """Stable log(sum(exp(values)))."""
+    vmax = max(values)
+    return vmax + math.log(sum(math.exp(v - vmax) for v in values))
 
 
 def _sorted_unique_mod(xs: Iterable[int], N: int) -> Tau:
@@ -125,13 +152,14 @@ class RJConfig:
     seed : Optional[int]
         PRNG seed for reproducibility.
     move_prob : float
-        Probability for a 'move' proposal when m>1.
+        Base probability for a 'move' proposal when it is available.
     birth_prob : float
-        Probability for a 'birth' proposal (adding a changepoint).
+        Base probability for a 'birth' proposal when it is available.
     death_prob : float
-        Probability for a 'death' proposal (deleting a changepoint).
-        (move_prob + birth_prob + death_prob) must equal 1 for m>1.
-        For m==1, only birth proposals are used.
+        Base probability for a 'death' proposal when it is available.
+        The three base probabilities must sum to one. At states where one
+        or more proposal families are impossible, the available families are
+        renormalized exactly.
     """
 
     iters: int = 30_000
@@ -147,14 +175,11 @@ class RJConfig:
             raise ValueError("iters>0, burn>=0, thin>0 required.")
         if self.burn >= self.iters:
             raise ValueError("burn must be < iters.")
-        if (
-            not (0 < self.move_prob < 1)
-            or not (0 < self.birth_prob < 1)
-            or not (0 < self.death_prob < 1)
-        ):
-            # The exact values only apply for m>1; for m==1 we ignore move/death.
-            pass
-        # We won't hard-enforce sum==1 since we adjust dynamically for m==1 below.
+        probs = (self.move_prob, self.birth_prob, self.death_prob)
+        if not all(math.isfinite(p) and p > 0.0 for p in probs):
+            raise ValueError("move_prob, birth_prob, and death_prob must be positive finite values.")
+        if not math.isclose(sum(probs), 1.0, rel_tol=1e-12, abs_tol=1e-12):
+            raise ValueError("move_prob + birth_prob + death_prob must equal 1.")
 
 
 @dataclass(frozen=True)
@@ -218,6 +243,8 @@ class MCMCResult:
     log_posteriors: List[float]
     changepoint_hist: Array1D
     mode_tau: Tau
+    acceptance_rate: float = 0.0
+    move_counts: dict[str, int] = field(default_factory=dict)
     provenance: dict[str, object] = field(default_factory=dict)
 
 
@@ -233,7 +260,8 @@ class WithinPeriodCore:
         - Prior on segment probabilities is Beta(1,1) (uniform), marginalized -> Beta-binomial per segment (Eq. (6)).
         - Prior on m ~ Truncated Poisson(λ), m ∈ {1, ..., floor(N/l)}.
         - Prior on changepoint locations, via excess lengths δ_i = seg_len_i - l with Dirichlet–multinomial(γ) over δ (Eq. (4)).
-        - Anchor is uniformly distributed over N positions (constant 1/N in the posterior proportionality).
+        - Anchor is marginalized out as a uniform constant over N positions.
+        - Non-empty tau stores one circular boundary per segment; tau==() is the one-segment model.
     """
 
     def __init__(self, prior: ModelPrior):
@@ -317,24 +345,48 @@ class WithinPeriodCore:
 
     # -------------------- Posterior (unnormalized log) --------------------
 
-    def _log_posterior_tau(self, tau: Tau) -> float:
+    def _log_segment_count_prior(self, m: int, *, normalized: bool = False) -> float:
+        """
+        Log truncated-Poisson prior for the number of segments.
+
+        The support is m in {1, ..., floor(N/l)}. The MH kernel uses the
+        unnormalized value because the truncation constant cancels, but
+        normalized values are available for exact tiny-state checks and
+        reported probabilities.
+        """
+        if m < 1 or m > self.prior.m_max:
+            return -math.inf
+        lam = self.prior.pois_lambda
+        log_mass = m * math.log(lam) - _lgamma(m + 1.0)
+        if normalized:
+            log_norm = _logsumexp(
+                [k * math.log(lam) - _lgamma(k + 1.0) for k in range(1, self.prior.m_max + 1)]
+            )
+            log_mass -= log_norm
+        return log_mass
+
+    def _log_posterior_tau(self, tau: Tau, *, normalized_m_prior: bool = False) -> float:
         """
         Unnormalized log-posterior for a given tau (changepoints), with segment-probabilities marginalized out.
 
         For m=1:
-            log π ∝ log Beta(1+S, 1+T-S)  - log N  + log Poisson_trunc(m=1)  (constants dropped).
+            log π ∝ log Beta(1+S, 1+T-S) + log Poisson_trunc(m=1).
 
         For m>1:
             log π ∝ sum_i log Beta(1+s_i, 1+n_i - s_i)
                     + log DirichletMultinomial(δ | m, γ)    [excess lengths: δ_i = seg_len_i - l]
-                    - log N
                     + log Poisson_trunc(m)
-            Constants wrt τ,m are omitted; ratios are correct in MH steps.
+            Constants wrt τ,m are omitted unless normalized_m_prior=True. The
+            marginalized uniform anchor contributes the same 1/N factor to all
+            states and is omitted from ratios.
 
         See Eqs. (3), (4), (6), (7) in Taylor et al. (2021).
         """
-        N, l, gamma, lam = self._N, self._l, self.prior.gamma, self.prior.pois_lambda
-        m = 1 if len(tau) == 0 else len(tau) + 1
+        if not _is_valid_tau(tau, self._N, self._l):
+            return -math.inf
+
+        N, l, gamma = self._N, self._l, self.prior.gamma
+        m = _segment_count(tau)
 
         # segment stats
         s_list, n_list = self._segment_stats(tau)
@@ -367,25 +419,23 @@ class WithinPeriodCore:
                 + sum(_lgamma(delta + gamma) - _lgamma(delta + 1.0) for delta in deltas)
             )
 
-        # (iii) Uniform anchor over N (constant -log N) and truncated Poisson prior on m: p(m) ∝ e^{-λ} λ^{m} / m!
-        # e^{-λ} is constant across m, truncation normalizer is also constant for a fixed N,l; include -log(m!)
-        # NOTE: If you prefer a different prior on m, modify here.
-        prior_m = -_lgamma(m + 1.0)  # -log(m!)
-        # (iv) total
-        return (
-            ll + prior_tau + prior_m
-        )  # (-log N) is a constant offset; omit for ratios.
+        # (iii) Truncated Poisson prior on m:
+        # p(m) ∝ exp(-lambda) * lambda**m / m!, truncated to 1..floor(N/l).
+        # exp(-lambda) and the truncation normalizer are constants for a fixed
+        # prior, but the lambda**m term is required when comparing models with
+        # different segment counts.
+        prior_m = self._log_segment_count_prior(m, normalized=normalized_m_prior)
+        return ll + prior_tau + prior_m
 
     # -------------------- Proposal mechanisms --------------------
 
     def _uniform_move_targets(self, tau: Tau, j: int) -> Tau:
         """
         Enumerate all valid new positions for changepoint index j, under min-length constraint.
-        Returns a Tau for each candidate value (with index j replaced), as a generator.
+        Returns one tau for each non-stay candidate value.
         """
         N, l = self._N, self._l
-        m = len(tau) + 1
-        assert m > 1
+        assert len(tau) >= 2
         # neighbors (prev cp and next cp) in circular order
         prev_cp = tau[j - 1] if j > 0 else tau[-1]
         next_cp = tau[(j + 1) % len(tau)]
@@ -399,17 +449,13 @@ class WithinPeriodCore:
             for k in range(Lmin, Lmax + 1):
                 v = (prev_cp + k) % N
                 if v == tau[j]:
-                    # include current position as well? We'll include it to let the chain stay (implies proposal prob)
-                    pass
+                    continue
                 new_tau = list(tau)
                 new_tau[j] = v
                 cand = _sorted_unique_mod(new_tau, N)
                 if len(cand) == len(tau) and _is_valid_tau(cand, N, l):
                     candidates.append(cand)
-        # Ensure at least current tau is available (stay)
-        if tau not in candidates:
-            candidates.append(tau)
-        return tuple(candidates)
+        return tuple(sorted(set(candidates)))
 
     def _uniform_birth_targets(self, tau: Tau, seg_index: int) -> Tuple[Tau, ...]:
         """
@@ -421,7 +467,7 @@ class WithinPeriodCore:
         We uniformly consider all lattice points v in {prev + l, ..., end - l} as valid insertion locations.
         """
         N, l = self._N, self._l
-        m = len(tau) + 1
+        m = _segment_count(tau)
         assert 0 <= seg_index < m
         if m == 1:
             # Whole circle is one segment: any two cps must be at least l apart both ways.
@@ -440,10 +486,7 @@ class WithinPeriodCore:
                 # Validate:
                 if len(new_tau) == len(tau) + 1 and _is_valid_tau(new_tau, N, l):
                     candidates.append(new_tau)
-        # Always include 'no change' option (stay)
-        if tau not in candidates:
-            candidates.append(tau)
-        return tuple(candidates)
+        return tuple(sorted(set(candidates)))
 
     def _uniform_birth_targets_m1(self) -> Tuple[Tau, ...]:
         """
@@ -452,7 +495,7 @@ class WithinPeriodCore:
             (b-a) >= l and (a+N-b) >= l  <=> distance in either direction >= l.
         """
         N, l = self._N, self._l
-        candidates: List[Tau] = [()]  # include stay
+        candidates: List[Tau] = []
         for a in range(N - 1):
             for b in range(a + 1, N):
                 d1 = b - a
@@ -463,17 +506,133 @@ class WithinPeriodCore:
 
     def _uniform_death_targets(self, tau: Tau) -> Tuple[Tau, ...]:
         """
-        Enumerate all valid death proposals by removing one changepoint (choose uniformly).
+        Enumerate all valid death proposals.
+
+        A circular two-segment model has two boundaries, so its only
+        one-segment death target is tau==(). For higher dimensions, death
+        removes exactly one boundary and merges two adjacent segments.
         """
         N, l = self._N, self._l
-        m = len(tau) + 1
-        assert m > 1
-        candidates: List[Tau] = [tau]  # include stay
+        assert len(tau) >= 2
+        if len(tau) == 2:
+            return ((),)
+        candidates: List[Tau] = []
         for j in range(len(tau)):
             reduced = tuple(t for k, t in enumerate(tau) if k != j)
             if _is_valid_tau(reduced, N, l):
                 candidates.append(reduced)
-        return tuple(candidates)
+        return tuple(sorted(set(candidates)))
+
+    def _move_steps(self, tau: Tau, action_prob: float) -> List[ProposalStep]:
+        """Return exact non-stay move proposal outcomes."""
+        target_groups = [self._uniform_move_targets(tau, j) for j in range(len(tau))]
+        available = [(j, targets) for j, targets in enumerate(target_groups) if targets]
+        if not available:
+            return []
+        index_prob = action_prob / len(available)
+        steps: List[ProposalStep] = []
+        for _, targets in available:
+            target_prob = index_prob / len(targets)
+            steps.extend(ProposalStep(t, "move", target_prob) for t in targets)
+        return steps
+
+    def _birth_steps(self, tau: Tau, action_prob: float) -> List[ProposalStep]:
+        """Return exact birth proposal outcomes."""
+        if len(tau) == 0:
+            targets = self._uniform_birth_targets_m1()
+            if not targets:
+                return []
+            return [ProposalStep(t, "birth", action_prob / len(targets)) for t in targets]
+
+        target_groups = [
+            self._uniform_birth_targets(tau, seg_index)
+            for seg_index in range(_segment_count(tau))
+        ]
+        available = [targets for targets in target_groups if targets]
+        if not available:
+            return []
+        segment_prob = action_prob / len(available)
+        steps: List[ProposalStep] = []
+        for targets in available:
+            target_prob = segment_prob / len(targets)
+            steps.extend(ProposalStep(t, "birth", target_prob) for t in targets)
+        return steps
+
+    def _death_steps(self, tau: Tau, action_prob: float) -> List[ProposalStep]:
+        """Return exact death proposal outcomes."""
+        if len(tau) < 2:
+            return []
+        targets = self._uniform_death_targets(tau)
+        if not targets:
+            return []
+        return [ProposalStep(t, "death", action_prob / len(targets)) for t in targets]
+
+    def proposal_steps(self, tau: Tau, cfg: RJConfig = RJConfig()) -> Tuple[ProposalStep, ...]:
+        """
+        Enumerate the exact proposal distribution from tau.
+
+        The configured move/birth/death weights are first restricted to proposal
+        families that have at least one feasible non-stay outcome, then
+        renormalized. Duplicate destinations are intentionally kept as separate
+        paths here; use proposal_probability to sum them.
+        """
+        if not _is_valid_tau(tau, self._N, self._l):
+            raise ValueError("tau is not a valid circular changepoint state.")
+
+        raw: list[tuple[str, float]] = []
+        if len(tau) >= 2 and any(self._uniform_move_targets(tau, j) for j in range(len(tau))):
+            raw.append(("move", cfg.move_prob))
+        if _segment_count(tau) < self.prior.m_max:
+            if tau:
+                has_birth = any(
+                    self._uniform_birth_targets(tau, seg_index)
+                    for seg_index in range(_segment_count(tau))
+                )
+            else:
+                has_birth = bool(self._uniform_birth_targets_m1())
+            if has_birth:
+                raw.append(("birth", cfg.birth_prob))
+        if len(tau) >= 2 and self._uniform_death_targets(tau):
+            raw.append(("death", cfg.death_prob))
+
+        if not raw:
+            return (ProposalStep(tau, "stay", 1.0),)
+
+        total = sum(weight for _, weight in raw)
+        steps: List[ProposalStep] = []
+        for kind, weight in raw:
+            action_prob = weight / total
+            if kind == "move":
+                steps.extend(self._move_steps(tau, action_prob))
+            elif kind == "birth":
+                steps.extend(self._birth_steps(tau, action_prob))
+            elif kind == "death":
+                steps.extend(self._death_steps(tau, action_prob))
+
+        if not steps:
+            return (ProposalStep(tau, "stay", 1.0),)
+        return tuple(steps)
+
+    def proposal_probability(self, tau_from: Tau, tau_to: Tau, cfg: RJConfig = RJConfig()) -> float:
+        """Return q(tau_to | tau_from) by summing all exact proposal paths."""
+        return sum(
+            step.probability
+            for step in self.proposal_steps(tau_from, cfg)
+            if step.tau == tau_to
+        )
+
+    def _sample_proposal(
+        self,
+        tau: Tau,
+        cfg: RJConfig,
+        rng: np.random.Generator,
+    ) -> ProposalStep:
+        """Draw a proposal from the exact enumerated kernel."""
+        steps = self.proposal_steps(tau, cfg)
+        probs = np.asarray([step.probability for step in steps], dtype=float)
+        probs = probs / probs.sum()
+        idx = int(rng.choice(len(steps), p=probs))
+        return steps[idx]
 
     # -------------------- Sampler --------------------
 
@@ -512,125 +671,30 @@ class WithinPeriodCore:
         tau: Tau = _sorted_unique_mod(init, self._N) if init is not None else ()
         if not _is_valid_tau(tau, self._N, self._l):
             tau = ()  # fallback to m=1
+        log_cur = self._log_posterior_tau(tau)
 
         # Storage
         kept_taus: List[Tau] = []
         kept_logs: List[float] = []
         cp_hist = np.zeros(self._N, dtype=np.int64)
+        attempts = {"move": 0, "birth": 0, "death": 0, "stay": 0}
+        accepts = {"move": 0, "birth": 0, "death": 0}
 
         # MH loop
         for it in range(cfg.iters):
-            m = 1 if len(tau) == 0 else len(tau) + 1
-            log_cur = self._log_posterior_tau(tau)
-
-            # Decide proposal type
-            if m == 1:
-                # Only birth from m=1 -> enumerate candidates (including stay)
-                candidates = self._uniform_birth_targets_m1()
-                # Discrete proposal: choose uniformly among candidates
-                q_fwd = 1.0 / len(candidates)
-                tau_prop = choose_from_sequence(candidates, rng)
-                q_bwd: float
-                if tau_prop == ():
-                    q_bwd = q_fwd  # symmetric stay
-                else:
-                    # Backward: from m=2 you can propose death; enumerate death candidates and count cardinality
-                    death_cands = self._uniform_death_targets(tau_prop)
-                    q_bwd = 1.0 / len(death_cands)
-            else:
-                # m > 1: choose move/birth/death with probabilities; if a move is not possible, we silently fall back to 'stay'
-                u = float(rng.random())
-                move_prob = cfg.move_prob
-                birth_prob = cfg.birth_prob
-                death_prob = cfg.death_prob
-                # Normalize in case user gave non-exact sums
-                s = move_prob + birth_prob + death_prob
-                move_prob, birth_prob, death_prob = (
-                    move_prob / s,
-                    birth_prob / s,
-                    death_prob / s,
-                )
-
-                if u < move_prob:
-                    # MOVE: pick a cp and a new position uniformly from valid targets (including stay)
-                    j = int(rng.integers(0, len(tau)))
-                    cand_list = self._uniform_move_targets(tau, j)
-                    tau_prop = choose_from_sequence(cand_list, rng)
-                    q_fwd = move_prob * (1.0 / len(tau)) * (1.0 / len(cand_list))
-
-                    # Backward: in tau_prop, the moved cp sits at position 'v'; find its index j' after sorting -> same cardinality
-                    if tau_prop == tau:
-                        q_bwd = q_fwd
-                    else:
-                        # identify which cp moved: find value that is in tau_prop but not in tau OR nearest match
-                        # Simpler: any cp index may "move back". Use the same count of candidates from tau_prop for that cp.
-                        # We'll choose the index j' corresponding to the value tau_prop[j*] closest to old tau[j]; but counts are same.
-                        j_back = None
-                        # Best-effort: take the cp in tau_prop with minimal circular distance to tau[j]
-                        dmins, j_back = None, 0
-                        for idx, v in enumerate(tau_prop):
-                            d = min(
-                                _mod_distance(v, tau[j], self._N),
-                                _mod_distance(tau[j], v, self._N),
-                            )
-                            if dmins is None or d < dmins:
-                                dmins, j_back = d, idx
-                        cand_back = self._uniform_move_targets(tau_prop, j_back)
-                        q_bwd = (
-                            move_prob * (1.0 / len(tau_prop)) * (1.0 / len(cand_back))
-                        )
-
-                elif u < move_prob + birth_prob:
-                    # BIRTH: pick segment uniformly, insert one cp uniformly among valid positions (including stay)
-                    seg_idx = int(rng.integers(0, m))
-                    cand_list = self._uniform_birth_targets(tau, seg_idx)
-                    tau_prop = choose_from_sequence(cand_list, rng)
-                    q_fwd = birth_prob * (1.0 / m) * (1.0 / len(cand_list))
-                    # Backward is DEATH from tau_prop
-                    if tau_prop == tau:
-                        q_bwd = q_fwd
-                    else:
-                        death_cands = self._uniform_death_targets(tau_prop)
-                        q_bwd = (
-                            death_prob
-                            * (1.0 / (len(tau_prop)))
-                            * (1.0 / len(death_cands))
-                        )
-
-                else:
-                    # DEATH: remove a cp uniformly (including stay)
-                    cand_list = self._uniform_death_targets(tau)
-                    tau_prop = choose_from_sequence(cand_list, rng)
-                    q_fwd = death_prob * (1.0 / len(tau)) * (1.0 / len(cand_list))
-                    # Backward is BIRTH from tau_prop
-                    if tau_prop == tau:
-                        q_bwd = q_fwd
-                    else:
-                        m_prop = len(tau_prop) + 1
-                        if len(tau_prop) == 0:
-                            birth_cands_prop = self._uniform_birth_targets_m1()
-                            q_bwd = birth_prob * (1.0 / len(birth_cands_prop))
-                        else:
-                            # Any segment could be selected; proposal totals below
-                            # average over all segment choices.
-                            # We don't know which seg was actually used to get back exactly 'tau'; use a conservative bound by summing?
-                            # For a valid MH step we need a single path probability; we approximate by averaging over segments.
-                            # To avoid bias, we instead compute total number of birth targets across segments and assume uniform segment draw.
-                            total_birth = 0
-                            for sidx in range(m_prop):
-                                total_birth += len(
-                                    self._uniform_birth_targets(tau_prop, sidx)
-                                )
-                            q_bwd = (
-                                birth_prob * (1.0 / m_prop) * (1.0 / (total_birth / m_prop))
-                            )  # = birth_prob / total_birth
+            step = self._sample_proposal(tau, cfg, rng)
+            attempts[step.kind] += 1
+            tau_prop = step.tau
+            q_fwd = step.probability
+            q_bwd = self.proposal_probability(tau_prop, tau, cfg)
 
             # MH ratio
             log_prop = self._log_posterior_tau(tau_prop)
             log_alpha = (log_prop - log_cur) + math.log(q_bwd) - math.log(q_fwd)
-            if math.log(float(rng.random())) < min(0.0, log_alpha):
+            if step.kind != "stay" and math.log(float(rng.random())) < min(0.0, log_alpha):
                 tau = tau_prop  # accept
                 log_cur = log_prop
+                accepts[step.kind] += 1
 
             # Record sample if needed
             if it >= cfg.burn and ((it - cfg.burn) % cfg.thin == 0):
@@ -645,15 +709,29 @@ class WithinPeriodCore:
             mode_tau = kept_taus[mode_idx]
         else:
             mode_tau = tau
+        total_attempted = attempts["move"] + attempts["birth"] + attempts["death"]
+        total_accepted = accepts["move"] + accepts["birth"] + accepts["death"]
+        acceptance_rate = total_accepted / total_attempted if total_attempted else 0.0
 
         return MCMCResult(
             samples_tau=kept_taus,
             log_posteriors=kept_logs,
             changepoint_hist=cp_hist,
             mode_tau=mode_tau,
+            acceptance_rate=acceptance_rate,
+            move_counts={
+                "move_attempted": attempts["move"],
+                "birth_attempted": attempts["birth"],
+                "death_attempted": attempts["death"],
+                "stay_attempted": attempts["stay"],
+                "move_accepted": accepts["move"],
+                "birth_accepted": accepts["birth"],
+                "death_accepted": accepts["death"],
+            },
             provenance={
                 "seed": cfg.seed,
                 "rng": "numpy.random.Generator",
+                "sampler": "exact-discrete-rjmcmc",
                 "iters": cfg.iters,
                 "burn": cfg.burn,
                 "thin": cfg.thin,
@@ -662,6 +740,7 @@ class WithinPeriodCore:
                 "death_prob": cfg.death_prob,
                 "period": self._N,
                 "min_segment_length": self._l,
+                "acceptance_rate": acceptance_rate,
             },
         )
 

@@ -172,11 +172,13 @@ def test_periodic_within_period_vs_bocpd(periodic_data):
 
     prior = ModelPrior(N=period, l=5)
     wp = WithinPeriodCPD(prior)
-    cfg = RJConfig(
-        iters=100, burn=20, thin=5, seed=0, move_prob=1.0, birth_prob=0.0, death_prob=0.0
-    )
-    wp.fit(data, cfg=cfg, init=(cp,))
-    wp_cps = list(wp.result.mode_tau)
+    cfg = RJConfig(iters=100, burn=20, thin=5, seed=0)
+    wp.fit(data, cfg=cfg, init=(cp - 1, period - 1))
+    wp_cps = [
+        (tau + 1) % period
+        for tau in wp.result.mode_tau
+        if abs(((tau + 1) % period) - cp) <= 2
+    ]
 
     wp_global = [tau + k * period for k in range(len(data) // period) for tau in wp_cps]
     fig = plot_changepoints(
