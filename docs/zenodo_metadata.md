@@ -14,7 +14,7 @@ Supported by internal research funds from ESMAD - Instituto Politécnico do Port
 
 ## Related Publications and Datasets
 - Ribeiro, D. (2025). *Change-Point Detection Toolkit*. Journal of Open Source Software.
-- Synthetic datasets and examples included in the project repository: <https://github.com/DiogoRibeiro7/articles_future>.
+- Synthetic datasets and examples included in the project repository: <https://github.com/DiogoRibeiro7/ChangePointLab>.
 
 ## Technical Specifications and System Requirements
 - **Programming language:** Python ≥3.10
@@ -24,7 +24,7 @@ Supported by internal research funds from ESMAD - Instituto Politécnico do Port
 
 ## Installation
 ```bash
-pip install cp-ss-toolkit
+pip install changepoint-lab
 ```
 
 ## Usage
@@ -42,7 +42,7 @@ print(result.changepoints)
 If you use ChangePointLab in your research, please cite the accompanying JOSS paper and reference the Zenodo archive:
 
 ```
-Ribeiro, D. (2025). Change-Point Detection Toolkit. Journal of Open Source Software. https://doi.org/10.21105/joss.00000
+Ribeiro, D. (2026). *ChangePointLab: A Unified Python Toolkit for Changepoint Detection*. Zenodo DOI assigned on release.
 ```
 
 The CITATION.cff file in the repository provides bibliographic metadata for citation managers.

@@ -30,7 +30,10 @@ from .algorithms.state_space.sdhmm_mix_vi import (
 )
 from .core.datatypes import ChangePointResult
 
+__version__ = "0.1.0"
+
 __all__ = [
+    "__version__",
     "PELT",
     "BOCPD",
     "BOCPDConfig",

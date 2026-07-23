@@ -1,6 +1,9 @@
 # Python artifacts
 __pycache__/
 *.py[cod]
+build/
+dist/
+*.egg-info/
 
 # Sphinx build artifacts
 /docs/build/

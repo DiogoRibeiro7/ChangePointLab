@@ -1,15 +1,15 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="changepoint-toolkit",
+    name="changepoint-lab",
     version="0.1.0",
-    author="Change-Point Detection Contributors",
-    description="Comprehensive toolkit for change-point detection in time series",
+    author="Diogo Ribeiro",
+    author_email="dfr@esmad.ipp.pt",
+    description="ChangePointLab: a unified Python toolkit for changepoint detection in time series.",
     packages=find_packages(),
+    python_requires=">=3.10",
     install_requires=[
-        "numpy>=1.20.0",
-        "matplotlib>=3.5.0",
-        "pandas>=1.5.0",
+        "numpy>=1.21.0",
     ],
     entry_points={
         "console_scripts": [

@@ -2,8 +2,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Versions](https://img.shields.io/pypi/pyversions/changepoint-lab.svg)](https://pypi.org/project/changepoint-lab/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.0000000.svg)](https://doi.org/10.5281/zenodo.0000000)
-[![CI](https://github.com/DiogoRibeiro7/articles_future/actions/workflows/ci.yml/badge.svg)](https://github.com/DiogoRibeiro7/articles_future/actions/workflows/ci.yml)
+[![DOI](https://zenodo.org/badge/1046174252.svg)](https://zenodo.org/badge/latestdoi/1046174252)
+[![CI](https://github.com/DiogoRibeiro7/ChangePointLab/actions/workflows/ci.yml/badge.svg)](https://github.com/DiogoRibeiro7/ChangePointLab/actions/workflows/ci.yml)
 
 Comprehensive Python toolkit for detecting structural changes in time series. The
 package unifies multiple changepoint algorithms behind a common API, making it
@@ -29,8 +29,8 @@ pip install changepoint-lab
 or from source:
 
 ```bash
-git clone https://github.com/DiogoRibeiro7/changepoint-lab
-cd changepoint-lab
+git clone https://github.com/DiogoRibeiro7/ChangePointLab
+cd ChangePointLab
 pip install -e .
 ```
 
@@ -102,12 +102,9 @@ If you use this toolkit in your research, please cite:
 @article{ribeiro2025changepoint,
   title={ChangePointLab: A Unified Toolkit for Time Series Changepoint Detection},
   author={Ribeiro, Diogo F.},
-  journal={Journal of Open Source Software},
-  year={2025},
-  volume={10},
-  number={100},
-  pages={xxxx},
-  doi={10.xxxx/xxxxx}
+  year={2026},
+  publisher={Zenodo},
+  note={Zenodo DOI assigned on release}
 }
 ```
 
@@ -122,4 +119,3 @@ NumPy.
 - Matteson, D., & James, N. (2014). *A Nonparametric Approach for Multiple Change Point Analysis of Multivariate Data*.
 - Killick, R., Fearnhead, P., & Eckley, I. (2012). *Optimal Detection of Changepoints With a Linear Computational Cost*.
 - Yu, S.-Z. (2010). *Hidden Semi-Markov Models*.
-```

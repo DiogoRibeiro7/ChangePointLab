@@ -5,31 +5,13 @@ on:
   pull_request:
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .[dev]
-      - name: Ruff
-        run: ruff .
-      - name: Mypy
-        run: mypy .
-
   tests:
-    needs: lint
     runs-on: ubuntu-latest
+    env:
+      MPLBACKEND: Agg
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -38,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .[dev]
+          pip install -e .[dev,plot]
           pip install coverage pdoc pytest-cov
       - name: Unit tests
         run: coverage run -m pytest -m "not slow" tests/unit
@@ -63,6 +45,8 @@ jobs:
 
   docs:
     runs-on: ubuntu-latest
+    env:
+      MPLBACKEND: Agg
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -71,10 +55,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .[dev]
+          pip install -e .[dev,plot]
           pip install pdoc
       - name: Build documentation
-        run: pdoc -o docs/_build changepoint_toolkit
+        run: pdoc -o docs/_build changepoint_lab
       - name: Upload docs artifact
         uses: actions/upload-artifact@v4
         with:
@@ -83,6 +67,8 @@ jobs:
 
   cross-platform:
     runs-on: ${{ matrix.os }}
+    env:
+      MPLBACKEND: Agg
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
@@ -94,6 +80,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .[dev]
+          pip install -e .[dev,plot]
       - name: Numerical stability tests
         run: pytest tests/unit

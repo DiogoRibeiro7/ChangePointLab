@@ -1,9 +1,8 @@
 cff-version: 1.2.0
-message: "If you use this toolkit, please cite the JOSS paper."
-title: "Change-Point Detection Toolkit"
+message: "If you use ChangePointLab, please cite the archived release."
+title: "ChangePointLab: A Unified Python Toolkit for Changepoint Detection"
 version: "0.1.0"
-doi: 10.5281/zenodo.0000000
-date-released: 2025-08-30
+date-released: 2026-07-23
 authors:
   - family-names: Ribeiro
     given-names: Diogo
@@ -11,8 +10,8 @@ authors:
     email: dfr@esmad.ipp.pt
     orcid: https://orcid.org/0009-0001-2022-7072
 license: MIT
-repository-code: https://github.com/DiogoRibeiro7/articles_future
-url: https://github.com/DiogoRibeiro7/articles_future
+repository-code: https://github.com/DiogoRibeiro7/ChangePointLab
+url: https://github.com/DiogoRibeiro7/ChangePointLab
 abstract: |
   ChangePointLab is an open-source Python library that unifies classical and modern
   approaches to changepoint detection. It implements Bayesian Online Change Point
@@ -52,13 +51,3 @@ keywords:
   - reproducible research
 funding:
   - name: "ESMAD - Instituto Politécnico do Porto internal research funds"
-preferred-citation:
-  type: article
-  title: "Change-Point Detection Toolkit"
-  journal: Journal of Open Source Software
-  year: 2025
-  doi: 10.21105/joss.00000
-  authors:
-    - family-names: Ribeiro
-      given-names: Diogo
-      orcid: https://orcid.org/0009-0001-2022-7072

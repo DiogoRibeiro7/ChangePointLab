@@ -9,12 +9,12 @@ tags:
   - binary data
 authors:
   - name: Diogo Ribeiro
-    orcid: 0000-0000-0000-0000
+    orcid: 0009-0001-2022-7072
     affiliation: 1
 affiliations:
-  - name: University of Lisbon, Portugal
+  - name: ESMAD - Instituto Politécnico do Porto, Portugal
     index: 1
-date: 29 August 2025
+date: 23 July 2026
 bibliography: paper.bib
 ---
 

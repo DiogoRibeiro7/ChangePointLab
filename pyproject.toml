@@ -3,18 +3,22 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cp-ss-toolkit"
+name = "changepoint-lab"
 version = "0.1.0"
-description = "Change-Point & State-Space Toolkit: Bayesian Blocks, E-Divisive, Kernel CPD (PELT), RFF CPD, SD-HMM, HSMM — NumPy-only implementations."
+description = "ChangePointLab: a unified Python toolkit for changepoint detection in time series."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-  { name = "Contributors" }
+  { name = "Diogo Ribeiro", email = "dfr@esmad.ipp.pt" }
+]
+maintainers = [
+  { name = "Diogo Ribeiro", email = "dfr@esmad.ipp.pt" }
 ]
 keywords = [
-  "changepoint", "change-point", "kernel", "PELT", "Bayesian Blocks", "E-Divisive",
-  "HMM", "HSMM", "RFF", "time-series", "nonparametric"
+  "changepoint", "change-point", "time-series", "BOCPD", "PELT", "E-Divisive",
+  "kernel methods", "HMM", "HSMM", "SD-HMM", "state-space models",
+  "nonparametric statistics", "anomaly detection"
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
@@ -40,17 +44,24 @@ dev = [
 
 [project.scripts]
 cpd = "toolkit.cpd_cli:main"
+cpd-cli = "toolkit.cpd_cli:main"
+bocpd-cli = "changepoint_lab.cli.bocpd_cli:main"
+within-period-cli = "changepoint_lab.algorithms.bayesian.within_period.cli:main"
 
 [project.urls]
-Homepage = "https://example.com/"
-Repository = "https://example.com/repo"
-Issues = "https://example.com/repo/issues"
+Homepage = "https://github.com/DiogoRibeiro7/ChangePointLab"
+Repository = "https://github.com/DiogoRibeiro7/ChangePointLab"
+Issues = "https://github.com/DiogoRibeiro7/ChangePointLab/issues"
+Documentation = "https://github.com/DiogoRibeiro7/ChangePointLab/tree/main/docs"
+Changelog = "https://github.com/DiogoRibeiro7/ChangePointLab/blob/main/CHANGELOG.md"
 
 # ---- setuptools config -------------------------------------------------------
 [tool.setuptools]
-packages = ["changepoint_lab", "toolkit"]
 py-modules = []
 include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["changepoint_lab*", "toolkit*"]
 
 # ---- tooling (optional but handy) -------------------------------------------
 [tool.ruff]

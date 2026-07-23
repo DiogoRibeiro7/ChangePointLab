@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-07-23
 ### Added
 - Introduced `changepoint_lab` package directory with unified `algorithms/` tree and `py.typed` marker.
 

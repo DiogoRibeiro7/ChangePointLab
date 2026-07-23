@@ -2,8 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Versions](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.0000000.svg)](https://doi.org/10.5281/zenodo.0000000)
-[![JOSS](https://joss.theoj.org/papers/10.21105/joss.00000/status.svg)](https://doi.org/10.21105/joss.00000)
+[![DOI](https://zenodo.org/badge/1046174252.svg)](https://zenodo.org/badge/latestdoi/1046174252)
 
 ## Purpose
 
@@ -26,8 +25,8 @@ pip install bocpd
 ### From Source
 ```bash
 # Clone the repository
-git clone https://github.com/username/bocpd.git
-cd bocpd
+git clone https://github.com/DiogoRibeiro7/ChangePointLab.git
+cd ChangePointLab
 
 # Install dependencies
 pip install -r requirements.txt
@@ -96,27 +95,23 @@ python -m bocpd_cli --demo --days 14 --period 96
 
 ## Documentation
 
-- [Full Documentation](https://github.com/username/bocpd/docs/)
-- [Parameter Selection Guide](https://github.com/username/bocpd/docs/parameter_guide.md)
-- [API Reference](https://github.com/username/bocpd/docs/api_reference.md)
-- [Example Notebook](https://github.com/username/bocpd/examples/example_notebook.ipynb)
-- [CLI Reference](https://github.com/username/bocpd/docs/cli_reference.md)
+- [Full Documentation](https://github.com/DiogoRibeiro7/ChangePointLab/tree/main/docs)
+- [Parameter Selection Guide](https://github.com/DiogoRibeiro7/ChangePointLab/blob/main/docs/parameters/bocpd_parameters.md)
+- [API Reference](https://github.com/DiogoRibeiro7/ChangePointLab/blob/main/docs/api/bocpd.rst)
+- [Examples](https://github.com/DiogoRibeiro7/ChangePointLab/tree/main/examples)
+- [CLI Reference](https://github.com/DiogoRibeiro7/ChangePointLab/blob/main/changepoint_lab/cli/bocpd_cli.py)
 
 ## How to Cite
 
-If you use BOCPD in your research, please cite our JOSS paper:
+If you use BOCPD in your research, please cite the archived ChangePointLab release:
 
 ```bibtex
-@article{Ribeiro2025,
-  title={BOCPD: Bayesian Online Changepoint Detection for Time Series with Flexible Hazard Functions},
+@software{Ribeiro2026ChangePointLab,
+  title={ChangePointLab: A Unified Python Toolkit for Changepoint Detection},
   author={Ribeiro, Diogo},
-  journal={Journal of Open Source Software},
-  volume={10},
-  number={104},
-  pages={0000},
-  year={2025},
-  publisher={The Open Journal},
-  doi={10.21105/joss.00000}
+  year={2026},
+  publisher={Zenodo},
+  note={Zenodo DOI assigned on release}
 }
 ```
 

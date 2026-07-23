@@ -1,6 +1,8 @@
 {
-  "title": "Change-Point Detection Toolkit",
-  "description": "Comprehensive Python toolkit providing multiple change-point detection algorithms including Bayesian Online Change-Point Detection (BOCPD), Pruned Exact Linear Time (PELT), E-Divisive energy-based detection, Hidden Markov Models (HMM), Hidden Semi-Markov Models (HSMM), Scaled-Dirichlet HMM (SD-HMM), and within-period methods.",
+  "title": "ChangePointLab: A Unified Python Toolkit for Changepoint Detection",
+  "version": "0.1.0",
+  "publication_date": "2026-07-23",
+  "description": "ChangePointLab is an open-source Python library that unifies classical and modern approaches to changepoint detection. It implements Bayesian Online Change Point Detection, Pruned Exact Linear Time segmentation, energy-distance divisive algorithms, Hidden Markov and semi-Markov models, state-dependent HMMs for compositional data, kernel-based methods, and within-period detectors for seasonal signals. A consistent API, lightweight NumPy dependency, validation utilities, examples, and documentation support reproducible experiments across binary, continuous, multivariate, periodic, and compositional time series.",
   "creators": [
     {
       "name": "Ribeiro, Diogo",
@@ -8,17 +10,34 @@
       "orcid": "0009-0001-2022-7072"
     }
   ],
+  "contributors": [
+    {
+      "name": "Ribeiro, Diogo",
+      "affiliation": "ESMAD - Instituto Polit\u00e9cnico do Porto",
+      "orcid": "0009-0001-2022-7072",
+      "type": "ContactPerson"
+    }
+  ],
   "upload_type": "software",
-  "license": "MIT",
+  "access_right": "open",
+  "license": "mit",
+  "language": "eng",
+  "notes": "Contact: dfr@esmad.ipp.pt",
   "keywords": [
     "changepoint detection",
+    "time series analysis",
     "BOCPD",
     "PELT",
     "E-Divisive",
+    "KernelCPD",
     "HMM",
     "HSMM",
     "SD-HMM",
-    "within-period"
+    "within-period detection",
+    "state-space models",
+    "anomaly detection",
+    "Python",
+    "reproducible research"
   ],
   "communities": [
     {
@@ -27,44 +46,52 @@
   ],
   "related_identifiers": [
     {
-      "identifier": "https://github.com/DiogoRibeiro7/articles_future",
+      "identifier": "https://github.com/DiogoRibeiro7/ChangePointLab",
       "relation": "isSupplementTo",
-      "scheme": "url"
+      "scheme": "url",
+      "resource_type": "software"
     },
     {
       "identifier": "10.48550/arXiv.0710.3742",
       "relation": "cites",
-      "scheme": "doi"
+      "scheme": "doi",
+      "resource_type": "publication-article"
     },
     {
       "identifier": "10.1080/01621459.2013.849605",
       "relation": "cites",
-      "scheme": "doi"
+      "scheme": "doi",
+      "resource_type": "publication-article"
     },
     {
       "identifier": "10.1080/01621459.2012.737745",
       "relation": "cites",
-      "scheme": "doi"
+      "scheme": "doi",
+      "resource_type": "publication-article"
     },
     {
       "identifier": "10.1109/5.18626",
       "relation": "cites",
-      "scheme": "doi"
+      "scheme": "doi",
+      "resource_type": "publication-article"
     },
     {
       "identifier": "10.1016/j.artint.2009.11.011",
       "relation": "cites",
-      "scheme": "doi"
+      "scheme": "doi",
+      "resource_type": "publication-article"
     },
     {
       "identifier": "10.1111/rssc.12464",
       "relation": "cites",
-      "scheme": "doi"
+      "scheme": "doi",
+      "resource_type": "publication-article"
     },
     {
       "identifier": "https://jmlr.org/papers/v14/johnson13a.html",
       "relation": "cites",
-      "scheme": "url"
+      "scheme": "url",
+      "resource_type": "publication-article"
     }
   ],
   "subjects": [

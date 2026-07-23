@@ -1,19 +1,18 @@
 {
   "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
   "@type": "SoftwareSourceCode",
-  "name": "Change-Point Detection Toolkit",
-  "description": "Python toolkit unifying BOCPD, PELT, E-Divisive, HMM/HSMM, SD-HMM, and within-period change-point detection methods.",
+  "name": "ChangePointLab",
+  "description": "Python toolkit unifying BOCPD, PELT, E-Divisive, kernel methods, HMM/HSMM, SD-HMM, and within-period changepoint detection methods.",
   "version": "0.1.0",
   "license": "https://spdx.org/licenses/MIT.html",
-  "codeRepository": "https://github.com/DiogoRibeiro7/articles_future",
-  "issueTracker": "https://github.com/DiogoRibeiro7/articles_future/issues",
+  "codeRepository": "https://github.com/DiogoRibeiro7/ChangePointLab",
+  "issueTracker": "https://github.com/DiogoRibeiro7/ChangePointLab/issues",
   "programmingLanguage": "Python",
   "operatingSystem": "OS-independent",
   "softwareRequirements": [
     "python >=3.10",
-    "numpy >=1.20",
-    "pandas >=1.5",
-    "matplotlib >=3.5"
+    "numpy >=1.21",
+    "matplotlib >=3.3"
   ],
   "keywords": [
     "changepoint detection",
@@ -26,8 +25,8 @@
     "within-period",
     "Python"
   ],
-  "datePublished": "2025-08-30",
-  "identifier": "https://doi.org/10.5281/zenodo.0000000",
+  "datePublished": "2026-07-23",
+  "identifier": "https://github.com/DiogoRibeiro7/ChangePointLab",
   "author": [
     {
       "@type": "Person",
