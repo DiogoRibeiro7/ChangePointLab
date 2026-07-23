@@ -4,12 +4,14 @@ import numpy as np
 
 from .core import (
     BOCPD as _BOCPD,
+    BOCPDAlertConfig,
     BOCPDConfig,
     BOCPDResult,
     BoostedBoundaryHazard,
     ConstantHazard,
     Hazard,
     ScheduledHazard,
+    extract_changepoint_alerts,
 )
 from ....core.datatypes import OnlineProbabilityResult
 from ..._base import BaseDetector
@@ -32,10 +34,14 @@ class BOCPD(_BOCPD, BaseDetector):
             return self.fit(x).predict()
         if not hasattr(self, "_result"):
             raise RuntimeError("Call fit before predict.")
-        cps = np.nonzero(self._result.cp_prob > 0.5)[0]
+        cps = extract_changepoint_alerts(self._result, self.cfg.alert_config)
         meta = {
             "cp_prob": self._result.cp_prob,
             "map_run_length": self._result.map_run_length,
+            "log_evidence": self._result.log_evidence,
+            "approximation_error": self._result.approximation_error,
+            "alert_config": self.cfg.alert_config,
+            "diagnostics": self._result.diagnostics,
         }
         return OnlineProbabilityResult(
             indices=cps,
@@ -64,12 +70,14 @@ def plot_cp_probability(*args, **kwargs):
 
 __all__ = [
     "BOCPD",
+    "BOCPDAlertConfig",
     "BOCPDConfig",
     "BOCPDResult",
     "Hazard",
     "ConstantHazard",
     "BoostedBoundaryHazard",
     "ScheduledHazard",
+    "extract_changepoint_alerts",
     "plot_run_length_heatmap",
     "plot_cp_probability",
 ]

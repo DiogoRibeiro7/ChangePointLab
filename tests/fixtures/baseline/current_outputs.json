@@ -23,12 +23,19 @@
     },
     "bocpd_beta_bernoulli_current": {
       "label": "compatibility",
-      "cp_prob": [0.25, 0.25, 0.2335766423, 0.3165434381, 0.3146034746, 0.2603074931],
-      "map_run_length": [1, 2, 3, 0, 0, 2],
-      "pred_mean": [0.5, 0.3333333333, 0.2708333333, 0.2399026764, 0.4841343192, 0.6314690011],
+        "cp_prob": [0.25, 0.2, 0.1851851852, 0.4179566563, 0.2482705611, 0.2053855348],
+        "map_run_length": [1, 2, 3, 0, 1, 2],
+        "pred_mean": [0.5, 0.3333333333, 0.2666666667, 0.2320987654, 0.5046439628, 0.6448153435],
       "run_length_posterior_shape": [6, 9],
       "wrapper_indices": [],
-      "metadata_keys": ["cp_prob", "map_run_length"]
+        "metadata_keys": [
+          "alert_config",
+          "approximation_error",
+          "cp_prob",
+          "diagnostics",
+          "log_evidence",
+          "map_run_length"
+        ]
     },
     "edivisive_current": {
       "label": "compatibility",

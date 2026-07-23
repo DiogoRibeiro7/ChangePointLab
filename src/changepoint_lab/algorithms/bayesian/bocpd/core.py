@@ -4,8 +4,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, Optional, Sequence, Set
+from dataclasses import dataclass, field
+from typing import Any, Dict, Mapping, Optional, Sequence, Set
+import warnings
 
 import numpy as np
 from numpy.typing import NDArray
@@ -127,6 +128,23 @@ class BoostedBoundaryHazard:
 # ----------------------- Config & result types ----------------------
 
 @dataclass(frozen=True)
+class BOCPDAlertConfig:
+    """Post-processing policy for extracting BOCPD changepoint alerts."""
+
+    probability_threshold: float | None = None
+    require_local_peak: bool = True
+    use_run_length_reset: bool = False
+    min_spacing: int = 1
+
+    def __post_init__(self) -> None:
+        if self.probability_threshold is not None and not (
+            0.0 <= self.probability_threshold <= 1.0
+        ):
+            raise ValueError("probability_threshold must be in [0, 1].")
+        int_ge(self.min_spacing, "min_spacing", 1)
+
+
+@dataclass(frozen=True)
 class BOCPDConfig:
     """
     Configuration for the BOCPD solver.
@@ -148,16 +166,23 @@ class BOCPDConfig:
         Small positive floor used to detect underflow during normalization.
     top_k : Optional[int]
         If set, keep only the K largest run-length states (plus r=0) each step.
+    cp_scale : float
+        Deprecated compatibility multiplier for changepoint transition mass.
+        Values other than 1.0 intentionally produce a scaled alert score, not a
+        canonical posterior probability.
+    alert_config : BOCPDAlertConfig
+        Explicit post-processing policy for wrapper-level changepoint alerts.
     """
     alpha0: float = 1.0
     beta0: float = 1.0
     max_run_length: int = 512
     store_run_length_posterior: bool = True
-    prune_epsilon: float = 1e-6
+    prune_epsilon: float = 0.0
     prune_relative: bool = True
     stabilizer: float = 1e-300
     top_k: Optional[int] = None
-    cp_scale: float = 20.0
+    cp_scale: float = 1.0
+    alert_config: BOCPDAlertConfig = field(default_factory=BOCPDAlertConfig)
 
     def __post_init__(self) -> None:
         positive_float(self.alpha0, "alpha0")
@@ -169,6 +194,14 @@ class BOCPDConfig:
         if self.top_k is not None:
             int_ge(self.top_k, "top_k", 1)
         positive_float(self.cp_scale, "cp_scale")
+        if self.cp_scale != 1.0:
+            warnings.warn(
+                "BOCPDConfig.cp_scale is deprecated because it changes the "
+                "run-length posterior normalization. Use a hazard model or "
+                "BOCPDAlertConfig for alerting policy instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
 
 @dataclass
@@ -186,11 +219,20 @@ class BOCPDResult:
         One-step-ahead predictive mean P(x_t=1 | x_{1:t-1}) before seeing x_t.
     run_length_posterior : Optional[ArrayF], shape (T, R)
         Posterior over run-length if requested.
+    log_evidence : Optional[ArrayF], shape (T,)
+        Per-step log normalizer before pruning/top-k approximation.
+    approximation_error : Optional[ArrayF], shape (T,)
+        Per-step removed probability mass from truncation, pruning, and top-k.
+    diagnostics : Mapping[str, Any]
+        Numerical and compatibility diagnostics.
     """
     cp_prob: ArrayF
     map_run_length: NDArray[np.int_]
     pred_mean: ArrayF
     run_length_posterior: Optional[ArrayF]
+    log_evidence: Optional[ArrayF] = None
+    approximation_error: Optional[ArrayF] = None
+    diagnostics: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         T = len(self.cp_prob)
@@ -198,6 +240,10 @@ class BOCPDResult:
             raise ValueError("cp_prob, map_run_length and pred_mean must have equal length")
         if self.run_length_posterior is not None and self.run_length_posterior.shape[0] != T:
             raise ValueError("run_length_posterior must have first dimension == len(cp_prob)")
+        if self.log_evidence is not None and len(self.log_evidence) != T:
+            raise ValueError("log_evidence must have length == len(cp_prob)")
+        if self.approximation_error is not None and len(self.approximation_error) != T:
+            raise ValueError("approximation_error must have length == len(cp_prob)")
 
 
 # ------------------------------ Model ---------------------------------
@@ -264,6 +310,8 @@ class BOCPD:
             "cp_prob"      : P(r_t=0 | x_{1:t})
             "map_run_length": argmax run-length at time t
             "pred_mean"    : P(x_t=1 | x_{1:t-1}) (mixture, before consuming x_t)
+            "log_evidence" : log normalizer before pruning/top-k approximation
+            "approximation_error": removed mass fraction from approximations
         """
         xi = bool(x_t)
 
@@ -286,12 +334,30 @@ class BOCPD:
         R_next = np.zeros_like(self.R_prev)
         if self.R > 1:
             R_next[1:] = self.R_prev[:-1] * one_m_H[:-1] * pred[:-1]  # growth
-        # Changepoint probability: sum hazard mass and use prior predictive for r=0
+        dropped_growth = float(self.R_prev[-1] * one_m_H[-1] * pred[-1])
+
+        # Changepoint probability: sum hazard mass and use the fresh-segment
+        # prior predictive, not the posterior predictive of the previous r=0.
+        # cp_scale is retained only for compatibility and is not canonical BOCPD.
         cp_mass = float(np.dot(self.R_prev, H))
-        R_next[0] = cp_mass * float(pred[0]) * float(self.cfg.cp_scale)
+        R_next[0] = cp_mass * float(self.lik.prior_predictive_prob(xi))
+        R_next[0] *= float(self.cfg.cp_scale)
 
         # (5) Normalize robustly (underflow guard, tail pruning, optional top-k)
-        self._prune_and_normalize(R_next)
+        tracked_normalizer = float(R_next.sum())
+        full_normalizer = tracked_normalizer + dropped_growth
+        log_evidence = (
+            float(np.log(full_normalizer))
+            if np.isfinite(full_normalizer) and full_normalizer > 0.0
+            else float("-inf")
+        )
+        truncation_error = (
+            dropped_growth / full_normalizer
+            if np.isfinite(full_normalizer) and full_normalizer > 0.0
+            else 0.0
+        )
+        pruning_error = self._prune_and_normalize(R_next)
+        approximation_error = truncation_error + (1.0 - truncation_error) * pruning_error
 
         # (6) Update sufficient statistics for the likelihood
         #     Order matters: grow old segments first, then reset r=0.
@@ -306,6 +372,8 @@ class BOCPD:
             "cp_prob": float(R_next[0]),
             "map_run_length": int(np.argmax(R_next)),
             "pred_mean": pred_mean,
+            "log_evidence": log_evidence,
+            "approximation_error": float(np.clip(approximation_error, 0.0, 1.0)),
         }
 
     def run(self, x: Sequence[int | bool]) -> BOCPDResult:
@@ -322,6 +390,8 @@ class BOCPD:
         cp_probs = np.empty(T, dtype=float)
         map_r = np.empty(T, dtype=np.int_)
         pred_means = np.empty(T, dtype=float)
+        log_evidence = np.empty(T, dtype=float)
+        approximation_error = np.empty(T, dtype=float)
         rl_store = np.empty((T, self.R), dtype=float) if self.cfg.store_run_length_posterior else None
 
         for t, val in enumerate(x):
@@ -329,6 +399,8 @@ class BOCPD:
             cp_probs[t] = out["cp_prob"]
             map_r[t] = out["map_run_length"]
             pred_means[t] = out["pred_mean"]
+            log_evidence[t] = out["log_evidence"]
+            approximation_error[t] = out["approximation_error"]
             if rl_store is not None:
                 rl_store[t, :] = self.R_prev
 
@@ -337,16 +409,27 @@ class BOCPD:
             map_run_length=map_r,
             pred_mean=pred_means,
             run_length_posterior=rl_store,
+            log_evidence=log_evidence,
+            approximation_error=approximation_error,
+            diagnostics={
+                "normalization_issues": self.normalization_issues_,
+                "posterior_is_calibrated": self.cfg.cp_scale == 1.0,
+                "cp_scale": self.cfg.cp_scale,
+                "prune_epsilon": self.cfg.prune_epsilon,
+                "top_k": self.cfg.top_k,
+                "max_run_length": self.cfg.max_run_length,
+            },
         )
 
     # ------------------- Numerics & pruning -------------------
 
-    def _prune_and_normalize(self, R_next: ArrayF) -> None:
+    def _prune_and_normalize(self, R_next: ArrayF) -> float:
         """
         In-place stabilization: rescale if needed, prune tiny mass, optional top-K,
         and renormalize. Protects against underflow in long, low-hazard stretches.
         """
         eps = float(self.cfg.stabilizer)
+        removed_mass = 0.0
 
         # Rescale if sum underflows
         total = float(R_next.sum())
@@ -360,7 +443,7 @@ class BOCPD:
                 R_next.fill(0.0)
                 R_next[0] = 1.0
                 self.normalization_issues_ += 1
-                return
+                return 1.0
 
         # First normalize to probability scale
         R_next /= total
@@ -370,7 +453,9 @@ class BOCPD:
         if pe > 0.0:
             thr = pe * float(R_next.max()) if self.cfg.prune_relative else pe
             if thr > 0.0:
-                R_next[R_next < thr] = 0.0
+                prune_mask = R_next < thr
+                removed_mass += float(R_next[prune_mask].sum())
+                R_next[prune_mask] = 0.0
                 s = float(R_next.sum())
                 if s <= eps:
                     # If everything got pruned, keep the argmax
@@ -389,6 +474,7 @@ class BOCPD:
                 mask = np.zeros_like(R_next, dtype=bool)
                 mask[keep] = True
                 mask[0] = True  # always preserve r=0
+                removed_mass += float(R_next[~mask].sum())
                 R_next[~mask] = 0.0
                 s = float(R_next.sum())
                 if s > eps and np.isfinite(s):
@@ -399,3 +485,54 @@ class BOCPD:
                     R_next.fill(0.0)
                     R_next[i] = 1.0
                     self.normalization_issues_ += 1
+        return float(np.clip(removed_mass, 0.0, 1.0))
+
+
+def extract_changepoint_alerts(
+    result: BOCPDResult,
+    config: BOCPDAlertConfig | None = None,
+) -> NDArray[np.int_]:
+    """Extract changepoint alert indices from a BOCPD posterior result."""
+    cfg = config or BOCPDAlertConfig()
+    cp_prob = np.asarray(result.cp_prob, dtype=float)
+    if cp_prob.size == 0:
+        return np.array([], dtype=int)
+
+    candidates = np.ones(cp_prob.size, dtype=bool)
+    if cfg.probability_threshold is None:
+        candidates.fill(False)
+    else:
+        candidates &= cp_prob >= cfg.probability_threshold
+
+    if cfg.require_local_peak:
+        peaks = np.ones(cp_prob.size, dtype=bool)
+        if cp_prob.size > 1:
+            peaks[0] = cp_prob[0] >= cp_prob[1]
+            peaks[-1] = cp_prob[-1] > cp_prob[-2]
+        if cp_prob.size > 2:
+            peaks[1:-1] = (cp_prob[1:-1] >= cp_prob[:-2]) & (
+                cp_prob[1:-1] > cp_prob[2:]
+            )
+        candidates &= peaks
+
+    if cfg.use_run_length_reset:
+        resets = np.zeros(cp_prob.size, dtype=bool)
+        if cp_prob.size > 1:
+            run_lengths = np.asarray(result.map_run_length, dtype=int)
+            resets[1:] = run_lengths[1:] < run_lengths[:-1]
+        if cfg.probability_threshold is None:
+            candidates = resets
+        else:
+            candidates &= resets
+
+    raw = np.flatnonzero(candidates)
+    if cfg.min_spacing <= 1 or raw.size <= 1:
+        return raw.astype(int)
+
+    kept: list[int] = []
+    last = -cfg.min_spacing
+    for idx in raw.tolist():
+        if idx - last >= cfg.min_spacing:
+            kept.append(int(idx))
+            last = int(idx)
+    return np.asarray(kept, dtype=int)

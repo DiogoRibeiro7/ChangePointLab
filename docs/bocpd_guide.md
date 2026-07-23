@@ -119,6 +119,23 @@ The Beta prior parameters control the initial beliefs about the Bernoulli probab
 
 ## Practical Parameter Selection
 
+## Posterior Probabilities and Alert Extraction
+
+`BOCPD.run(...)` updates the online run-length posterior. With the default
+configuration, `cp_prob[t]` is the canonical unscaled posterior probability
+`P(r_t = 0 | x_1:t)` under the configured hazard and Beta-Bernoulli predictive
+model.
+
+Changepoint alerts are extracted after inference. Use `BOCPDAlertConfig` to set
+an explicit `probability_threshold`, optional local-peak filtering, optional
+run-length-reset filtering, and `min_spacing` cooldown. This policy affects only
+wrapper/CLI alert indices; it does not change `cp_prob`, `map_run_length`, or the
+stored run-length posterior.
+
+`cp_scale` is deprecated. Values other than `1.0` preserve legacy boosted
+behavior for comparison runs, but the resulting `cp_prob` is a compatibility
+score and diagnostics mark it as not calibrated.
+
 ### Time-Scale Considerations
 
 When working with real-world data, consider the natural time scales:

@@ -1,6 +1,11 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- Made BOCPD use the canonical unscaled run-length posterior by default,
+  deprecated `cp_scale`, and moved wrapper changepoint alerts to an explicit
+  `BOCPDAlertConfig` post-processing policy with evidence and approximation
+  diagnostics.
 
 ## [0.1.10] - 2026-07-23
 ### Added

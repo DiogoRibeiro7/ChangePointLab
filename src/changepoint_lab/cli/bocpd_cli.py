@@ -13,11 +13,13 @@ import numpy as np
 from changepoint_lab._optional import require_matplotlib_pyplot
 from changepoint_lab.algorithms.bayesian.bocpd import (
     BOCPD,
+    BOCPDAlertConfig,
     BOCPDConfig,
     BoostedBoundaryHazard,
     ConstantHazard,
     Hazard,
     ScheduledHazard,
+    extract_changepoint_alerts,
 )
 from changepoint_lab.common.io.data_loader import load_binary_from_csv
 
@@ -145,6 +147,7 @@ def main() -> None:
         store_run_length_posterior=True,
         prune_epsilon=float(args.prune_eps),
         prune_relative=(not args.abs_prune),
+        alert_config=BOCPDAlertConfig(probability_threshold=float(args.cp_threshold)),
     )
     model = BOCPD(cfg=cfg, hazard=hazard)
 
@@ -169,7 +172,7 @@ def main() -> None:
     plt.close()
 
     # ---- Simple event report ----
-    cps = np.nonzero(res.cp_prob >= args.cp_threshold)[0].tolist()
+    cps = extract_changepoint_alerts(res, cfg.alert_config).tolist()
     (args.outdir / "summary.txt").write_text(
         f"N={N}\n"
         f"alpha0={args.alpha0}, beta0={args.beta0}\n"
@@ -195,7 +198,7 @@ def main() -> None:
             w.writerow(["t", "timestamp", "cp_prob", "map_run_length", "pred_mean", "is_cp"])
             for t in range(len(res.cp_prob)):
                 ts_val = str(timestamps[t]) if timestamps is not None and t < len(timestamps) else ""
-                is_cp = float(res.cp_prob[t] >= args.cp_threshold)
+                is_cp = float(t in cps)
                 w.writerow([t, ts_val, float(res.cp_prob[t]), int(res.map_run_length[t]), float(res.pred_mean[t]), is_cp])
 
     print(f"[OK] Wrote heatmap + CP plot + summary to: {args.outdir}")

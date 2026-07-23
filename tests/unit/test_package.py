@@ -9,6 +9,7 @@ def test_main_imports():
     pkg = importlib.import_module("changepoint_lab")
     names = [
         "BOCPD",
+        "BOCPDAlertConfig",
         "BOCPDConfig",
         "BOCPDResult",
         "ConstantHazard",

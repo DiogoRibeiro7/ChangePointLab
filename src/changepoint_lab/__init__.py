@@ -4,12 +4,14 @@ from ._compat import __all__ as _compat_all
 from ._compat import __getattr__  # noqa: F401
 from .algorithms.bayesian.bocpd import (
     BOCPD,
+    BOCPDAlertConfig,
     BOCPDConfig,
     BOCPDResult,
     BoostedBoundaryHazard,
     ConstantHazard,
     Hazard,
     ScheduledHazard,
+    extract_changepoint_alerts,
 )
 from .algorithms.bayesian.within_period import WithinPeriodCPD
 from .algorithms.kernel.kcp import KernelCPD
@@ -72,12 +74,14 @@ __all__ = [
     "MarkedSlicedPoissonResult",
     "fit_marked_sliced_poisson",
     "BOCPD",
+    "BOCPDAlertConfig",
     "BOCPDConfig",
     "BOCPDResult",
     "Hazard",
     "ConstantHazard",
     "BoostedBoundaryHazard",
     "ScheduledHazard",
+    "extract_changepoint_alerts",
     "WithinPeriodCPD",
     "edivisive",
     "EDivisive",

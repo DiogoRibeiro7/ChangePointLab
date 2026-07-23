@@ -27,8 +27,21 @@ prior = dict(alpha=2, beta=8)  # baseline success rate 0.2
 - **Guideline**: At least twice the longest expected segment; too small biases towards frequent changepoints.
 
 ## Pruning Parameter
-- **`cp_scale`** rescales changepoint probabilities before pruning.
-- **Effect**: Larger values increase sensitivity by retaining more candidates.
+- **`prune_epsilon`** removes tiny posterior states after normalization.
+- **Effect**: Larger values reduce the retained run-length support and expose
+  removed mass through `approximation_error`.
+
+## Alert Extraction
+- **`BOCPDAlertConfig.probability_threshold`** sets the posterior threshold for
+  reported alerts. The default is `None`, which disables wrapper alerts.
+- **`require_local_peak`** keeps only local maxima of `cp_prob`.
+- **`use_run_length_reset`** requires a decrease in MAP run length.
+- **`min_spacing`** applies a simple cooldown between accepted alerts.
+
+## Deprecated Compatibility Parameter
+- **`cp_scale`** is retained only for old boosted-recursion comparisons.
+- **Effect**: Any value other than `1.0` changes the normalized recursion and is
+  not a calibrated posterior probability.
 
 ## Parameter Summary
 | Parameter | Typical Range | Default | Notes |
@@ -36,7 +49,9 @@ prior = dict(alpha=2, beta=8)  # baseline success rate 0.2
 | `mean_run_length` | 10–1000 | 200 | Memoryless changepoint rate |
 | `alpha`, `beta` | 0.1–100 | 1 | Prior counts for successes/failures |
 | `max_run_length` | 50–5000 | 1000 | Posterior truncation |
-| `cp_scale` | 0.5–5 | 1.0 | Multiplicative scaling before pruning |
+| `prune_epsilon` | 0–1e-3 | 0.0 | Optional posterior-state pruning |
+| `probability_threshold` | 0–1 | None | Explicit alert threshold |
+| `cp_scale` | 1.0 | 1.0 | Deprecated compatibility mode only |
 
 ## Example: Mean Run Length Sensitivity
 ```python
@@ -46,8 +61,8 @@ from changepoint_lab.algorithms.bayesian.bocpd import BOCPD, ConstantHazard
 x = np.concatenate([np.zeros(50), np.ones(50)])
 for mrl in [25, 50, 100]:
     model = BOCPD(hazard=ConstantHazard(mrl))
-    cps = model.fit_predict(x)
-    plt.plot(model.cp_prob, label=f"mrl={mrl}")
+    result = model.fit_predict(x)
+    plt.plot(result.cp_prob, label=f"mrl={mrl}")
 plt.legend(); plt.show()
 ```
 Running the above shows that underestimating `mean_run_length` yields spurious spikes, while overestimation delays detection.

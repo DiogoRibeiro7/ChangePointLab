@@ -118,7 +118,7 @@
     {
       "id": "bocpd_beta_bernoulli",
       "name": "Bayesian Online Changepoint Detection, Beta-Bernoulli path",
-      "stable_package_symbols": ["BOCPD", "BOCPDConfig", "BOCPDResult", "Hazard", "ConstantHazard", "BoostedBoundaryHazard", "ScheduledHazard"],
+      "stable_package_symbols": ["BOCPD", "BOCPDConfig", "BOCPDAlertConfig", "BOCPDResult", "Hazard", "ConstantHazard", "BoostedBoundaryHazard", "ScheduledHazard"],
       "citation_ids": ["adams_mackay_2007"],
       "relationship_to_source": "adaptation",
       "implemented_equations_or_algorithms": ["run-length posterior recursion", "hazard-weighted growth and changepoint mass", "Beta-Bernoulli conjugate updates"],
@@ -130,14 +130,15 @@
       "public_api": ["changepoint_lab.BOCPD", "changepoint_lab.ConstantHazard", "changepoint_lab.BoostedBoundaryHazard", "bocpd-cli"],
       "tests": [
         "tests/unit/test_bocpd_edge_cases.py",
+        "tests/unit/test_bocpd_canonical.py",
         "tests/unit/test_algorithm_parity.py",
         "tests/integration/test_cli_integration.py"
       ],
       "documentation_paths": ["docs/api/bocpd.rst", "docs/bocpd_README.md"],
-      "reproduction_artifact": "No independent posterior calibration oracle yet.",
-      "deviations": ["Wrapper uses cp_scale and threshold extraction policy that are not canonical Adams-MacKay defaults.", "Only Beta-Bernoulli is implemented as a usable likelihood path."],
+      "reproduction_artifact": "Hand-computed Bernoulli posterior tests, independent tiny recursion oracle, posterior-row normalization checks, explicit alert-policy tests, and approximation-error checks.",
+      "deviations": ["Only Beta-Bernoulli is implemented as a usable likelihood path.", "Scheduled and boundary-boosted hazards are package extensions to the base constant-hazard model.", "Deprecated cp_scale compatibility mode is not calibrated when set away from 1.0."],
       "extensions": ["Scheduled and boundary-boosted hazard functions"],
-      "verification_status": "characterized_only",
+      "verification_status": "partially_verified",
       "mysense_connection": "Streaming binary event detector for home-activity event streams."
     },
     {

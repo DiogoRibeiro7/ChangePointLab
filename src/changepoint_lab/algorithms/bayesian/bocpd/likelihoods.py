@@ -82,6 +82,11 @@ class ConjugateLikelihood(ABC):
         ...
 
     @abstractmethod
+    def prior_predictive_prob(self, x_t, /) -> float:
+        """Compute p(x_t) under the fresh segment prior."""
+        ...
+
+    @abstractmethod
     def update_cp(self, x_t) -> None:
         """
         Reset-update for r = 0 given observation x_t.
@@ -169,6 +174,12 @@ class BetaBernoulli(ConjugateLikelihood):
         p1 = α / denom  # P(x=1)
         # Return P(x=xi) across all states
         return p1 if xi == 1.0 else (1.0 - p1)
+
+    def prior_predictive_prob(self, x_t, /) -> float:
+        """Predictive probability under the initial Beta prior."""
+        xi = 1.0 if bool(x_t) else 0.0
+        p1 = self.alpha0 / (self.alpha0 + self.beta0)
+        return float(p1 if xi == 1.0 else (1.0 - p1))
 
     def predictive_mean(self) -> ArrayF:
         if self.stats is None:
@@ -266,6 +277,9 @@ class PoissonGamma(ConjugateLikelihood):
         # For now, raise to make the placeholder explicit.
         raise NotImplementedError("PoissonGamma.predictive_prob is not yet implemented.")
 
+    def prior_predictive_prob(self, x_t, /) -> float:
+        raise NotImplementedError("PoissonGamma.prior_predictive_prob is not yet implemented.")
+
     def predictive_mean(self) -> ArrayF:
         if self.stats is None:
             raise RuntimeError("Call init_stats(R) before predictive_mean().")
@@ -354,6 +368,9 @@ class GaussianNIW(ConjugateLikelihood):
     def predictive_prob(self, x_t, /) -> ArrayF:
         # TODO: return multivariate Student-t predictive densities per state
         raise NotImplementedError("GaussianNIW.predictive_prob is not yet implemented.")
+
+    def prior_predictive_prob(self, x_t, /) -> float:
+        raise NotImplementedError("GaussianNIW.prior_predictive_prob is not yet implemented.")
 
     def predictive_mean(self) -> ArrayF:
         # Posterior predictive mean equals m (the posterior mean of μ)

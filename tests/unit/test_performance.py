@@ -10,9 +10,11 @@ pytestmark = pytest.mark.slow
 from changepoint_lab import edivisive, pelt
 from changepoint_lab.algorithms.bayesian.bocpd import (
     BOCPD,
+    BOCPDAlertConfig,
     BOCPDConfig,
     BoostedBoundaryHazard,
     ConstantHazard,
+    extract_changepoint_alerts,
 )
 from changepoint_lab.algorithms.optimization.cost_functions import (
     BetaBinomialCost,
@@ -180,14 +182,17 @@ def compositional_data(
 
 def run_bocpd_const(mean_rl: int) -> Callable[[np.ndarray], list[int]]:
     def _run(x: np.ndarray) -> list[int]:
-        model = BOCPD(ConstantHazard(mean_rl), BOCPDConfig(max_run_length=500))
+        alert_config = BOCPDAlertConfig(
+            probability_threshold=0.02,
+            require_local_peak=True,
+            min_spacing=1,
+        )
+        model = BOCPD(
+            ConstantHazard(mean_rl),
+            BOCPDConfig(max_run_length=500, alert_config=alert_config),
+        )
         res = model.run(x)
-        positions = np.flatnonzero(res.cp_prob >= 0.05)
-        out: list[int] = []
-        for p in positions:
-            if not out or p - out[-1] > 5:
-                out.append(int(p))
-        return out
+        return extract_changepoint_alerts(res, alert_config).tolist()
 
     return _run
 
@@ -200,14 +205,17 @@ def run_bocpd_boost(period: int, boundary: int) -> Callable[[np.ndarray], list[i
             boundary_indices={boundary},
             boost_factor=50,
         )
-        model = BOCPD(hazard, BOCPDConfig(max_run_length=period * 2))
+        alert_config = BOCPDAlertConfig(
+            probability_threshold=0.02,
+            require_local_peak=True,
+            min_spacing=1,
+        )
+        model = BOCPD(
+            hazard,
+            BOCPDConfig(max_run_length=period * 2, alert_config=alert_config),
+        )
         res = model.run(x)
-        positions = np.flatnonzero(res.cp_prob >= 0.05)
-        out: list[int] = []
-        for p in positions:
-            if not out or p - out[-1] > 5:
-                out.append(int(p))
-        return out
+        return extract_changepoint_alerts(res, alert_config).tolist()
 
     return _run
 

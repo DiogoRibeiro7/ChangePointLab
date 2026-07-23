@@ -10,7 +10,7 @@ shared fields only where the semantics match.
 | Use case | Public shape | Result object | Notes |
 | --- | --- | --- | --- |
 | Offline segmentation | `fit`, `predict`, `fit_predict` | `SegmentationResult` | PELT, E-Divisive, and KernelCPD return right-exclusive changepoint boundaries, optional objective score, segment labels, and segment costs when available. |
-| Online probability tracing | `run`; wrapper `fit_predict` for event extraction | `BOCPDResult` from `run`, `OnlineProbabilityResult` from wrapper prediction | BOCPD probabilities, MAP run lengths, and predictive means remain typed fields. Wrapper event extraction still uses the existing `cp_prob > 0.5` compatibility rule pending the BOCPD correctness workstream. |
+| Online probability tracing | `run`; wrapper `fit_predict` for event extraction | `BOCPDResult` from `run`, `OnlineProbabilityResult` from wrapper prediction | BOCPD probabilities, MAP run lengths, predictive means, evidence, and approximation diagnostics remain typed fields. Wrapper event extraction uses explicit `BOCPDAlertConfig` post-processing. |
 | Posterior sampling | `fit`, `predict`, `fit_predict`, `result` | `PosteriorSampleResult` from wrapper prediction; `MCMCResult` from `.result` | Within-period inference exposes mode changepoints, posterior samples, changepoint histograms, and log posterior traces using explicit circular `periodic_bin_end` semantics. |
 | Latent-state decoding | `decode_viterbi`; wrapper `fit_predict` | `LatentStateResult` | HSMM and SD-HMM wrappers expose decoded states and changepoints derived from state or segment-duration boundaries. |
 | Model selection | low-level selection functions | `ModelSelectionResult` for stable wrappers when added | Existing low-level KCP model-selection results remain available; a public wrapper should return selected model, criterion values, and selected changepoints. |
@@ -21,8 +21,8 @@ shared fields only where the semantics match.
   `boundary_convention`.
 - `right_exclusive` means each changepoint is the first index of the following
   segment.
-- `time_index` means the index labels the observation time at which an online
-  event probability crossed the wrapper's extraction rule.
+- `time_index` means the index labels the observation time selected by an online
+  post-processing alert policy.
 - `periodic_bin_end` means the index is the final bin of a circular period
   segment; the next segment starts at `(k + 1) % period`.
 - `score` is only set when a single comparable objective value exists.

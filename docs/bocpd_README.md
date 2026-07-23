@@ -13,7 +13,14 @@ Key innovations:
 - **DST-safe binning** for proper handling of timezone transitions
 - **Numerically stable** algorithms for long sequences
 - **Beta-Bernoulli likelihood** for binary streams
+- **Explicit alert extraction** separate from the run-length posterior recursion
 - **Comprehensive visualization** tools and metrics
+
+The canonical default recursion returns `cp_prob[t] = P(r_t = 0 | x_1:t)`.
+Thresholded changepoint alerts are post-processing decisions controlled by
+`BOCPDAlertConfig` or CLI flags. The deprecated `cp_scale` compatibility option
+changes the normalized recursion and should not be interpreted as a posterior
+probability when set to a value other than `1.0`.
 
 ## Installation
 
@@ -36,7 +43,7 @@ poetry install --with dev,docs --extras "plot data"
 ### Simple Example
 ```python
 import numpy as np
-from changepoint_lab import BOCPD, ConstantHazard
+from changepoint_lab import BOCPD, BOCPDAlertConfig, BOCPDConfig, ConstantHazard
 
 # Create synthetic data with a changepoint
 x1 = np.random.binomial(1, 0.1, size=50)  # Low probability
@@ -53,6 +60,12 @@ result = model.run(x)
 # Access results
 print(f"CP probability at t=50: {result.cp_prob[50]:.4f}")
 print(f"MAP run length at t=60: {result.map_run_length[60]}")
+
+alerts = BOCPD(
+    hazard,
+    BOCPDConfig(alert_config=BOCPDAlertConfig(probability_threshold=0.4)),
+).fit_predict(x)
+print(alerts.indices)
 ```
 
 ### Custom Hazard Functions
