@@ -21,6 +21,14 @@ from .algorithms.nonparametric.edivisive_core import (
     EDivisiveSplit,
 )
 from .algorithms.optimization.pelt import PELT
+from .algorithms.point_process.sliced_poisson import (
+    EventPeriod,
+    MarkedSlicedPoissonResult,
+    SlicedPoissonCPD,
+    SlicedPoissonConfig,
+    SlicedPoissonResult,
+    fit_marked_sliced_poisson,
+)
 from .algorithms.state_space.hsmm import HSMM, HSMMConfig, HSMMParams, PoissonDur
 from .algorithms.state_space.sdhmm import SDHMM, SDHMMConfig, SDHMMResult
 from .algorithms.state_space.sdhmm_mix_vi import (
@@ -57,6 +65,12 @@ __version__ = "0.1.9"
 __all__ = [
     "__version__",
     "PELT",
+    "EventPeriod",
+    "SlicedPoissonCPD",
+    "SlicedPoissonConfig",
+    "SlicedPoissonResult",
+    "MarkedSlicedPoissonResult",
+    "fit_marked_sliced_poisson",
     "BOCPD",
     "BOCPDConfig",
     "BOCPDResult",

@@ -8,3 +8,4 @@ Development Notes
    randomness_reproducibility
    within_period_rjmcmc
    within_period_reproduction
+   sliced_poisson_process

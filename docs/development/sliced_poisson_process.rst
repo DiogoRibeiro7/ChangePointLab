@@ -1,0 +1,65 @@
+Sliced Poisson Process
+======================
+
+The sliced Poisson process detector implements a local adaptation of
+Martinez-Hernandez and Killick (2024; DOI ``10.1093/biomtc/ujae114``).
+Each repeated period, such as one day, is treated as one observation from an
+inhomogeneous Poisson process on ``[0, period)``. Changepoints are detected
+across the sequence of periods.
+
+Faithful baseline
+-----------------
+
+The baseline API is ``SlicedPoissonCPD``. It accepts a sequence of event-time
+periods. A period can be either a plain sequence of event times or an
+``EventPeriod`` with explicit exposure intervals. The fitted log-intensity in
+each segment is represented by an open uniform B-spline basis:
+
+.. code-block:: python
+
+   from changepoint_lab import SlicedPoissonCPD, SlicedPoissonConfig
+
+   periods = [(0.2, 0.4), (0.3,), (3.0, 3.2), (3.1,)]
+   cfg = SlicedPoissonConfig(period=24.0, n_basis=5, degree=3)
+   result = SlicedPoissonCPD(cfg).fit_predict(periods)
+
+The segment cost is minus twice the optimized inhomogeneous Poisson
+log-likelihood. This additive objective is passed through the existing PELT
+implementation with ``K=0`` because allowing a split cannot increase the
+optimized negative log-likelihood.
+
+Exposure intervals
+------------------
+
+Observed intervals are supplied per period:
+
+.. code-block:: python
+
+   from changepoint_lab import EventPeriod
+
+   period = EventPeriod(event_times=(8.25, 9.0), exposure_intervals=((6.0, 12.0),))
+
+Events outside observed exposure intervals raise ``ValueError``. Integrals are
+evaluated by deterministic midpoint quadrature over the observed intervals.
+
+Marked extension
+----------------
+
+Marked sensor streams are intentionally outside the faithful unmarked baseline.
+``fit_marked_sliced_poisson(..., mode="independent")`` fits one independent
+detector per mark. ``mode="shared_baseline"`` raises ``NotImplementedError``;
+it is not approximated silently.
+
+Diagnostics
+-----------
+
+``SlicedPoissonResult`` exposes segment fits, fitted intensity grids, costs,
+labels, optimization convergence messages, and the generic
+``SegmentationResult`` view through ``to_changepoint_result()``.
+
+Limitations
+-----------
+
+The implementation uses a NumPy-only Newton solver and midpoint quadrature.
+The Howz data from the paper are not bundled, so tests use analytical cases
+and deterministic simulations rather than paper-data parity.

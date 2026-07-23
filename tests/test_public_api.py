@@ -51,6 +51,12 @@ def test_top_level_exports_work_on_tiny_inputs():
     )
     assert isinstance(kernel, cpl.SegmentationResult)
 
+    sliced = cpl.SlicedPoissonCPD(
+        cpl.SlicedPoissonConfig(period=1.0, n_basis=1, degree=0, min_segment_periods=2, penalty=1.0)
+    ).fit_predict([(0.1,), (0.2,), (0.8,), (0.9,)])
+    assert isinstance(sliced, cpl.SlicedPoissonResult)
+    assert sliced.to_changepoint_result().boundary_convention == "right_exclusive"
+
     prior = ModelPrior(N=20, l=5)
     cfg = RJConfig(iters=20, burn=5, thin=5, seed=0)
     within = cpl.WithinPeriodCPD(prior, cfg=cfg).fit_predict(

@@ -18,6 +18,7 @@ def test_main_imports():
         "EDivisive",
         "HSMM",
         "KernelCPD",
+        "SlicedPoissonCPD",
         "WithinPeriodCPD",
         "SDHMM",
         "SDHMMMixVI",
@@ -40,6 +41,7 @@ def test_class_instantiation():
         NormalMeanKnownVar,
         NormalMeanVarUnknown,
     )
+    from changepoint_lab.algorithms.point_process import SlicedPoissonCPD, SlicedPoissonConfig
     from changepoint_lab.algorithms.state_space.hsmm import (
         HSMM,
         HSMMConfig,
@@ -70,6 +72,8 @@ def test_class_instantiation():
     # PELT cost classes
     NormalMeanKnownVar(sigma2=1.0)
     NormalMeanVarUnknown()
+
+    SlicedPoissonCPD(SlicedPoissonConfig(period=1.0, n_basis=1, degree=0))
 
     # HSMM
     hsmm_cfg = HSMMConfig(K=1, Dmax=5)

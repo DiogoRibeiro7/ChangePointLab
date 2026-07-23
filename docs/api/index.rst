@@ -7,6 +7,7 @@ API Reference
    datatypes
    bocpd
    within_period
+   sliced_poisson
    pelt
    edivisive
    hsmm
