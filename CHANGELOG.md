@@ -1,6 +1,18 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- Added canonical linear and circular changepoint conversion helpers.
+- Documented right-exclusive linear boundaries and periodic bin-end circular
+  boundaries.
+
+### Changed
+- Marked within-period wrapper results with explicit `periodic_bin_end`
+  boundary semantics.
+
+### Fixed
+- Fixed exact and RFF KCP backtracking so terminal endpoint `n` is not emitted
+  as a changepoint.
 
 ## [0.1.5] - 2026-07-23
 ### Added

@@ -8,7 +8,11 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-BoundaryConvention: TypeAlias = Literal["right_exclusive", "time_index"]
+BoundaryConvention: TypeAlias = Literal[
+    "right_exclusive",
+    "time_index",
+    "periodic_bin_end",
+]
 ObjectiveOrientation: TypeAlias = Literal["minimize", "maximize"]
 ArrayI: TypeAlias = NDArray[np.int_]
 ArrayF: TypeAlias = NDArray[np.float64]

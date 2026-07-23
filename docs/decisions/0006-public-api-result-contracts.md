@@ -48,6 +48,6 @@ Distinct protocols document the main public interaction shapes:
 - Type-aware callers can now rely on explicit fields for labels, costs,
   probabilities, posterior samples, and latent states.
 - Three exported wrapper paths now execute on minimal examples.
-- KCP low-level terminal-boundary semantics and BOCPD probability calibration
-  remain out of scope for this decision and stay in the risk register.
-
+- KCP low-level terminal-boundary semantics are resolved separately by
+  Decision 0007. BOCPD probability calibration remains out of scope for this
+  decision and stays in the risk register.

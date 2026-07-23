@@ -15,6 +15,7 @@ from .kcp_core import (
 )
 
 from ...core.datatypes import SegmentationResult
+from ...core.segmentation import normalize_linear_changepoints
 from .._base import BaseDetector
 
 KernelFunc = Callable[..., np.ndarray | tuple[np.ndarray, float]]
@@ -54,7 +55,11 @@ class KernelCPD(BaseDetector):
             return self.fit(x).predict()
         if self._result is None:
             raise RuntimeError("Call fit before predict.")
-        cps = np.array(self._result.change_points, dtype=int)
+        cps = normalize_linear_changepoints(
+            self._result.change_points,
+            n=self._result.n,
+            min_segment_length=self.min_size,
+        )
         meta = {
             "labels": self._result.labels,
             "costs": self._result.costs_per_segment,

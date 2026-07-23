@@ -6,6 +6,7 @@ from .hsmm_core import HSMM as _HSMM
 from .hsmm_core import HSMMConfig, HSMMParams, PoissonDur, NegBinDur
 
 from ...core.datatypes import LatentStateResult
+from ...core.segmentation import normalize_linear_changepoints
 from .._base import BaseDetector
 
 
@@ -29,7 +30,10 @@ class HSMM(_HSMM, BaseDetector):
             raise RuntimeError("Call fit before predict.")
         states, durations = super().decode_viterbi(self._loglik)
         segment_ends = np.flatnonzero(durations > 0) + 1
-        cps = segment_ends[segment_ends < len(durations)]
+        cps = normalize_linear_changepoints(
+            segment_ends[segment_ends < len(durations)],
+            n=len(durations),
+        )
         meta = {"states": states, "durations": durations}
         return LatentStateResult(
             indices=cps,

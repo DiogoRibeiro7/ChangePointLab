@@ -11,6 +11,8 @@ import math
 import numpy as np
 from numpy.typing import NDArray
 
+from ...core.segmentation import changepoints_to_edges, labels_from_changepoints
+
 # Scientific traceability:
 # - Rahimi and Recht (2007), Random Features for Large-Scale Kernel Machines.
 # - Registry entry: docs/science/method_registry.yml, method id "rff_kernel_cpd".
@@ -189,14 +191,7 @@ class RFFKCPResult:
 
 
 def _labels_from_cps(n: int, cps: ArrayI) -> ArrayI:
-    y = np.empty(n, dtype=int)
-    a = 0
-    k = 0
-    for b in cps.tolist() + [n]:
-        y[a:b] = k
-        a = b
-        k += 1
-    return y
+    return labels_from_changepoints(n, cps)
 
 
 # --------------------------- Penalized DP (PELT/OP) ---------------------------
@@ -273,8 +268,8 @@ def rff_kcp_penalized(
                     R.append(i)
 
     # backtrack
-    cps: List[int] = []
-    costs_list: List[float] = []
+    segments_desc: list[tuple[int, int]] = []
+    costs_desc: List[float] = []
     t = n
     if not np.isfinite(F[t]):
         # one segment fallback
@@ -285,15 +280,17 @@ def rff_kcp_penalized(
                             rff_gamma=float("nan"), n_features=pref.S.shape[1])
     while t > 0:
         i = int(prev[t])
-        cps.append(t)
-        costs_list.append(feature_segment_cost(pref, i, t))
+        segments_desc.append((i, t))
+        costs_desc.append(feature_segment_cost(pref, i, t))
         t = i
-    cps = list(reversed(cps[:-1]))
-    edges = np.array([0, *cps, n], dtype=int)
-    labels = _labels_from_cps(n, np.asarray(cps, dtype=int))
-    return RFFKCPResult(n=n, change_points=np.asarray(cps, dtype=int), labels=labels,
+    segments = list(reversed(segments_desc))
+    cps = [stop for _, stop in segments[:-1]]
+    cps_array = np.asarray(cps, dtype=int)
+    edges = changepoints_to_edges(cps_array, n=n)
+    labels = _labels_from_cps(n, cps_array)
+    return RFFKCPResult(n=n, change_points=cps_array, labels=labels,
                         total_cost=float(F[n]), edges=edges,
-                        costs_per_segment=np.asarray(costs_list[::-1], dtype=float),
+                        costs_per_segment=np.asarray(costs_desc[::-1], dtype=float),
                         rff_gamma=float("nan"), n_features=pref.S.shape[1])
 
 
@@ -354,17 +351,19 @@ def rff_kcp_fixed_m(
             F[k, j] = best
             P[k, j] = best_i
 
-    cps: List[int] = []
+    segments_desc: list[tuple[int, int]] = []
     k, j = m, T
     while k > 0:
         i_idx = int(P[k, j])
         t = int(endpoints[j])
         i = int(endpoints[i_idx])
-        cps.append(t)
+        segments_desc.append((i, t))
         k -= 1
         j = i_idx
-    cps = list(reversed(cps[:-1]))
-    edges = np.array([0, *cps, n], dtype=int)
-    labels = _labels_from_cps(n, np.asarray(cps, dtype=int))
-    return RFFKCPSNResult(n=n, m=m, edges=edges, change_points=np.asarray(cps, dtype=int),
+    segments = list(reversed(segments_desc))
+    cps = [stop for _, stop in segments[:-1]]
+    cps_array = np.asarray(cps, dtype=int)
+    edges = changepoints_to_edges(cps_array, n=n)
+    labels = _labels_from_cps(n, cps_array)
+    return RFFKCPSNResult(n=n, m=m, edges=edges, change_points=cps_array,
                           labels=labels, total_cost=float(F[m, T]), n_features=pref.S.shape[1])

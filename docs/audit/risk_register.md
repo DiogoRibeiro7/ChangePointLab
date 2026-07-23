@@ -26,7 +26,6 @@ Severity levels:
 | R-014 | Medium | Documentation | Root `README.md` previously contained `from bocpd.bocpd import BOCPD`. | Quickstart/migration examples can drift after package reorganization. | Keep executable-documentation checks aligned with current imports. |
 | R-015 | Medium | Scientific traceability | `docs/science/method_registry.yml` now maps methods to sources, deviations, and tests, but several methods remain below `verified`. | Scientific claims can still overstate evidence if verification status is ignored. | Add independent oracles before marking any method `verified`. |
 | R-016 | Low | Repository hygiene | Empty marker files are expected, but package `__init__.py` files are inconsistent about exports. | Discoverability and API boundaries are unclear. | Normalize package exports after public API contract decision. |
-| R-019 | Critical | Scientific correctness | Kernel CPD low-level baselines still emit terminal changepoint `[4]` for a 4-point fixture where the independent oracle expects `[2]`. | Kernel segmentation results can contain invalid or scientifically wrong boundaries even though the public wrapper now executes. | Fix during index-boundary/KCP correctness work with independent oracle tests. |
 
 ## Resolved or Partially Resolved Findings
 
@@ -44,10 +43,11 @@ Severity levels:
 | RR-010 | Resolved | Runnable package examples and package-local KCP tests were moved out of the wheel package tree. |
 | RR-011 | Resolved | Former `toolkit` entry points now target package-local CLI modules under `changepoint_lab.cli`. |
 | RR-012 | Resolved | Core runtime dependencies are now NumPy-only; Matplotlib and pandas are optional extras with lazy import errors and CI coverage. |
-| RR-013 | Resolved | `KernelCPD.fit_predict(...)` now builds a kernel prefix and returns a typed result instead of raising `AttributeError`; low-level KCP boundary correctness remains open as R-019. |
+| RR-013 | Resolved | `KernelCPD.fit_predict(...)` now builds a kernel prefix and returns a typed result instead of raising `AttributeError`. |
 | RR-014 | Resolved | Top-level public API tests now exercise every stable estimator wrapper with a real tiny input. |
 | RR-015 | Resolved | HSMM wrapper changepoints now come from nonzero sparse duration-end markers and match the tiny Viterbi oracle. |
 | RR-016 | Resolved | `SDHMMMixVI.fit_predict(...)` now updates parameters through a mutable local copy and completes the minimal fixture. |
+| RR-017 | Resolved | Exact and RFF KCP backtracking now drops terminal endpoint `n` and returns validated right-exclusive interior boundaries; the tiny kernel oracle now reports `[2]` with edges `[0, 2, 4]`. |
 
 ## Blockers Before External Scientific Readiness
 

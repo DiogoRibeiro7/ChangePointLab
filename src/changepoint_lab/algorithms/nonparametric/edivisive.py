@@ -8,6 +8,7 @@ from .edivisive_core import EDivisiveResult
 from .edivisive_core import edivisive as _edivisive
 
 from ...core.datatypes import SegmentationResult
+from ...core.segmentation import normalize_linear_changepoints
 from .._base import BaseDetector
 
 
@@ -32,7 +33,11 @@ class EDivisive(BaseDetector):
             return self.fit(x).predict()
         if self._result is None:
             raise RuntimeError("Call fit before predict.")
-        cps = np.array(self._result.change_points, dtype=int)
+        cps = normalize_linear_changepoints(
+            self._result.change_points,
+            n=self._result.labels.size,
+            min_segment_length=self.min_size,
+        )
         meta = {"labels": self._result.labels, "splits": self._result.splits}
         return SegmentationResult(
             indices=cps,

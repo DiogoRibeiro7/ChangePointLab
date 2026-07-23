@@ -24,6 +24,10 @@ from changepoint_lab.common.types.types import (
     ChangePointResult,
     Tau,
 )
+from changepoint_lab.core.segmentation import (
+    CircularChangePoints,
+    changepoints_to_edges,
+)
 
 # Import algorithm modules
 try:
@@ -256,10 +260,11 @@ class AlgorithmRegistry:
 
         # Convert to standard result
         change_points = list(result.change_points)
-        segments = []
-        cp_with_bounds = [0] + change_points + [data.shape[0]]
-        for i in range(len(cp_with_bounds) - 1):
-            segments.append((cp_with_bounds[i], cp_with_bounds[i + 1]))
+        edges = changepoints_to_edges(change_points, n=data.shape[0])
+        segments = [
+            (int(start), int(stop))
+            for start, stop in zip(edges[:-1], edges[1:], strict=True)
+        ]
 
         return ChangePointResult(
             change_points=change_points,
@@ -325,16 +330,17 @@ class AlgorithmRegistry:
 
         # Convert to standard result
         change_points = list(result.change_points)
-        segments = []
-        cp_with_bounds = [0] + change_points + [data.shape[0]]
-        for i in range(len(cp_with_bounds) - 1):
-            segments.append((cp_with_bounds[i], cp_with_bounds[i + 1]))
+        edges = changepoints_to_edges(change_points, n=data.shape[0], min_segment_length=min_size)
+        segments = [
+            (int(start), int(stop))
+            for start, stop in zip(edges[:-1], edges[1:], strict=True)
+        ]
 
         return ChangePointResult(
             change_points=change_points,
             segments=segments,
             scores=None,
-            cost=float(result.cost),
+            cost=float(result.total_cost),
             model_name="kcp_penalized",
             parameters={
                 "kernel": kernel,
@@ -386,16 +392,17 @@ class AlgorithmRegistry:
 
         # Convert to standard result
         change_points = list(result.change_points)
-        segments = []
-        cp_with_bounds = [0] + change_points + [data.shape[0]]
-        for i in range(len(cp_with_bounds) - 1):
-            segments.append((cp_with_bounds[i], cp_with_bounds[i + 1]))
+        edges = changepoints_to_edges(change_points, n=data.shape[0], min_segment_length=min_size)
+        segments = [
+            (int(start), int(stop))
+            for start, stop in zip(edges[:-1], edges[1:], strict=True)
+        ]
 
         return ChangePointResult(
             change_points=change_points,
             segments=segments,
             scores=None,
-            cost=float(result.cost),
+            cost=float(result.total_cost),
             model_name="kcp_fixed_m",
             parameters={"kernel": kernel, "m": m, "min_size": min_size},
         )
@@ -473,16 +480,17 @@ class AlgorithmRegistry:
 
         # Convert to standard result
         change_points = list(result.change_points)
-        segments = []
-        cp_with_bounds = [0] + change_points + [data.shape[0]]
-        for i in range(len(cp_with_bounds) - 1):
-            segments.append((cp_with_bounds[i], cp_with_bounds[i + 1]))
+        edges = changepoints_to_edges(change_points, n=data.shape[0], min_segment_length=min_size)
+        segments = [
+            (int(start), int(stop))
+            for start, stop in zip(edges[:-1], edges[1:], strict=True)
+        ]
 
         return ChangePointResult(
             change_points=change_points,
             segments=segments,
             scores=None,
-            cost=float(result.cost),
+            cost=float(result.total_cost),
             model_name="rff_kcp_penalized",
             parameters={
                 "n_features": n_features,
@@ -563,16 +571,17 @@ class AlgorithmRegistry:
 
         # Convert to standard result
         change_points = list(result.change_points)
-        segments = []
-        cp_with_bounds = [0] + change_points + [data.shape[0]]
-        for i in range(len(cp_with_bounds) - 1):
-            segments.append((cp_with_bounds[i], cp_with_bounds[i + 1]))
+        edges = changepoints_to_edges(change_points, n=data.shape[0], min_segment_length=min_size)
+        segments = [
+            (int(start), int(stop))
+            for start, stop in zip(edges[:-1], edges[1:], strict=True)
+        ]
 
         return ChangePointResult(
             change_points=change_points,
             segments=segments,
             scores=None,
-            cost=float(result.cost),
+            cost=float(result.total_cost),
             model_name="rff_kcp_fixed_m",
             parameters={
                 "n_features": n_features,
@@ -626,7 +635,7 @@ class AlgorithmRegistry:
 
         # Set up prior and model
         prior = within_period_cpd.ModelPrior(N=N, l=l, gamma=1.0, pois_lambda=1.0)
-        model = within_period_cpd.WithinPeriodCPD(prior)
+        model = within_period_cpd.WithinPeriodCore(prior)
 
         if not tempering:
             # Use standard RJMCMC
@@ -656,22 +665,11 @@ class AlgorithmRegistry:
             cp_hist = result.cp_hist_cold
 
         # Build segments
-        segments = []
-        if change_points:
-            # Sort changepoints (should already be sorted)
-            change_points = sorted(change_points)
-
-            # Previous cp, with wraparound
-            prev_cp = change_points[-1]
-            for cp in change_points:
-                # Each segment is (prev_cp, cp] with modulo N wrapping
-                length = (cp - prev_cp) % N
-                length = N if length == 0 else length
-                segments.append((prev_cp, cp))
-                prev_cp = cp
-        else:
-            # Single segment for the whole period
-            segments.append((0, N - 1))
+        circular = CircularChangePoints(period=N, indices=np.asarray(change_points, dtype=int))
+        segments = [
+            (segment.start, segment.end)
+            for segment in circular.segments()
+        ]
 
         return ChangePointResult(
             change_points=change_points,

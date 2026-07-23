@@ -11,6 +11,7 @@ import math
 import numpy as np
 from numpy.typing import NDArray
 
+from ...core.segmentation import changepoints_to_edges, labels_from_changepoints
 from .kcp_rff import (
     FeaturePrefix,
     RFFConfig,
@@ -201,14 +202,7 @@ class KCPResult:
 
 
 def _labels_from_cps(n: int, cps: ArrayI) -> ArrayI:
-    labs = np.empty(n, dtype=int)
-    a = 0
-    k = 0
-    for b in cps.tolist() + [n]:
-        labs[a:b] = k
-        a = b
-        k += 1
-    return labs
+    return labels_from_changepoints(n, cps)
 
 
 # ---------------------------------------------------------------------
@@ -329,8 +323,8 @@ def kcp_penalized(
                     R.append(i)
 
     # Backtrack
-    cps: List[int] = []
-    costs_list: List[float] = []
+    segments_desc: list[tuple[int, int]] = []
+    costs_desc: List[float] = []
     t = n
     if F[t] == float("inf"):
         # fallback: force a single segment
@@ -348,19 +342,21 @@ def kcp_penalized(
         )
     while t > 0:
         i = int(prev[t])
-        cps.append(t)
-        costs_list.append(_cost(i, t))
+        segments_desc.append((i, t))
+        costs_desc.append(_cost(i, t))
         t = i
-    cps = list(reversed(cps[:-1]))  # drop the terminal n
-    edges = np.array([0, *cps, n], dtype=np.int64)
-    labels = _labels_from_cps(n, np.asarray(cps, dtype=np.int64))
+    segments = list(reversed(segments_desc))
+    cps = [stop for _, stop in segments[:-1]]
+    cps_array = np.asarray(cps, dtype=np.int64)
+    edges = changepoints_to_edges(cps_array, n=n)
+    labels = _labels_from_cps(n, cps_array)
     return KCPResult(
         n=n,
-        change_points=np.asarray(cps, dtype=np.int64),
+        change_points=cps_array,
         labels=labels,
         total_cost=float(F[n]),
         edges=edges,
-        costs_per_segment=np.asarray(costs_list[::-1], dtype=float),
+        costs_per_segment=np.asarray(costs_desc[::-1], dtype=float),
     )
 
 
@@ -433,19 +429,21 @@ def kcp_fixed_m(
             P[k, j] = best_i
 
     # backtrack best at k=m, j=T
-    cps: List[int] = []
+    segments_desc: list[tuple[int, int]] = []
     cur_k, cur_j = m, T
     while cur_k > 0:
         i_idx = int(P[cur_k, cur_j])
         t = int(endpoints[cur_j])
         i = int(endpoints[i_idx])
-        cps.append(t)
+        segments_desc.append((i, t))
         cur_k -= 1
         cur_j = i_idx
-    cps = list(reversed(cps[:-1]))  # drop terminal n
-    edges = np.array([0, *cps, n], dtype=int)
-    labels = _labels_from_cps(n, np.asarray(cps, dtype=int))
-    return KCPSNResult(n=n, m=m, edges=edges, change_points=np.asarray(cps, dtype=int),
+    segments = list(reversed(segments_desc))
+    cps = [stop for _, stop in segments[:-1]]
+    cps_array = np.asarray(cps, dtype=int)
+    edges = changepoints_to_edges(cps_array, n=n)
+    labels = _labels_from_cps(n, cps_array)
+    return KCPSNResult(n=n, m=m, edges=edges, change_points=cps_array,
                        labels=labels, total_cost=float(F[m, T]))
 
 

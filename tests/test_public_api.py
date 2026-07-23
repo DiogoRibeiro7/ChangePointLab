@@ -30,12 +30,15 @@ def test_top_level_exports_work_on_tiny_inputs():
     ).fit_predict(np.array([0.0, 0.0, 0.0, 4.0, 4.0, 4.0]))
     assert isinstance(pelt, cpl.SegmentationResult)
     assert pelt.method_name == "pelt"
+    assert pelt.boundary_convention == "right_exclusive"
+    assert cpl.changepoints_to_edges(pelt.indices, n=6).tolist() == [0, 3, 6]
 
     bocpd = cpl.BOCPD(
         cpl.ConstantHazard(mean_run_length=4),
         cpl.BOCPDConfig(max_run_length=8, prune_epsilon=0.0, cp_scale=1.0),
     ).fit_predict(np.array([0, 0, 0, 1, 1, 1]))
     assert isinstance(bocpd, cpl.OnlineProbabilityResult)
+    assert bocpd.boundary_convention == "time_index"
     assert bocpd.cp_prob.shape == (6,)
 
     edivisive = cpl.EDivisive(min_size=2, R=9, seed=0).fit_predict(
@@ -54,6 +57,9 @@ def test_top_level_exports_work_on_tiny_inputs():
         np.array([0, 1, 0, 1] * 5, dtype=bool)
     )
     assert isinstance(within, cpl.PosteriorSampleResult)
+    assert within.boundary_convention == "periodic_bin_end"
+    circular = cpl.CircularChangePoints(period=20, indices=within.indices)
+    assert isinstance(circular, cpl.CircularChangePoints)
 
     hsmm_params = cpl.HSMMParams(
         pi=np.array([1.0, 0.0]),

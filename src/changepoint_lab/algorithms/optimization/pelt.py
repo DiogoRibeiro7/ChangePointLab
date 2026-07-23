@@ -8,6 +8,11 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ...core.datatypes import ChangePointResult, SegmentationResult
+from ...core.segmentation import (
+    changepoints_to_edges,
+    labels_from_changepoints,
+    normalize_linear_changepoints,
+)
 from .._base import BaseDetector
 from .cost_functions import (
     BetaBinomialCost,
@@ -114,11 +119,10 @@ def pelt(
             cps.append(tau)
         t = tau
     cps.reverse()
-    edges = [0] + cps + [n]
-    labels = np.empty(n, dtype=int)
+    edges = changepoints_to_edges(cps, n=n, min_segment_length=min_seg_len)
+    labels = labels_from_changepoints(n, cps, min_segment_length=min_seg_len)
     costs = []
-    for k, (a, b) in enumerate(zip(edges[:-1], edges[1:], strict=True)):
-        labels[a:b] = k
+    for a, b in zip(edges[:-1], edges[1:], strict=True):
         costs.append(cost_fn.cost(a, b))
     return PELTResult(
         change_points=cps,
@@ -176,7 +180,11 @@ class PELT(BaseDetector):
             return self.fit(x).predict()
         if self._result is None:
             raise RuntimeError("Call fit before predict.")
-        cps = np.array(self._result.change_points, dtype=int)
+        cps = normalize_linear_changepoints(
+            self._result.change_points,
+            n=self._result.labels.size,
+            min_segment_length=self.min_seg_len,
+        )
         meta = {
             "labels": self._result.labels,
             "costs_per_segment": self._result.costs_per_segment,

@@ -222,8 +222,8 @@
         "tests/unit/test_algorithm_parity.py"
       ],
       "documentation_paths": ["docs/api/kcp.rst", "docs/cpd.md"],
-      "reproduction_artifact": "No independent KCP oracle yet.",
-      "deviations": ["Low-level KCP backtracking can still emit terminal changepoints on the frozen tiny fixture."],
+      "reproduction_artifact": "Tiny independent kernel oracle in tests/unit/test_kcp_segment_bounds.py.",
+      "deviations": ["Penalty and model-selection behavior still need broader independent validation."],
       "extensions": ["Bandwidth selection helpers"],
       "verification_status": "characterized_only",
       "mysense_connection": "Flexible nonparametric offline comparison method."
@@ -242,6 +242,7 @@
       "public_api": ["changepoint_lab.algorithms.kernel.kcp_rff"],
       "tests": [
         "tests/unit/test_kcp/test_rff_variants.py",
+        "tests/unit/test_kcp_segment_bounds.py",
         "tests/unit/test_performance.py"
       ],
       "documentation_paths": ["docs/cpd.md"],

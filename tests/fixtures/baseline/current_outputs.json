@@ -45,22 +45,23 @@
       "fixed_m_total_cost": 0.0
     },
     "kernel_cpd_current": {
-      "label": "suspected_bug",
-      "change_points": [4],
-      "edges": [0, 4, 4],
-      "labels": [0, 0, 0, 0],
+      "label": "compatibility",
+      "change_points": [2],
+      "edges": [0, 2, 4],
+      "labels": [0, 0, 1, 1],
       "total_cost": 0.1,
       "costs_per_segment": [0.0, 0.0],
       "wrapper_result_type": "SegmentationResult",
-      "wrapper_indices": [4],
+      "wrapper_indices": [2],
       "wrapper_metadata_keys": ["costs", "edges", "kernel_gamma", "labels"]
     },
     "rff_kernel_current": {
-      "label": "suspected_bug",
+      "label": "compatibility",
       "gamma": 0.5,
       "feature_shape": [4, 4],
-      "change_points": [4],
-      "edges": [0, 4, 4],
+      "change_points": [2],
+      "edges": [0, 2, 4],
+      "labels": [0, 0, 1, 1],
       "total_cost": 0.1
     },
     "within_period_current": {

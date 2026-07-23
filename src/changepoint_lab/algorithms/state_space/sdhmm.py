@@ -12,6 +12,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ...core.datatypes import LatentStateResult
+from ...core.segmentation import changepoints_from_labels, normalize_linear_changepoints
 from .._base import BaseDetector
 
 # Scientific traceability:
@@ -450,7 +451,10 @@ class SDHMM(_SDHMM, BaseDetector):
         if not hasattr(self, "_X"):
             raise RuntimeError("Call fit before predict.")
         states = super().viterbi(self._X)
-        cps = np.flatnonzero(np.diff(states)) + 1
+        cps = normalize_linear_changepoints(
+            changepoints_from_labels(states),
+            n=states.size,
+        )
         meta = {"states": states, "result": self.result_}
         return LatentStateResult(
             indices=cps,

@@ -6,6 +6,7 @@ from typing import Sequence
 import numpy as np
 
 from ....core.datatypes import PosteriorSampleResult
+from ....core.segmentation import CircularChangePoints
 from ..._base import BaseDetector
 
 from .within_period_cpd import (
@@ -49,15 +50,22 @@ class WithinPeriodCPD(BaseDetector):
             return self.fit(x).predict()
         if self._result is None:
             raise RuntimeError("Call fit before predict.")
-        cps = np.array(self._result.mode_tau, dtype=int)
+        circular = CircularChangePoints(
+            period=self.prior.N,
+            indices=np.array(self._result.mode_tau, dtype=int),
+        )
+        cps = circular.indices
         meta = {
             "cp_hist": self._result.changepoint_hist,
             "samples_tau": self._result.samples_tau,
             "log_posteriors": self._result.log_posteriors,
+            "period": self.prior.N,
+            "segments": circular.segments(),
         }
         return PosteriorSampleResult(
             indices=cps,
             method_name="within_period",
+            boundary_convention="periodic_bin_end",
             samples=tuple(tuple(sample) for sample in self._result.samples_tau),
             log_posteriors=self._result.log_posteriors,
             changepoint_hist=self._result.changepoint_hist,

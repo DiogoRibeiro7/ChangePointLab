@@ -40,6 +40,16 @@ from .core.datatypes import (
     PosteriorSampler,
     SegmentationResult,
 )
+from .core.segmentation import (
+    CircularChangePoints,
+    CircularSegment,
+    changepoints_from_labels,
+    changepoints_to_edges,
+    edges_to_changepoints,
+    labels_from_changepoints,
+    normalize_linear_changepoints,
+    segment_slices,
+)
 
 __version__ = "0.1.5"
 
@@ -82,6 +92,14 @@ __all__ = [
     "OnlineDetector",
     "LatentStateDecoder",
     "PosteriorSampler",
+    "CircularChangePoints",
+    "CircularSegment",
+    "normalize_linear_changepoints",
+    "changepoints_to_edges",
+    "edges_to_changepoints",
+    "labels_from_changepoints",
+    "changepoints_from_labels",
+    "segment_slices",
 ]
 
 # Attach compatibility layer (lazy attribute fallback + deprecations)

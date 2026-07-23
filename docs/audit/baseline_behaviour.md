@@ -25,7 +25,7 @@ outputs live in `tests/fixtures/baseline/current_outputs.json`.
 | `BOCPD` | `compatibility` | Beta-Bernoulli run records `cp_prob`, MAP run lengths, predictive means, posterior shape, wrapper indices, and metadata keys. |
 | `EDivisive` | `compatibility` | Tiny deterministic fixture with `R=9` and `seed=0` currently returns no accepted split. |
 | `WithinPeriodCPD` | `compatibility` | Seeded small periodic binary fixture records three kept samples and mode `()`. |
-| `KernelCPD` | `suspected_bug` | Wrapper now executes and returns a typed segmentation result, but the low-level KCP path still emits terminal changepoint `[4]` on the tiny oracle where `[2]` is expected. |
+| `KernelCPD` | `compatibility` | Wrapper now executes and returns the right-exclusive interior changepoint `[2]` on the tiny kernel oracle. |
 | `HSMM` | `scientific_oracle` | Core Viterbi oracle gives changepoint `[2]`; wrapper now extracts `[2]` from sparse duration-end indicators. |
 | `SDHMM` | `compatibility` | Tiny compositional fixture records states `[1, 1, 0, 0]` and changepoint `[2]`. |
 | `SDHMMMixVI` | `compatibility` | Tiny fixture now completes and returns states `[1, 1, 0, 0]` with changepoint `[2]`; scientific validation remains pending. |
@@ -37,8 +37,8 @@ outputs live in `tests/fixtures/baseline/current_outputs.json`.
 | `pelt` with `NormalMeanKnownVar` | `scientific_oracle` | Independent exhaustive segmentation over all changepoint subsets confirms `[3]`. |
 | `pelt` with `NormalMeanVarUnknown` | `compatibility` | Current fixture returns no changepoint and score `25.3450285652`. |
 | `pelt_concave_penalty` | `compatibility` | Current fixture returns no changepoint and score `25.3450285652`. |
-| `kcp_penalized`, `kcp_fixed_m`, `kcp_select_bic` | `suspected_bug` | Independent kernel oracle finds `[2]`, but current package outputs terminal changepoint `[4]` with edges `[0, 4, 4]`. |
-| `rff_kcp_penalized` | `suspected_bug` | Current RFF path also emits terminal changepoint `[4]`. |
+| `kcp_penalized`, `kcp_fixed_m`, `kcp_select_bic` | `compatibility` | Exact KCP backtracking returns right-exclusive changepoint `[2]` with edges `[0, 2, 4]` on the tiny oracle. |
+| `rff_kcp_penalized` | `compatibility` | RFF KCP backtracking drops the terminal endpoint and returns `[2]` on the deterministic tiny fixture. |
 | within-period circular validity | `scientific_oracle` | Exhaustive enumeration for `N=6`, `l=2` is stored in fixtures and compared to implementation validity checks. |
 | HSMM duration table and Viterbi | `scientific_oracle` | Independent truncated-Poisson duration probabilities and direct Viterbi state path confirm the core tiny case. |
 
@@ -52,8 +52,6 @@ global state for the frozen fixtures.
 
 The following current outputs may change under a planned correctness fix:
 
-- KCP/RFF low-level backtracking should not emit terminal changepoints equal to
-  `n`.
 - Within-period RJMCMC should avoid global RNG and should handle small valid
   circular cases without `math domain error`.
 

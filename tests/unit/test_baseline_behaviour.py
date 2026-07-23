@@ -261,6 +261,7 @@ def test_low_level_entry_points_match_recorded_baselines() -> None:
     assert list(rff.Z.shape) == rff_expected["feature_shape"]
     assert rff_res.change_points.tolist() == rff_expected["change_points"]
     assert rff_res.edges.tolist() == rff_expected["edges"]
+    assert rff_res.labels.tolist() == rff_expected["labels"]
     assert rff_res.total_cost == pytest.approx(rff_expected["total_cost"])
 
 
