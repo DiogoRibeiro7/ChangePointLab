@@ -461,9 +461,7 @@ def simulate_ar_process(
     X : NDArray
         Shape (T, D) - simulated time series
     """
-    if seed is not None:
-        np.random.seed(seed)
-
+    rng = np.random.default_rng(seed)
     T = len(state_sequence)
     D = params.intercepts.shape[1]
     p = params.order
@@ -479,7 +477,7 @@ def simulate_ar_process(
     else:
         # Initialize with small random values
         if T >= p:
-            X[:p] = np.random.normal(0, 0.1, size=(p, D))
+            X[:p] = rng.normal(0, 0.1, size=(p, D))
 
     # Generate time series
     for t in range(p, T):
@@ -491,7 +489,7 @@ def simulate_ar_process(
             pred_mean += params.coeffs[k, lag - 1] @ X[t - lag]
 
         # Add noise
-        noise = np.random.multivariate_normal(np.zeros(D), params.noise_covs[k])
+        noise = rng.multivariate_normal(np.zeros(D), params.noise_covs[k])
 
         X[t] = pred_mean + noise
 
@@ -536,21 +534,23 @@ class AREmissions:
         seed : Optional[int]
             Random seed
         """
-        if seed is not None:
-            np.random.seed(seed)
-
+        rng = np.random.default_rng(seed)
         T, D = X.shape
 
         if method == "random":
-            self._initialize_random(X)
+            self._initialize_random(X, rng)
         elif method == "global":
-            self._initialize_global(X)
+            self._initialize_global(X, rng)
         elif method == "kmeans":
-            self._initialize_kmeans(X, seed=seed)
+            self._initialize_kmeans(X, rng)
         else:
             raise ValueError(f"Unknown initialization method: {method}")
 
-    def _initialize_random(self, X: NDArray[np.floating]) -> None:
+    def _initialize_random(
+        self,
+        X: NDArray[np.floating],
+        rng: np.random.Generator,
+    ) -> None:
         """Initialize parameters randomly around data statistics."""
         T, D = X.shape
 
@@ -560,10 +560,10 @@ class AREmissions:
 
         intercepts = np.zeros((self.n_states, D), dtype=float)
         for k in range(self.n_states):
-            intercepts[k] = data_mean + np.random.normal(0, data_std * 0.5)
+            intercepts[k] = data_mean + rng.normal(0, data_std * 0.5)
 
         # Random AR coefficients (small values for stability)
-        coeffs = np.random.normal(0, 0.1, size=(self.n_states, self.order, D, D))
+        coeffs = rng.normal(0, 0.1, size=(self.n_states, self.order, D, D))
 
         # Diagonal structure for stability
         for k in range(self.n_states):
@@ -577,14 +577,18 @@ class AREmissions:
 
         noise_covs = np.zeros((self.n_states, D, D), dtype=float)
         for k in range(self.n_states):
-            scale = np.random.uniform(0.5, 2.0)
+            scale = rng.uniform(0.5, 2.0)
             noise_covs[k] = scale * emp_cov + self.reg * np.eye(D)
 
         self.params = ARParams(
             intercepts=intercepts, coeffs=coeffs, noise_covs=noise_covs, order=self.order
         )
 
-    def _initialize_global(self, X: NDArray[np.floating]) -> None:
+    def _initialize_global(
+        self,
+        X: NDArray[np.floating],
+        rng: np.random.Generator,
+    ) -> None:
         """Initialize all states with global AR parameters."""
         # Fit single AR model to entire data
         dummy_labels = np.zeros(X.shape[0], dtype=int)
@@ -597,14 +601,18 @@ class AREmissions:
 
         # Add small random perturbations
         for k in range(1, self.n_states):
-            intercepts[k] += np.random.normal(0, 0.1, size=intercepts.shape[1])
-            coeffs[k] += np.random.normal(0, 0.05, size=coeffs.shape[1:])
+            intercepts[k] += rng.normal(0, 0.1, size=intercepts.shape[1])
+            coeffs[k] += rng.normal(0, 0.05, size=coeffs.shape[1:])
 
         self.params = ARParams(
             intercepts=intercepts, coeffs=coeffs, noise_covs=noise_covs, order=self.order
         )
 
-    def _initialize_kmeans(self, X: NDArray[np.floating], seed: Optional[int]) -> None:
+    def _initialize_kmeans(
+        self,
+        X: NDArray[np.floating],
+        rng: np.random.Generator,
+    ) -> None:
         """Initialize using k-means clustering and fit AR to each cluster."""
         # Simple k-means (could use more sophisticated version)
         T, D = X.shape
@@ -615,14 +623,11 @@ class AREmissions:
 
         if len(X_sub) < self.n_states:
             # Fallback to random initialization
-            self._initialize_random(X)
+            self._initialize_random(X, rng)
             return
 
         # K-means clustering
-        if seed is not None:
-            np.random.seed(seed)
-
-        centers = X_sub[np.random.choice(len(X_sub), self.n_states, replace=False)]
+        centers = X_sub[rng.choice(len(X_sub), self.n_states, replace=False)]
 
         for _ in range(20):  # Max iterations
             # Assignment step
@@ -692,7 +697,7 @@ if __name__ == "__main__":
     print("Testing AR emissions...")
 
     # Generate synthetic AR(2) data with 2 states
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
 
     T, D, K, p = 1000, 2, 2, 2
 
@@ -720,7 +725,7 @@ if __name__ == "__main__":
     )
 
     # Generate state sequence (simple alternating)
-    states = np.random.choice(K, size=T)
+    states = rng.choice(K, size=T)
 
     # Generate AR time series
     X = simulate_ar_process(true_params, states, seed=42)

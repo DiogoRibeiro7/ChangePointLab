@@ -38,12 +38,17 @@ class EDivisive(BaseDetector):
             n=self._result.labels.size,
             min_segment_length=self.min_size,
         )
-        meta = {"labels": self._result.labels, "splits": self._result.splits}
+        meta = {
+            "labels": self._result.labels,
+            "splits": self._result.splits,
+            "provenance": self._result.provenance,
+        }
         return SegmentationResult(
             indices=cps,
             labels=self._result.labels,
             method_name="edivisive",
             metadata=meta,
+            provenance=self._result.provenance,
         )
 
 

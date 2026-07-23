@@ -10,6 +10,7 @@ from .datatypes import (
     PosteriorSampler,
     SegmentationResult,
 )
+from .random import choose_from_sequence, make_rng, spawn_rngs
 from .segmentation import (
     CircularChangePoints,
     CircularSegment,
@@ -40,4 +41,7 @@ __all__ = [
     "labels_from_changepoints",
     "changepoints_from_labels",
     "segment_slices",
+    "make_rng",
+    "spawn_rngs",
+    "choose_from_sequence",
 ]

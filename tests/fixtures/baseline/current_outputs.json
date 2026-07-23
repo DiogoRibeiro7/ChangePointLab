@@ -33,7 +33,7 @@
     "edivisive_current": {
       "label": "compatibility",
       "indices": [],
-      "metadata_keys": ["labels", "splits"],
+      "metadata_keys": ["labels", "provenance", "splits"],
       "split_count": 0
     },
     "kernel_cpd_oracle": {
@@ -66,18 +66,17 @@
     },
     "within_period_current": {
       "label": "compatibility",
-      "mode_tau": [],
+      "mode_tau": [6],
       "sample_count": 3,
-      "changepoint_hist": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-      "log_posteriors": [-57.4262940109, -57.4262940109, -60.5173364642]
+      "changepoint_hist": [0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "log_posteriors": [-60.5173364642, -60.5173364642, -60.5173364642]
     },
     "within_period_tiny_current": {
-      "label": "suspected_bug",
-      "exception_type": "ValueError",
-      "exception_messages": [
-        "math domain error",
-        "expected a noninteger or positive integer, got 0.0"
-      ]
+      "label": "compatibility",
+      "mode_tau": [1, 3],
+      "sample_count": 6,
+      "changepoint_hist": [0, 6, 5, 6],
+      "log_posteriors": [-8.5941542326, -8.5941542326, -8.5941542326, -8.5941542326, -8.5941542326, -7.2848209126]
     },
     "circular_segmentation_oracle": {
       "label": "scientific_oracle",
@@ -104,20 +103,20 @@
       "indices": [2],
       "states": [0, 0, 1, 1],
       "durations_by_end": [0, 2, 0, 2],
-      "metadata_keys": ["durations", "states"]
+      "metadata_keys": ["durations", "provenance", "states"]
     },
     "sdhmm_current": {
       "label": "compatibility",
       "indices": [2],
       "states": [1, 1, 0, 0],
-      "metadata_keys": ["result", "states"]
+      "metadata_keys": ["provenance", "result", "states"]
     },
     "sdhmm_mix_current": {
       "label": "compatibility",
       "result_type": "LatentStateResult",
       "indices": [2],
       "states": [1, 1, 0, 0],
-      "metadata_keys": ["result", "states"]
+      "metadata_keys": ["provenance", "result", "states"]
     },
     "legacy_current": {
       "label": "compatibility",

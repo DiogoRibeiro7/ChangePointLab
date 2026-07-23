@@ -455,12 +455,21 @@ class SDHMM(_SDHMM, BaseDetector):
             changepoints_from_labels(states),
             n=states.size,
         )
-        meta = {"states": states, "result": self.result_}
+        provenance = {
+            "seed": self.cfg.seed,
+            "rng": "numpy.random.Generator",
+            "K": self.cfg.K,
+            "max_iter": self.cfg.max_iter,
+            "min_iter": self.cfg.min_iter,
+            "tol": self.cfg.tol,
+        }
+        meta = {"states": states, "result": self.result_, "provenance": provenance}
         return LatentStateResult(
             indices=cps,
             method_name="sdhmm",
             states=states,
             metadata=meta,
+            provenance=provenance,
         )
 
 

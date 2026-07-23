@@ -272,9 +272,7 @@ def estimate_gaussian_full_by_kmeans(
     GaussianFullParams
         Estimated parameters from best k-means run
     """
-    if seed is not None:
-        np.random.seed(seed)
-
+    rng = np.random.default_rng(seed)
     T, D = X.shape
     best_inertia = np.inf
     best_params = None
@@ -284,7 +282,7 @@ def estimate_gaussian_full_by_kmeans(
         centers = np.zeros((K, D), dtype=float)
 
         # Choose first center randomly
-        centers[0] = X[np.random.randint(T)]
+        centers[0] = X[int(rng.integers(T))]
 
         # Choose remaining centers with probability proportional to squared distance
         for k in range(1, K):
@@ -296,7 +294,7 @@ def estimate_gaussian_full_by_kmeans(
 
             # Sample proportional to squared distances
             probs = min_dists / min_dists.sum()
-            centers[k] = X[np.random.choice(T, p=probs)]
+            centers[k] = X[int(rng.choice(T, p=probs))]
 
         # Run k-means
         for iter_idx in range(max_iter):
@@ -368,8 +366,7 @@ class GaussianFullEmissions:
 
     def initialize_random(self, X: NDArray[np.floating], seed: Optional[int] = None) -> None:
         """Initialize parameters randomly around data statistics."""
-        if seed is not None:
-            np.random.seed(seed)
+        rng = np.random.default_rng(seed)
 
         T, D = X.shape
 
@@ -379,7 +376,7 @@ class GaussianFullEmissions:
 
         means = np.zeros((self.n_states, D), dtype=float)
         for k in range(self.n_states):
-            means[k] = data_mean + np.random.normal(0, data_std * 0.5, size=D)
+            means[k] = data_mean + rng.normal(0, data_std * 0.5, size=D)
 
         # Initialize covariances as scaled identity around empirical covariance
         emp_cov = np.cov(X, rowvar=False)
@@ -388,7 +385,7 @@ class GaussianFullEmissions:
 
         covs = np.zeros((self.n_states, D, D), dtype=float)
         for k in range(self.n_states):
-            scale = np.random.uniform(0.5, 2.0)  # Random scaling
+            scale = rng.uniform(0.5, 2.0)  # Random scaling
             covs[k] = scale * emp_cov + self.reg * np.eye(D)
 
         self.params = GaussianFullParams(means=means, covs=covs)
@@ -450,9 +447,7 @@ class GaussianFullEmissions:
         if self.params is None:
             raise RuntimeError("Parameters not initialized.")
 
-        if seed is not None:
-            np.random.seed(seed)
-
+        rng = np.random.default_rng(seed)
         T = len(states)
         D = self.params.means.shape[1]
 
@@ -462,7 +457,7 @@ class GaussianFullEmissions:
             k = states[t]
             mean_k = self.params.means[k]
             cov_k = self.params.covs[k]
-            X[t] = np.random.multivariate_normal(mean_k, cov_k)
+            X[t] = rng.multivariate_normal(mean_k, cov_k)
 
         return X
 
@@ -480,7 +475,7 @@ class GaussianFullEmissions:
 # Example usage and testing
 if __name__ == "__main__":
     # Generate synthetic data
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
 
     T, D, K = 500, 3, 2
 
@@ -497,12 +492,12 @@ if __name__ == "__main__":
     true_params = GaussianFullParams(means=true_means, covs=true_covs)
 
     # Generate data
-    states = np.random.choice(K, size=T)
+    states = rng.choice(K, size=T)
     X = np.zeros((T, D), dtype=float)
 
     for t in range(T):
         k = states[t]
-        X[t] = np.random.multivariate_normal(true_means[k], true_covs[k])
+        X[t] = rng.multivariate_normal(true_means[k], true_covs[k])
 
     # Test estimation
     print("Testing full-covariance Gaussian emissions...")

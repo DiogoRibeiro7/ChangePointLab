@@ -34,13 +34,22 @@ class HSMM(_HSMM, BaseDetector):
             segment_ends[segment_ends < len(durations)],
             n=len(durations),
         )
-        meta = {"states": states, "durations": durations}
+        provenance = {
+            "seed": self.cfg.seed,
+            "rng": "numpy.random.Generator",
+            "K": self.cfg.K,
+            "Dmax": self.cfg.Dmax,
+            "max_em_iters": self.cfg.max_em_iters,
+            "learn_durations": self.cfg.learn_durations,
+        }
+        meta = {"states": states, "durations": durations, "provenance": provenance}
         return LatentStateResult(
             indices=cps,
             method_name="hsmm",
             states=states,
             segment_durations=durations,
             metadata=meta,
+            provenance=provenance,
         )
 
 

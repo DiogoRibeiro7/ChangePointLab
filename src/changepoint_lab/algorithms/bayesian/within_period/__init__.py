@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Sequence
 
 import numpy as np
@@ -26,6 +26,7 @@ class WithinPeriodCPD(BaseDetector):
     prior: ModelPrior
     cfg: RJConfig = RJConfig()
     init: Tau | None = None
+    rng: np.random.Generator | None = None
 
     _model: WithinPeriodCore | None = None
     _result: MCMCResult | None = None
@@ -42,7 +43,9 @@ class WithinPeriodCPD(BaseDetector):
         self._model = WithinPeriodCore(self.prior)
         cfg = cfg or self.cfg
         init = self.init if init is None else init
-        self._result = self._model.fit(x_arr, cfg=cfg, init=init)
+        if self.rng is not None and cfg.seed is not None:
+            cfg = replace(cfg, seed=None)
+        self._result = self._model.fit(x_arr, cfg=cfg, init=init, rng=self.rng)
         return self
 
     def predict(self, x: Sequence[int | bool] | None = None) -> PosteriorSampleResult:
@@ -61,6 +64,7 @@ class WithinPeriodCPD(BaseDetector):
             "log_posteriors": self._result.log_posteriors,
             "period": self.prior.N,
             "segments": circular.segments(),
+            "provenance": self._result.provenance,
         }
         return PosteriorSampleResult(
             indices=cps,
@@ -70,6 +74,7 @@ class WithinPeriodCPD(BaseDetector):
             log_posteriors=self._result.log_posteriors,
             changepoint_hist=self._result.changepoint_hist,
             metadata=meta,
+            provenance=self._result.provenance,
         )
 
     def __getattr__(self, name: str):

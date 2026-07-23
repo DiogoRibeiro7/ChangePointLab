@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import math
-import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Tuple, Optional, Sequence
 
 import numpy as np
 from numpy.typing import NDArray
+
+from .....core.random import choose_from_sequence, spawn_rngs
 
 # Types and model hooks
 Tau = Tuple[int, ...]
@@ -35,9 +36,15 @@ class PTResult:
     mode_tau_cold: Tau
     swaps_attempted: int
     swaps_accepted: int
+    provenance: dict[str, object] = field(default_factory=dict)
 
 
-def _mh_step_with_temperature(model, tau: Tau, T: float) -> tuple[Tau, float]:
+def _mh_step_with_temperature(
+    model,
+    tau: Tau,
+    T: float,
+    rng: np.random.Generator,
+) -> tuple[Tau, float]:
     """
     Single Metropolis-Hastings step at temperature T using model's internal proposal mechanisms.
     Reuses the exact logic as in WithinPeriodCPD.fit, but scales acceptance by 1/T.
@@ -56,7 +63,7 @@ def _mh_step_with_temperature(model, tau: Tau, T: float) -> tuple[Tau, float]:
     if m == 1:
         cand_list = model._uniform_birth_targets_m1()
         q_fwd = 1.0 / len(cand_list)
-        tau_prop = random.choice(cand_list)
+        tau_prop = choose_from_sequence(cand_list, rng)
         if tau_prop == ():
             q_bwd = q_fwd
         else:
@@ -69,12 +76,12 @@ def _mh_step_with_temperature(model, tau: Tau, T: float) -> tuple[Tau, float]:
         death_prob = 0.25
         s = move_prob + birth_prob + death_prob
         move_prob, birth_prob, death_prob = move_prob / s, birth_prob / s, death_prob / s
-        u = random.random()
+        u = float(rng.random())
 
         if u < move_prob:
-            j = random.randrange(len(tau))
+            j = int(rng.integers(0, len(tau)))
             cand_list = model._uniform_move_targets(tau, j)
-            tau_prop = random.choice(cand_list)
+            tau_prop = choose_from_sequence(cand_list, rng)
             q_fwd = move_prob * (1.0 / len(tau)) * (1.0 / len(cand_list))
             if tau_prop == tau:
                 q_bwd = q_fwd
@@ -84,9 +91,9 @@ def _mh_step_with_temperature(model, tau: Tau, T: float) -> tuple[Tau, float]:
                 q_bwd = move_prob * (1.0 / len(tau_prop)) * (1.0 / len(cand_back))
 
         elif u < move_prob + birth_prob:
-            seg_idx = random.randrange(m)
+            seg_idx = int(rng.integers(0, m))
             cand_list = model._uniform_birth_targets(tau, seg_idx)
-            tau_prop = random.choice(cand_list)
+            tau_prop = choose_from_sequence(cand_list, rng)
             q_fwd = birth_prob * (1.0 / m) * (1.0 / len(cand_list))
             if tau_prop == tau:
                 q_bwd = q_fwd
@@ -96,7 +103,7 @@ def _mh_step_with_temperature(model, tau: Tau, T: float) -> tuple[Tau, float]:
 
         else:
             cand_list = model._uniform_death_targets(tau)
-            tau_prop = random.choice(cand_list)
+            tau_prop = choose_from_sequence(cand_list, rng)
             q_fwd = death_prob * (1.0 / len(tau)) * (1.0 / len(cand_list))
             if tau_prop == tau:
                 q_bwd = q_fwd
@@ -110,7 +117,7 @@ def _mh_step_with_temperature(model, tau: Tau, T: float) -> tuple[Tau, float]:
 
     log_prop = model._log_posterior_tau(tau_prop)
     log_alpha = ((log_prop - log_cur) / max(1e-12, T)) + math.log(q_bwd) - math.log(q_fwd)
-    if math.log(random.random()) < min(0.0, log_alpha):
+    if math.log(float(rng.random())) < min(0.0, log_alpha):
         return tau_prop, log_prop
     return tau, log_cur
 
@@ -120,9 +127,7 @@ def parallel_tempering_fit(model, x: Sequence[int | bool], ptcfg: PTConfig) -> P
     Run two-chain Parallel Tempering: cold T=1 and hot T=ptcfg.T_hot, with periodic swaps.
     Keeps and returns ONLY the cold chain's samples (typical practice).
     """
-    if ptcfg.seed is not None:
-        np.random.seed(ptcfg.seed)
-        random.seed(ptcfg.seed)
+    rng_cold, rng_hot, rng_swap = spawn_rngs(ptcfg.seed, 3)
 
     x_arr = np.asarray(x, dtype=bool)
     if x_arr.ndim != 1 or x_arr.size < model._N:
@@ -145,15 +150,17 @@ def parallel_tempering_fit(model, x: Sequence[int | bool], ptcfg: PTConfig) -> P
 
     for it in range(ptcfg.iters):
         # One local MH step per chain
-        tau_cold, log_cold = _mh_step_with_temperature(model, tau_cold, T=1.0)
-        tau_hot,  log_hot  = _mh_step_with_temperature(model, tau_hot,  T=ptcfg.T_hot)
+        tau_cold, log_cold = _mh_step_with_temperature(model, tau_cold, T=1.0, rng=rng_cold)
+        tau_hot, log_hot = _mh_step_with_temperature(
+            model, tau_hot, T=ptcfg.T_hot, rng=rng_hot
+        )
 
         # Attempt swap periodically
         if (it + 1) % ptcfg.swap_every == 0:
             swaps_attempted += 1
             # swap acceptance: min(1, exp((1/T1 - 1/T2)*(log_post_hot - log_post_cold)))
             delta = (1.0 - 1.0 / ptcfg.T_hot) * (log_hot - log_cold)
-            if math.log(random.random()) < min(0.0, delta):
+            if math.log(float(rng_swap.random())) < min(0.0, delta):
                 swaps_accepted += 1
                 tau_cold, tau_hot = tau_hot, tau_cold
                 log_cold, log_hot = log_hot, log_cold
@@ -178,6 +185,16 @@ def parallel_tempering_fit(model, x: Sequence[int | bool], ptcfg: PTConfig) -> P
         mode_tau_cold=mode_tau,
         swaps_attempted=swaps_attempted,
         swaps_accepted=swaps_accepted,
+        provenance={
+            "seed": ptcfg.seed,
+            "rng": "numpy.random.Generator",
+            "stream_policy": "SeedSequence.spawn(cold, hot, swap)",
+            "iters": ptcfg.iters,
+            "burn": ptcfg.burn,
+            "thin": ptcfg.thin,
+            "swap_every": ptcfg.swap_every,
+            "T_hot": ptcfg.T_hot,
+        },
     )
 
 # from tempering import PTConfig, parallel_tempering_fit

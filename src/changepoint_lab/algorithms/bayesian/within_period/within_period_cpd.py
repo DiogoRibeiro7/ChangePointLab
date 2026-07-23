@@ -8,13 +8,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Iterable, List, Optional, Sequence, Tuple, Dict
 import math
-import random
 
 import numpy as np
 from numpy.typing import NDArray
+
+from ....core.random import choose_from_sequence, make_rng
 
 
 # =========================
@@ -217,6 +218,7 @@ class MCMCResult:
     log_posteriors: List[float]
     changepoint_hist: Array1D
     mode_tau: Tau
+    provenance: dict[str, object] = field(default_factory=dict)
 
 
 class WithinPeriodCore:
@@ -480,6 +482,7 @@ class WithinPeriodCore:
         x: Sequence[int | bool],
         cfg: RJConfig = RJConfig(),
         init: Optional[Tau] = None,
+        rng: np.random.Generator | None = None,
     ) -> MCMCResult:
         """
         Run RJMCMC and return posterior samples for τ.
@@ -497,10 +500,7 @@ class WithinPeriodCore:
         -------
         MCMCResult
         """
-        # Seed RNG
-        if cfg.seed is not None:
-            np.random.seed(cfg.seed)
-            random.seed(cfg.seed)
+        rng = make_rng(seed=cfg.seed, rng=rng)
 
         x_arr = np.asarray(x, dtype=bool)
         if x_arr.ndim != 1 or x_arr.size < self._N:
@@ -529,7 +529,7 @@ class WithinPeriodCore:
                 candidates = self._uniform_birth_targets_m1()
                 # Discrete proposal: choose uniformly among candidates
                 q_fwd = 1.0 / len(candidates)
-                tau_prop = random.choice(candidates)
+                tau_prop = choose_from_sequence(candidates, rng)
                 q_bwd: float
                 if tau_prop == ():
                     q_bwd = q_fwd  # symmetric stay
@@ -539,7 +539,7 @@ class WithinPeriodCore:
                     q_bwd = 1.0 / len(death_cands)
             else:
                 # m > 1: choose move/birth/death with probabilities; if a move is not possible, we silently fall back to 'stay'
-                u = random.random()
+                u = float(rng.random())
                 move_prob = cfg.move_prob
                 birth_prob = cfg.birth_prob
                 death_prob = cfg.death_prob
@@ -553,9 +553,9 @@ class WithinPeriodCore:
 
                 if u < move_prob:
                     # MOVE: pick a cp and a new position uniformly from valid targets (including stay)
-                    j = random.randrange(len(tau))
+                    j = int(rng.integers(0, len(tau)))
                     cand_list = self._uniform_move_targets(tau, j)
-                    tau_prop = random.choice(cand_list)
+                    tau_prop = choose_from_sequence(cand_list, rng)
                     q_fwd = move_prob * (1.0 / len(tau)) * (1.0 / len(cand_list))
 
                     # Backward: in tau_prop, the moved cp sits at position 'v'; find its index j' after sorting -> same cardinality
@@ -582,9 +582,9 @@ class WithinPeriodCore:
 
                 elif u < move_prob + birth_prob:
                     # BIRTH: pick segment uniformly, insert one cp uniformly among valid positions (including stay)
-                    seg_idx = random.randrange(m)
+                    seg_idx = int(rng.integers(0, m))
                     cand_list = self._uniform_birth_targets(tau, seg_idx)
-                    tau_prop = random.choice(cand_list)
+                    tau_prop = choose_from_sequence(cand_list, rng)
                     q_fwd = birth_prob * (1.0 / m) * (1.0 / len(cand_list))
                     # Backward is DEATH from tau_prop
                     if tau_prop == tau:
@@ -600,7 +600,7 @@ class WithinPeriodCore:
                 else:
                     # DEATH: remove a cp uniformly (including stay)
                     cand_list = self._uniform_death_targets(tau)
-                    tau_prop = random.choice(cand_list)
+                    tau_prop = choose_from_sequence(cand_list, rng)
                     q_fwd = death_prob * (1.0 / len(tau)) * (1.0 / len(cand_list))
                     # Backward is BIRTH from tau_prop
                     if tau_prop == tau:
@@ -611,12 +611,8 @@ class WithinPeriodCore:
                             birth_cands_prop = self._uniform_birth_targets_m1()
                             q_bwd = birth_prob * (1.0 / len(birth_cands_prop))
                         else:
-                            seg_idx_prop = random.randrange(
-                                m_prop
-                            )  # any segment could be selected; but proposal enumerates uniformly
-                            birth_cands_prop = self._uniform_birth_targets(
-                                tau_prop, seg_idx_prop
-                            )
+                            # Any segment could be selected; proposal totals below
+                            # average over all segment choices.
                             # We don't know which seg was actually used to get back exactly 'tau'; use a conservative bound by summing?
                             # For a valid MH step we need a single path probability; we approximate by averaging over segments.
                             # To avoid bias, we instead compute total number of birth targets across segments and assume uniform segment draw.
@@ -632,7 +628,7 @@ class WithinPeriodCore:
             # MH ratio
             log_prop = self._log_posterior_tau(tau_prop)
             log_alpha = (log_prop - log_cur) + math.log(q_bwd) - math.log(q_fwd)
-            if math.log(random.random()) < min(0.0, log_alpha):
+            if math.log(float(rng.random())) < min(0.0, log_alpha):
                 tau = tau_prop  # accept
                 log_cur = log_prop
 
@@ -655,6 +651,18 @@ class WithinPeriodCore:
             log_posteriors=kept_logs,
             changepoint_hist=cp_hist,
             mode_tau=mode_tau,
+            provenance={
+                "seed": cfg.seed,
+                "rng": "numpy.random.Generator",
+                "iters": cfg.iters,
+                "burn": cfg.burn,
+                "thin": cfg.thin,
+                "move_prob": cfg.move_prob,
+                "birth_prob": cfg.birth_prob,
+                "death_prob": cfg.death_prob,
+                "period": self._N,
+                "min_segment_length": self._l,
+            },
         )
 
     # -------------------- Posterior summaries --------------------
@@ -663,6 +671,9 @@ class WithinPeriodCore:
         self,
         tau: Tau,
         credible: float = 0.95,
+        *,
+        seed: int | None = None,
+        rng: np.random.Generator | None = None,
     ) -> Dict[str, List[Tuple[float, float, float]]]:
         """
         Given a fixed τ (e.g., the MAP), return per-segment posterior summaries for the Bernoulli probability ϕ_i,
@@ -677,9 +688,8 @@ class WithinPeriodCore:
         betas = np.array([1 + (n - s) for s, n in zip(s_list, n_list)], dtype=float)
         means = alphas / (alphas + betas)
 
-        # Use a simple Beta quantile approximation via inverse CDF by sampling (no SciPy dependency).
-        # For reproducibility keep a fixed seed here or let user control externally.
-        rng = np.random.default_rng(123)
+        # Use a simple Beta quantile approximation by sampling (no SciPy dependency).
+        rng = make_rng(seed=seed, rng=rng)
         L = int(
             5_000 / max(1, len(alphas))
         )  # total samples ~ 5k distributed over segments
@@ -698,7 +708,8 @@ class WithinPeriodCore:
         samples: Sequence[Tau],
         draws_per_sample: int = 1,
         credible: float = 0.95,
-        seed: Optional[int] = 123,
+        seed: Optional[int] = None,
+        rng: np.random.Generator | None = None,
     ) -> Dict[str, NDArray]:
         """
         Build a pointwise posterior summary of p(t) on the N lattice, by drawing ϕ from each kept sample's
@@ -722,8 +733,7 @@ class WithinPeriodCore:
             "lower":  (N,) array of lower CI bound,
             "upper":  (N,) array of upper CI bound.
         """
-        if seed is not None:
-            np.random.seed(seed)
+        rng = make_rng(seed=seed, rng=rng)
 
         N = self._N
         all_draws: List[NDArray] = []
@@ -734,7 +744,7 @@ class WithinPeriodCore:
                 [1 + (n - s) for s, n in zip(s_list, n_list)], dtype=float
             )
             for _ in range(max(1, draws_per_sample)):
-                phi = np.random.beta(alphas, betas)
+                phi = rng.beta(alphas, betas)
                 # Assign phi to the N lattice points according to segments
                 grid = np.empty(N, dtype=float)
                 if len(tau) == 0:

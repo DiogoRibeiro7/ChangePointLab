@@ -430,14 +430,13 @@ def kmeanspp_init(X: NDArray[np.floating],
     NDArray
         Initial cluster centers of shape (k, n_features)
     """
-    if random_state is not None:
-        np.random.seed(random_state)
-        
+    rng = np.random.default_rng(random_state)
+
     n_samples, n_features = X.shape
     centers = np.empty((k, n_features), dtype=X.dtype)
     
     # Choose first center randomly
-    centers[0] = X[np.random.randint(n_samples)]
+    centers[0] = X[int(rng.integers(n_samples))]
     
     # Choose remaining centers
     for i in range(1, k):
@@ -447,7 +446,7 @@ def kmeanspp_init(X: NDArray[np.floating],
         
         # Choose next center with probability proportional to squared distance
         probs = min_dists / np.sum(min_dists)
-        centers[i] = X[np.random.choice(n_samples, p=probs)]
+        centers[i] = X[int(rng.choice(n_samples, p=probs))]
     
     return centers
 
@@ -468,10 +467,9 @@ def random_orthogonal_matrix(n: int, random_state: Optional[int] = None) -> NDAr
     NDArray
         Random orthogonal matrix of shape (n, n)
     """
-    if random_state is not None:
-        np.random.seed(random_state)
-        
-    A = np.random.randn(n, n)
+    rng = np.random.default_rng(random_state)
+
+    A = rng.normal(size=(n, n))
     Q, R = np.linalg.qr(A)
     
     # Ensure determinant is 1 (proper rotation)
@@ -503,9 +501,8 @@ def median_heuristic(X: NDArray[np.floating],
     float
         Suggested bandwidth parameter
     """
-    if random_state is not None:
-        np.random.seed(random_state)
-        
+    rng = np.random.default_rng(random_state)
+
     n_samples = X.shape[0]
     
     if n_samples <= subsample:
@@ -513,7 +510,7 @@ def median_heuristic(X: NDArray[np.floating],
         idx = np.arange(n_samples)
     else:
         # Subsample for efficiency
-        idx = np.random.choice(n_samples, size=subsample, replace=False)
+        idx = rng.choice(n_samples, size=subsample, replace=False)
     
     X_sub = X[idx]
     

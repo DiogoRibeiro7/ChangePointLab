@@ -370,13 +370,14 @@ def test_documented_broken_paths_raise_recorded_exceptions() -> None:
     assert sorted(kernel_wrapper.metadata) == kernel_expected["wrapper_metadata_keys"]
 
     wp_expected = expected["within_period_tiny_current"]
-    with pytest.raises(ValueError) as wp_error:
-        WithinPeriodCPD(ModelPrior(N=4, l=1)).fit(
-            np.asarray(inputs["within_period_tiny_stream"], dtype=bool),
-            cfg=RJConfig(iters=40, burn=10, thin=5, seed=0),
-        )
-    assert type(wp_error.value).__name__ == wp_expected["exception_type"]
-    assert str(wp_error.value) in wp_expected["exception_messages"]
+    tiny = WithinPeriodCPD(ModelPrior(N=4, l=1)).fit(
+        np.asarray(inputs["within_period_tiny_stream"], dtype=bool),
+        cfg=RJConfig(iters=40, burn=10, thin=5, seed=0),
+    )
+    assert list(tiny.result.mode_tau) == wp_expected["mode_tau"]
+    assert len(tiny.result.samples_tau) == wp_expected["sample_count"]
+    assert tiny.result.changepoint_hist.tolist() == wp_expected["changepoint_hist"]
+    assert _round_list(tiny.result.log_posteriors) == wp_expected["log_posteriors"]
 
     mix_expected = expected["sdhmm_mix_current"]
     mix_result = SDHMMMixVI(

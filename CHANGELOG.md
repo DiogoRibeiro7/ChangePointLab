@@ -1,6 +1,15 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- Added stochastic result provenance and reproducibility guidance.
+- Added tests for seeded replay, spawned stream independence, and global RNG
+  isolation.
+
+### Changed
+- Migrated stochastic production paths to owned `numpy.random.Generator`
+  streams instead of module-level NumPy or Python random state.
+- Updated within-period baseline traces to the explicit-Generator behavior.
 
 ## [0.1.6] - 2026-07-23
 ### Added

@@ -45,7 +45,11 @@ class CVResult:
     method: str
 
 
-def _median_heuristic(X: NDArray[np.floating], subsample: int = 1000) -> float:
+def _median_heuristic(
+    X: NDArray[np.floating],
+    subsample: int = 1000,
+    rng: np.random.Generator | None = None,
+) -> float:
     """Compute median heuristic bandwidth.
 
     Uses a vectorized pairwise distance computation and optional subsampling to
@@ -59,7 +63,9 @@ def _median_heuristic(X: NDArray[np.floating], subsample: int = 1000) -> float:
 
     n = X.shape[0]
     if n > subsample:
-        idx = np.random.choice(n, size=subsample, replace=False)
+        if rng is None:
+            rng = np.random.default_rng()
+        idx = rng.choice(n, size=subsample, replace=False)
         X = X[idx]
 
     pairwise_dists = _pairwise_distances(X)
@@ -71,6 +77,7 @@ def _generate_candidate_sigmas(
     config: BandwidthCVConfig, X: NDArray[np.floating]
 ) -> NDArray[np.floating]:
     """Generate candidate bandwidth values for search."""
+    rng = np.random.default_rng(config.seed)
     if config.search_strategy == "grid":
         if config.log_space:
             log_min, log_max = np.log(config.sigma_range[0]), np.log(config.sigma_range[1])
@@ -80,19 +87,18 @@ def _generate_candidate_sigmas(
             return np.linspace(config.sigma_range[0], config.sigma_range[1], config.n_candidates)
 
     elif config.search_strategy == "random":
-        np.random.seed(config.seed)
         if config.log_space:
             log_min, log_max = np.log(config.sigma_range[0]), np.log(config.sigma_range[1])
-            log_sigmas = np.random.uniform(log_min, log_max, config.n_candidates)
+            log_sigmas = rng.uniform(log_min, log_max, config.n_candidates)
             return np.exp(log_sigmas)
         else:
-            return np.random.uniform(
+            return rng.uniform(
                 config.sigma_range[0], config.sigma_range[1], config.n_candidates
             )
 
     elif config.search_strategy == "adaptive_grid":
         # Start with coarse grid, then refine around best candidates
-        median_sigma = _median_heuristic(X)
+        median_sigma = _median_heuristic(X, rng=rng)
 
         # Coarse grid around median heuristic
         coarse_range = (median_sigma * 0.1, median_sigma * 10.0)
@@ -124,10 +130,8 @@ def _kfold_split(
     n: int, k: int, seed: Optional[int] = None
 ) -> List[Tuple[NDArray[np.integer], NDArray[np.integer]]]:
     """Generate k-fold cross-validation splits."""
-    if seed is not None:
-        np.random.seed(seed)
-
-    indices = np.random.permutation(n)
+    rng = np.random.default_rng(seed)
+    indices = rng.permutation(n)
     fold_sizes = np.full(k, n // k, dtype=int)
     fold_sizes[: n % k] += 1
 
@@ -340,7 +344,7 @@ def select_rbf_bandwidth_cv(
     if not np.any(valid_scores):
         # Fallback to median heuristic
         print("Warning: All CV scores invalid, falling back to median heuristic")
-        return _median_heuristic(X)
+        return _median_heuristic(X, rng=np.random.default_rng(config.seed))
 
     valid_indices = np.where(valid_scores)[0]
     best_idx = valid_indices[np.argmax(mean_scores[valid_indices])]
@@ -523,12 +527,13 @@ def bandwidth_stability_analysis(
     """
     n, d = X.shape
     subsample_size = int(n * subsample_ratio)
+    rng = np.random.default_rng(None if config is None else config.seed)
 
     selected_sigmas = []
 
     for i in range(n_bootstrap):
         # Bootstrap sample
-        idx = np.random.choice(n, size=subsample_size, replace=True)
+        idx = rng.choice(n, size=subsample_size, replace=True)
         X_boot = X[idx]
 
         # Select bandwidth
@@ -615,16 +620,16 @@ if __name__ == "__main__":
     print("Testing bandwidth cross-validation...")
 
     # Generate test data with multiple scales
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
     n, d = 500, 3
 
     # Create data with structure at different scales
     # Fine scale: tight clusters
-    X1 = np.random.normal([0, 0, 0], 0.5, size=(n // 3, d))
-    X2 = np.random.normal([3, 3, 3], 0.5, size=(n // 3, d))
+    X1 = rng.normal([0, 0, 0], 0.5, size=(n // 3, d))
+    X2 = rng.normal([3, 3, 3], 0.5, size=(n // 3, d))
 
     # Coarse scale: spread out
-    X3 = np.random.normal([0, 3, -3], 2.0, size=(n // 3, d))
+    X3 = rng.normal([0, 3, -3], 2.0, size=(n // 3, d))
 
     X = np.vstack([X1, X2, X3])
 

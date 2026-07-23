@@ -5,3 +5,4 @@ Development Notes
    :maxdepth: 1
 
    segmentation_semantics
+   randomness_reproducibility

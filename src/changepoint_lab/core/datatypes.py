@@ -63,6 +63,7 @@ class ChangePointResult:
     boundary_convention: BoundaryConvention = "right_exclusive"
     objective_orientation: ObjectiveOrientation | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
+    provenance: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "indices", _array(self.indices, dtype=int))
@@ -79,6 +80,7 @@ class ChangePointResult:
             "method_name": self.method_name,
             "boundary_convention": self.boundary_convention,
             "objective_orientation": self.objective_orientation,
+            "provenance": _to_jsonable(self.provenance),
         }
         if include_metadata:
             payload["metadata"] = _to_jsonable(self.metadata)
@@ -96,6 +98,7 @@ class ChangePointResult:
             boundary_convention=payload.get("boundary_convention", "right_exclusive"),
             objective_orientation=payload.get("objective_orientation"),
             metadata=payload.get("metadata", {}),
+            provenance=payload.get("provenance", {}),
         )
 
 
@@ -133,6 +136,7 @@ class SegmentationResult(ChangePointResult):
             boundary_convention=payload.get("boundary_convention", "right_exclusive"),
             objective_orientation=payload.get("objective_orientation"),
             metadata=payload.get("metadata", {}),
+            provenance=payload.get("provenance", {}),
             costs_per_segment=None if costs is None else _array(costs, dtype=float),
         )
 
@@ -168,6 +172,7 @@ class OnlineProbabilityResult(ChangePointResult):
             boundary_convention=payload.get("boundary_convention", "time_index"),
             objective_orientation=payload.get("objective_orientation"),
             metadata=payload.get("metadata", {}),
+            provenance=payload.get("provenance", {}),
             cp_prob=_array(payload.get("cp_prob", []), dtype=float),
             map_run_length=_array(payload.get("map_run_length", []), dtype=int),
             pred_mean=None

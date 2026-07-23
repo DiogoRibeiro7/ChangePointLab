@@ -133,9 +133,6 @@ def _sobol_sequence(
     Note: This is a basic implementation. For production use, consider
     using specialized libraries like scipy.stats.qmc.Sobol.
     """
-    if seed is not None:
-        np.random.seed(seed)
-
     # For simplicity, we'll use a pseudo-Sobol based on bit-reversal
     # Real Sobol sequences require direction numbers and more complex construction
 
@@ -218,19 +215,18 @@ def _latin_hypercube_sequence(
     n_points: int, dimension: int, seed: Optional[int] = None
 ) -> NDArray[np.floating]:
     """Generate Latin Hypercube sampling points."""
-    if seed is not None:
-        np.random.seed(seed)
+    rng = np.random.default_rng(seed)
 
     points = np.zeros((n_points, dimension), dtype=float)
 
     for d in range(dimension):
         # Divide [0,1] into n_points intervals and sample one point from each
         intervals = np.arange(n_points) / n_points
-        jitter = np.random.uniform(0, 1 / n_points, n_points)
+        jitter = rng.uniform(0, 1 / n_points, n_points)
         coords = intervals + jitter
 
         # Permute to ensure Latin Hypercube property
-        points[:, d] = np.random.permutation(coords)
+        points[:, d] = rng.permutation(coords)
 
     return points
 
@@ -493,11 +489,13 @@ def quasi_mc_rff_map(
 
     # Generate phase shifts using same sequence (shifted)
     if config.sequence_type == "sobol":
-        phase_uniform = _sobol_sequence(n_features, 1, config.seed + 12345 if config.seed else None)
+        phase_seed = config.seed + 12345 if config.seed is not None else None
+        phase_uniform = _sobol_sequence(n_features, 1, phase_seed)
     else:
         # For other sequences, use simple offset
-        np.random.seed(config.seed + 12345 if config.seed else None)
-        phase_uniform = np.random.uniform(0, 1, size=(n_features, 1))
+        phase_seed = config.seed + 12345 if config.seed is not None else None
+        rng = np.random.default_rng(phase_seed)
+        phase_uniform = rng.uniform(0, 1, size=(n_features, 1))
 
     b = 2 * np.pi * phase_uniform.ravel()
 
@@ -743,6 +741,7 @@ def compare_rff_variants(
     Returns approximation quality metrics for each variant.
     """
     n, d = X.shape
+    rng = np.random.default_rng(seed)
 
     # Standard RFF baseline
     from .kcp_rff import rbf_rff_map, RFFConfig
@@ -766,8 +765,7 @@ def compare_rff_variants(
 
     # Test on subset for efficiency
     if n > 300:
-        np.random.seed(seed)
-        test_idx = np.random.choice(n, size=300, replace=False)
+        test_idx = rng.choice(n, size=300, replace=False)
         X_test = X[test_idx]
     else:
         X_test = X
@@ -826,12 +824,12 @@ if __name__ == "__main__":
     print("Testing RFF variants...")
 
     # Generate synthetic data
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
     n, d = 1000, 5
 
     # Create data with some structure
-    X1 = np.random.normal(0, 1, size=(n // 2, d))
-    X2 = np.random.normal(2, 1.5, size=(n // 2, d))
+    X1 = rng.normal(0, 1, size=(n // 2, d))
+    X2 = rng.normal(2, 1.5, size=(n // 2, d))
     X = np.vstack([X1, X2])
 
     print(f"Testing on {n} samples in {d} dimensions")

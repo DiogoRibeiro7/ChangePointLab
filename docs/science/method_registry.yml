@@ -154,10 +154,10 @@
         "src/changepoint_lab/algorithms/bayesian/within_period/samplers/tempering.py"
       ],
       "public_api": ["changepoint_lab.WithinPeriodCPD", "within-period-cli"],
-      "tests": ["tests/integration/test_methods_interoperability.py", "tests/integration/test_cli_integration.py"],
+      "tests": ["tests/integration/test_methods_interoperability.py", "tests/integration/test_cli_integration.py", "tests/unit/test_randomness_reproducibility.py"],
       "documentation_paths": ["docs/api/within_period.rst", "docs/parameters/within_period_parameters.md"],
       "reproduction_artifact": "No paper-derived posterior or detailed-balance oracle yet.",
-      "deviations": ["Uses global numpy and Python random state in parts of the sampler.", "Proposal probability accounting is under scientific audit."],
+      "deviations": ["Uses explicit Generator streams; seeded traces changed from legacy module-level RNG behavior.", "Proposal probability accounting is under scientific audit."],
       "extensions": ["Parallel tempering helper", "posterior predictive summaries"],
       "verification_status": "unverified",
       "mysense_connection": "Direct implementation target for repeated daily home-activity sensor patterns."

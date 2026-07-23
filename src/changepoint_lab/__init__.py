@@ -50,6 +50,7 @@ from .core.segmentation import (
     normalize_linear_changepoints,
     segment_slices,
 )
+from .core.random import choose_from_sequence, make_rng, spawn_rngs
 
 __version__ = "0.1.6"
 
@@ -100,6 +101,9 @@ __all__ = [
     "labels_from_changepoints",
     "changepoints_from_labels",
     "segment_slices",
+    "make_rng",
+    "spawn_rngs",
+    "choose_from_sequence",
 ]
 
 # Attach compatibility layer (lazy attribute fallback + deprecations)

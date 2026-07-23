@@ -934,12 +934,12 @@ def example_usage() -> None:
             print(f"    - {algo}")
 
     # Generate synthetic data
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
     N = 500
     x = np.zeros(N)
     x[100:200] = 1.0
     x[300:400] = -1.0
-    x = x + np.random.normal(0, 0.3, N)
+    x = x + rng.normal(0, 0.3, N)
 
     # Run KCP with the harmonized API
     result = registry.run("kcp_penalized", data=x, kernel="rbf", gamma=np.log(N), min_size=20)

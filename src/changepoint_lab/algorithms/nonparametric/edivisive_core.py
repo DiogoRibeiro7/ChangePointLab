@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import tempfile
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -41,6 +41,7 @@ class EDivisiveResult:
     splits: List[EDivisiveSplit]     # in the order they were accepted
     change_points: ArrayI            # sorted unique changepoint indices
     labels: ArrayI                   # segment labels 0..K-1 for each time index
+    provenance: dict[str, object] = field(default_factory=dict)
 
 # ------------------------------- Resamplers -------------------------------
 
@@ -437,6 +438,17 @@ def edivisive(
         splits=accepted,
         change_points=cps,
         labels=labels,
+        provenance={
+            "seed": seed,
+            "rng": "numpy.random.Generator",
+            "R": R,
+            "resample": resample,
+            "block_size": block_size,
+            "chunk_size": chunk_size,
+            "use_memmap": use_memmap,
+            "significance": significance,
+            "max_cps": max_cps,
+        },
     )
 
 
