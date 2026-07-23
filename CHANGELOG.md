@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.1.7] - 2026-07-23
 ### Added
 - Added stochastic result provenance and reproducibility guidance.
 - Added tests for seeded replay, spawned stream independence, and global RNG
