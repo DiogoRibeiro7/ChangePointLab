@@ -86,7 +86,7 @@ def main() -> None:
     assert states.tolist() == expected["hsmm_core_oracle"]["states"]
     assert durations.tolist() == expected["hsmm_core_oracle"]["durations_by_end"]
 
-    assert cpl.__version__ == "0.1.5"
+    assert cpl.__version__ == "0.1.6"
     print("installed baseline ok")
 
 

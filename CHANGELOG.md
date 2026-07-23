@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.1.6] - 2026-07-23
 ### Added
 - Added canonical linear and circular changepoint conversion helpers.
 - Documented right-exclusive linear boundaries and periodic bin-end circular
