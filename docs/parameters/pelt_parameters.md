@@ -32,12 +32,17 @@ Pruned Exact Linear Time (PELT) optimizes a cost plus penalty objective.
 
 ## Example: Penalty Sensitivity
 ```python
-from changepoint_lab.algorithms.optimization.pelt import pelt
 import numpy as np
+
+from changepoint_lab import PELT
+from changepoint_lab.algorithms.optimization.pelt import NormalMeanVarUnknown
+
 x = np.concatenate([np.zeros(100), np.ones(100)])
 for penalty in [5, 10, 20]:
-    cps = pelt(x, penalty=penalty)
-    print(penalty, cps)
+    cost = NormalMeanVarUnknown()
+    detector = PELT(cost_fn=cost, penalty=penalty)
+    result = detector.fit_predict(x)
+    print(penalty, result.indices)
 ```
 Increasing penalty reduces detected changepoints; plotting F1 vs. penalty helps select a balanced value.
 

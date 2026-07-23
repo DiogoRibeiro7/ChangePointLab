@@ -13,7 +13,7 @@ Implements multiple strategies:
 
 from __future__ import annotations
 from dataclasses import dataclass, replace
-from typing import Callable, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -49,7 +49,7 @@ def _median_heuristic(X: NDArray[np.floating], subsample: int = 1000) -> float:
     """Compute median heuristic bandwidth.
 
     Uses a vectorized pairwise distance computation and optional subsampling to
-    avoid the \(O(n^2)\) memory blow-up on large datasets.
+    avoid the ``O(n^2)`` memory blow-up on large datasets.
     """
     def _pairwise_distances(Y: NDArray[np.floating]) -> NDArray[np.floating]:
         sq = np.sum(Y**2, axis=1, keepdims=True)

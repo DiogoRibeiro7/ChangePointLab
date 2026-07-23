@@ -10,4 +10,5 @@ API Reference
    pelt
    edivisive
    hsmm
+   sdhmm
    kcp

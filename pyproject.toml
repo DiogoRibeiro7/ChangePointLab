@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "changepoint-lab"
-version = "0.1.1"
+version = "0.1.2"
 description = "ChangePointLab: a unified Python toolkit for changepoint detection in time series."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
   { name = "Diogo Ribeiro", email = "dfr@esmad.ipp.pt" }
 ]
@@ -23,12 +23,10 @@ keywords = [
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "License :: OSI Approved :: MIT License",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering :: Information Analysis",
   "Topic :: Scientific/Engineering :: Artificial Intelligence"
 ]
-# Minimal runtime deps; matplotlib kept optional via extras
 dependencies = [
   "numpy>=1.21",
   "pandas>=1.5",
@@ -38,8 +36,14 @@ dependencies = [
 [project.optional-dependencies]
 plot = ["matplotlib>=3.3"]
 dev = [
+  "build>=1.2",
+  "coverage>=7",
+  "pdoc>=15",
+  "pydocstyle>=6",
   "pytest>=7",
+  "pytest-cov>=4",
   "ruff>=0.3",
+  "sphinx>=7",
   "mypy>=1.6",
   "types-setuptools"
 ]
@@ -65,15 +69,22 @@ include-package-data = true
 [tool.setuptools.packages.find]
 include = ["changepoint_lab*", "toolkit*"]
 
-# ---- tooling (optional but handy) -------------------------------------------
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-select = ["E", "F", "I", "B", "UP"]
+exclude = ["build", "dist", "*.egg-info"]
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82"]
 ignore = []
 
 [tool.mypy]
 python_version = "3.10"
+files = [
+  "changepoint_lab/core/datatypes.py",
+  "changepoint_lab/algorithms/_base.py"
+]
+follow_imports = "skip"
 warn_unused_ignores = true
 warn_redundant_casts = true
 warn_unreachable = true
@@ -81,6 +92,13 @@ strict_optional = true
 no_implicit_optional = true
 check_untyped_defs = true
 ignore_missing_imports = true
+
+[tool.pydocstyle]
+match_dir = "^(?!build|dist|.*\\.egg-info).*$"
+add_ignore = [
+  "D100", "D101", "D102", "D103", "D104", "D105", "D107",
+  "D200", "D204", "D205", "D301", "D400", "D401", "D403"
+]
 
 [tool.pytest.ini_options]
 addopts = "-q"

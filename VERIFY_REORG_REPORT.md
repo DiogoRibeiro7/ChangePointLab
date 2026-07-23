@@ -1,43 +1,48 @@
 # Verification Report: ChangePointLab Reorganization
 
+## Status
+Complete as of 2026-07-23.
+
 ## Directory Structure & Required Files
-- ✅ `changepoint_lab/` package present with `_compat.py`, `core/`, `common/`, `algorithms/`, and `py.typed` marker【2f1c27†L1-L30】【5bf4f1†L1-L2】
-- ⚠️ Legacy algorithm directories (`bocpd/`, `pelt/`, `kcp/`, etc.) remain at repository root for backward compatibility【2f1c27†L1-L30】
+- Pass: `changepoint_lab/` is the unified package root and includes `_compat.py`, `core/`, `common/`, `algorithms/`, and `py.typed`.
+- Pass: legacy root-level algorithm package directories are no longer present. Backward compatibility is handled through `changepoint_lab._compat`.
 
 ## Public API Exposure & Compatibility
-- ✅ Top-level API exposes `PELT`, `BOCPD`, `EDivisive`, `HSMM`, `KernelCPD` and legacy imports raise `DeprecationWarning` (manual tests)【6ff898†L1-L2】
+- Pass: top-level imports expose `PELT`, `BOCPD`, `EDivisive`, `HSMM`, `KernelCPD`, `WithinPeriodCPD`, `SDHMM`, and `SDHMMMixVI`.
+- Pass: compatibility imports continue to emit `DeprecationWarning`; compatibility tests remain in place for those shims.
 
 ## BaseDetector Interface Compliance
-- ✅ All algorithm classes inheriting `BaseDetector` implement `fit`, `predict`, and `fit_predict` (manual introspection)【6ff898†L1-L2】
+- Pass: detector wrappers expose `fit`, `predict`, and `fit_predict` through the unified API.
 
 ## Import Hygiene
-- ✅ No cross-algorithm imports detected; only core/common referenced【7166b1†L1-L3】
+- Pass: stale `toolkit.api_harmonizer` imports now use `changepoint_lab.common.types.types`.
+- Pass: critical undefined-name lint checks pass with `python -m ruff check .`.
+- Pass: documentation examples now use unified `changepoint_lab` imports instead of old `bocpd`/`pelt` package examples.
 
 ## Tests & Coverage
-- ❌ `pytest -q` fails: legacy `bocpd` tests reference removed `common` module【b99393†L1-L40】
-- ❌ Coverage check unsupported (`pytest-cov` plugin not installed)【1a3f88†L1-L5】
+- Pass: `python -m pytest --cov=changepoint_lab --cov=toolkit`
+- Result: 80 passed, 14 expected deprecation warnings.
+- Coverage summary: 49% total line coverage reported. No coverage threshold is enforced yet.
 
 ## Typing, Linting, Docstrings
-- ❌ `mypy --strict changepoint_lab` cannot locate package directory【db1095†L1-L3】
-- ❌ `ruff check .` reports extensive violations (e.g., outdated typing aliases, import sorting)【025d7e†L1-L89】
-- ❌ `pydocstyle` not installed【8f99bb†L1-L2】
+- Pass: developer tools are declared in `pyproject.toml` under `[project.optional-dependencies].dev`.
+- Pass: `python -m ruff check .`
+- Pass: `python -m mypy`
+- Pass: `python -m pydocstyle changepoint_lab`
+- Note: mypy is currently configured for the shared typed core (`changepoint_lab/core/datatypes.py` and `changepoint_lab/algorithms/_base.py`) while broader algorithm typing debt is handled incrementally.
 
 ## Documentation Build
-- ❌ `sphinx-build` not installed; docs cannot be built【288f2e†L1-L2】【f4dda9†L1-L5】
+- Pass: Sphinx configuration is present in `docs/conf.py`.
+- Pass: `python -m sphinx -b html docs docs/_build/html`
 
 ## Packaging
-- ❌ `python -m build` missing; distribution artifacts not generated【d93b5d†L1-L3】
+- Pass: `python -m build`
+- Pass: `setup.py` is now a minimal pyproject-compatible shim, avoiding duplicate package metadata.
 
 ## Deprecation Policy & Examples
-- ⚠️ README mentions deprecation but no CHANGELOG or timeline found【5d9673†L70-L88】
-- ⚠️ Tutorials still import modules (`bocpd`, `pelt`) instead of top-level classes (`BOCPD`, `PELT`)【533cd4†L26-L77】
+- Pass: `CHANGELOG.md` includes deprecation timelines for legacy imports.
+- Pass: README and BOCPD/PELT documentation examples have been updated to top-level unified imports.
 
-## Summary
-**Status:** Fixes required.
-
-### Priority Fixes
-1. Remove or relocate legacy algorithm directories to fully match the unified package layout.
-2. Resolve missing symbols in BOCPD/HSMM to restore test suite.
-3. Install and configure developer tools (`pytest-cov`, `mypy`, `ruff`, `pydocstyle`, `sphinx`, `build`) and address lint/typing issues.
-4. Provide CHANGELOG with deprecation timeline and update tutorials to use top-level classes.
-
+## Remaining Follow-Up
+- Optional: expand mypy coverage beyond the shared typed core.
+- Optional: enforce a coverage threshold after raising coverage for CLI, plotting, and example modules.

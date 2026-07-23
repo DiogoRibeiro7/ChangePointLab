@@ -58,10 +58,10 @@ def gram_rbf(
     gamma: float | None = None,
     sigma: float | None = None,
 ) -> Tuple[ArrayF, float]:
-    """
-    RBF kernel Gram matrix: K_ij = exp(-gamma * ||x_i - x_j||^2)
-    If gamma and sigma are None, uses the median heuristic:
-        gamma = 1 / (2 * median(||x_i - x_j||^2))
+    """Compute an RBF kernel Gram matrix.
+
+    If ``gamma`` and ``sigma`` are None, this uses the median heuristic:
+    ``gamma = 1 / (2 * median(||x_i - x_j||^2))``.
 
     Returns
     -------

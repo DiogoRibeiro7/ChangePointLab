@@ -118,7 +118,7 @@ The following example demonstrates detection of a change in a binary sequence:
 
 ```python
 import numpy as np
-from bocpd import BOCPD, ConstantHazard
+from changepoint_lab import BOCPD, ConstantHazard
 
 # Create synthetic data with a changepoint
 x1 = np.random.binomial(1, 0.1, size=50)  # Low probability
@@ -141,7 +141,7 @@ print(f"Predictive mean at t=30: {result.pred_mean[30]:.4f}")
 For time-of-day patterns with known boundaries:
 
 ```python
-from bocpd import BoostedBoundaryHazard
+from changepoint_lab import BoostedBoundaryHazard, ConstantHazard
 
 # Boost hazard at day boundaries (every 96 points for 15-min bins)
 base_hazard = ConstantHazard(mean_run_length=200.0)

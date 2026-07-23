@@ -48,7 +48,7 @@ pip install -e ".[dev]"
 ### Simple Example
 ```python
 import numpy as np
-from bocpd import BOCPD, ConstantHazard
+from changepoint_lab import BOCPD, ConstantHazard
 
 # Create synthetic data with a changepoint
 x1 = np.random.binomial(1, 0.1, size=50)  # Low probability
@@ -69,7 +69,7 @@ print(f"MAP run length at t=60: {result.map_run_length[60]}")
 
 ### Custom Hazard Functions
 ```python
-from bocpd import BoostedBoundaryHazard
+from changepoint_lab import BoostedBoundaryHazard, ConstantHazard
 
 # Boost hazard at day boundaries (every 96 points for 15-min bins)
 base_hazard = ConstantHazard(mean_run_length=200.0)

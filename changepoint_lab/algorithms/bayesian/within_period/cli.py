@@ -36,7 +36,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Local modules
-from .within_period_cpd import WithinPeriodCore, ModelPrior, RJConfig, Tau
+from .within_period_cpd import ModelPrior, RJConfig, Tau, WithinPeriodCore
+from . import WithinPeriodCPD
 from changepoint_lab.common.plotting.plotting_helpers import (
     plot_changepoint_posterior_mass,
     plot_pointwise_bands,

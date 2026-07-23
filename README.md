@@ -78,7 +78,7 @@ from changepoint_lab.algorithms.optimization.pelt import (
 from bocpd.bocpd import BOCPD
 
 # New
-from changepoint_lab import PELT, BOCPD
+from changepoint_lab import BOCPD, PELT
 from changepoint_lab.algorithms.optimization.pelt import NormalMeanVarUnknown
 ```
 

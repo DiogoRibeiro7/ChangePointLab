@@ -17,7 +17,13 @@ import numpy as np
 from numpy.typing import NDArray
 
 # Import shared types
-from common.types.types import ChangePointResult, Tau, Array1D, Array1DFloat, ArrayBool
+from changepoint_lab.common.types.types import (
+    Array1D,
+    Array1DFloat,
+    ArrayBool,
+    ChangePointResult,
+    Tau,
+)
 
 # Import algorithm modules
 try:

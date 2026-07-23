@@ -1,4 +1,4 @@
-from __future__ import annotations  # ruff: noqa: I001
+from __future__ import annotations
 
 from ._compat import __all__ as _compat_all
 from ._compat import __getattr__  # noqa: F401
@@ -30,7 +30,7 @@ from .algorithms.state_space.sdhmm_mix_vi import (
 )
 from .core.datatypes import ChangePointResult
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 __all__ = [
     "__version__",

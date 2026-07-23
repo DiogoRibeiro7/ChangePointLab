@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
+import tempfile
+from collections import deque
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Tuple
-from collections import deque
 
 import numpy as np
 from numpy.typing import NDArray
@@ -132,8 +133,6 @@ def _pairwise_energy_dist_alpha(
 
     tmp = None
     if use_memmap:
-        import tempfile
-
         tmp = tempfile.NamedTemporaryFile()
         D = np.memmap(tmp, dtype=float, mode="w+", shape=(m, m))
     else:
