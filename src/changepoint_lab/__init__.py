@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from ._compat import __all__ as _compat_all
+# ruff: noqa: F401
+
 from ._compat import __getattr__  # noqa: F401
+from .api_status import deprecated_symbols, experimental_symbols, stable_symbols
 from .algorithms.bayesian.bocpd import (
     BOCPD,
     BOCPDAlertConfig,
@@ -67,70 +69,8 @@ from .core.random import choose_from_sequence, make_rng, spawn_rngs
 
 __version__ = "0.1.14"
 
-__all__ = [
-    "__version__",
-    "PELT",
-    "EventPeriod",
-    "SlicedPoissonCPD",
-    "SlicedPoissonConfig",
-    "SlicedPoissonResult",
-    "MarkedSlicedPoissonResult",
-    "fit_marked_sliced_poisson",
-    "BOCPD",
-    "BOCPDAlertConfig",
-    "BOCPDConfig",
-    "BOCPDResult",
-    "ConjugateLikelihood",
-    "BetaBernoulli",
-    "PoissonGamma",
-    "Hazard",
-    "ConstantHazard",
-    "BoostedBoundaryHazard",
-    "ScheduledHazard",
-    "extract_changepoint_alerts",
-    "WithinPeriodCPD",
-    "edivisive",
-    "EDivisive",
-    "EDivisiveResult",
-    "EDivisiveSplit",
-    "HSMM",
-    "HSMMConfig",
-    "HSMMParams",
-    "PoissonDur",
-    "SDHMM",
-    "SDHMMConfig",
-    "SDHMMResult",
-    "SDHMMMixVI",
-    "SDHMMMixVIConfig",
-    "SDHMMMixVIResult",
-    "KernelCPD", 
-    "KernelMatrix",
-    "RFFConfig",
-    "gram_rbf", 
-    "kcp_penalized", 
-    "kcp_select_bic", 
-    "ChangePointResult", 
-    "SegmentationResult",
-    "OnlineProbabilityResult",
-    "PosteriorSampleResult",
-    "LatentStateResult",
-    "ModelSelectionResult",
-    "OfflineDetector",
-    "OnlineDetector",
-    "LatentStateDecoder",
-    "PosteriorSampler",
-    "CircularChangePoints",
-    "CircularSegment",
-    "normalize_linear_changepoints",
-    "changepoints_to_edges",
-    "edges_to_changepoints",
-    "labels_from_changepoints",
-    "changepoints_from_labels",
-    "segment_slices",
-    "make_rng",
-    "spawn_rngs",
-    "choose_from_sequence",
-]
+__stable__ = stable_symbols()
+__experimental__ = experimental_symbols()
+__deprecated__ = deprecated_symbols()
 
-# Attach compatibility layer (lazy attribute fallback + deprecations)
-__all__ += _compat_all
+__all__ = [*__stable__, *__experimental__, *__deprecated__]

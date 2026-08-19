@@ -3,8 +3,6 @@ from __future__ import annotations
 from collections import deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any
-
 import numpy as np
 from numpy.typing import NDArray
 
@@ -28,8 +26,8 @@ from .cost_functions import (
 # - Killick, Fearnhead, and Eckley (2012), doi:10.1080/01621459.2012.737745.
 # - Registry entry: docs/science/method_registry.yml, method id "pelt".
 
-ArrayF = NDArray[np.floating[Any]]
-ArrayI = NDArray[np.integer[Any]]
+ArrayF = NDArray[np.floating]
+ArrayI = NDArray[np.integer]
 
 
 @dataclass

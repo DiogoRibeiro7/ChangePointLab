@@ -14,8 +14,8 @@ BoundaryConvention: TypeAlias = Literal[
     "periodic_bin_end",
 ]
 ObjectiveOrientation: TypeAlias = Literal["minimize", "maximize"]
-ArrayI: TypeAlias = NDArray[np.integer[Any]]
-ArrayF: TypeAlias = NDArray[np.floating[Any]]
+ArrayI: TypeAlias = NDArray[np.integer]
+ArrayF: TypeAlias = NDArray[np.floating]
 
 _BOUNDARY_CONVENTIONS = {"right_exclusive", "time_index", "periodic_bin_end"}
 _OBJECTIVE_ORIENTATIONS = {"minimize", "maximize"}

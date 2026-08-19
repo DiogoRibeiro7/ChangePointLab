@@ -1,7 +1,15 @@
-import warnings
+import importlib
 
 import numpy as np
 import pytest
+
+from changepoint_lab.api_status import (
+    API_MANIFEST,
+    deprecated_symbols,
+    experimental_symbols,
+    manifest_entry,
+    stable_symbols,
+)
 
 
 def _hsmm_loglik() -> np.ndarray:
@@ -16,6 +24,51 @@ def _hsmm_loglik() -> np.ndarray:
         var=np.array([[0.2], [0.2]]),
     )
     return gaussian_diag_loglik(obs.reshape(-1, 1), params)
+
+
+def _resolve(import_path: str):
+    module_name, attr = import_path.rsplit(".", 1)
+    return getattr(importlib.import_module(module_name), attr)
+
+
+def test_api_manifest_matches_top_level_all():
+    import changepoint_lab as cpl
+
+    names = [entry["name"] for entry in API_MANIFEST]
+
+    assert len(names) == len(set(names))
+    assert set(cpl.__all__) == set(names)
+    assert cpl.__stable__ == stable_symbols()
+    assert cpl.__experimental__ == experimental_symbols()
+    assert cpl.__deprecated__ == deprecated_symbols()
+
+
+def test_manifest_symbols_import():
+    import changepoint_lab as cpl
+
+    for entry in API_MANIFEST:
+        if entry["status"] == "deprecated":
+            continue
+        assert _resolve(entry["import_path"]) == getattr(cpl, entry["name"])
+
+    for name in deprecated_symbols():
+        entry = manifest_entry(name)
+        with pytest.warns(DeprecationWarning) as caught:
+            getattr(cpl, name)
+
+        text = str(caught[0].message)
+        assert entry["removal_version"] in text
+        assert entry["replacement"] in text
+
+
+def test_experimental_symbols_do_not_leak_into_stable_manifest():
+    stable = set(stable_symbols())
+    experimental = set(experimental_symbols())
+
+    assert stable.isdisjoint(experimental)
+    assert experimental.isdisjoint(deprecated_symbols())
+    for name in experimental:
+        assert manifest_entry(name)["note"]
 
 
 def test_top_level_exports_work_on_tiny_inputs():
@@ -104,10 +157,8 @@ def test_top_level_exports_work_on_tiny_inputs():
 
 
 def test_deprecated_imports_warn():
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
+    with pytest.warns(DeprecationWarning, match="0.3.0"):
         from changepoint_lab import pelt as _  # noqa: F401
-        assert any(issubclass(ww.category, DeprecationWarning) for ww in w)
 
 
 def test_legacy_module_removed():
