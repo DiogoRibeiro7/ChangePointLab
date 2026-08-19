@@ -40,6 +40,8 @@ from typing import Any, Mapping, Optional
 import numpy as np
 from numpy.typing import NDArray
 
+from changepoint_lab.core.validation import as_count_array
+
 
 # ------------------------- Common type aliases --------------------------
 
@@ -191,7 +193,6 @@ class BetaBernoulli(ConjugateLikelihood):
         if self.stats is None:
             raise RuntimeError("Call init_stats(R) before predictive_prob().")
 
-        # Coerce to {0,1}
         xi = 1.0 if bool(x_t) else 0.0
         α = self.stats.alpha
         β = self.stats.beta
@@ -339,10 +340,12 @@ class PoissonGamma(ConjugateLikelihood):
 
     @staticmethod
     def _coerce_count(x_t) -> int:
-        value = float(x_t)
-        if not np.isfinite(value) or value < 0.0 or not value.is_integer():
-            raise ValueError("PoissonGamma observations must be finite nonnegative integers.")
-        return int(value)
+        try:
+            return int(as_count_array([x_t], name="x_t")[0])
+        except ValueError as exc:
+            raise ValueError(
+                "PoissonGamma observations must be finite nonnegative integer counts."
+            ) from exc
 
     @staticmethod
     def _log_predictive(count: int, shape: ArrayF, rate: ArrayF) -> ArrayF:
