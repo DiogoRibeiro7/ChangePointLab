@@ -15,7 +15,7 @@ References:
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional, Sequence, Tuple
+from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -289,7 +289,7 @@ def orthogonal_rff_map(
         actual_features = n_blocks * d
 
         W_blocks = []
-        for block_idx in range(n_blocks):
+        for _ in range(n_blocks):
             # Generate orthogonal matrix for this block
             Q = _generate_orthogonal_matrix(d, structured=True, rng=rng)
 
@@ -418,23 +418,6 @@ def quasi_mc_rff_map(
         u = np.clip(u, 1e-15, 1 - 1e-15)
 
         # Constants
-        a = [
-            0,
-            -3.969683028665376e01,
-            2.209460984245205e02,
-            -2.759285104469687e02,
-            1.383577518672690e02,
-            -3.066479806614716e01,
-            2.506628277459239e00,
-        ]
-        b = [
-            0,
-            -5.447609879822406e01,
-            1.615858368580409e02,
-            -1.556989798598866e02,
-            6.680131188771972e01,
-            -1.328068155288572e01,
-        ]
         c = [
             0,
             -7.784894002430293e-03,
@@ -847,7 +830,7 @@ if __name__ == "__main__":
         )
 
     # Test adaptive RFF
-    print(f"\nTesting adaptive RFF...")
+    print("\nTesting adaptive RFF...")
     adaptive_rff = adaptive_rff_map(
         X, base_features=128, max_features=1024, tolerance=1e-3, seed=42
     )

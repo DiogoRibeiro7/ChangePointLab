@@ -5,10 +5,22 @@ This document summarises the development workflow and coding conventions.
 
 ## Coding standards
 
-- Format code with **black** (line length 100) and run **ruff** for linting.
+- Keep lines within 100 characters and run **ruff** for semantic linting.
+- Formatting policy is separate from linting; no formatter is configured in Poetry.
 - Type check with **mypy**; all public functions must be annotated.
 - Follow the naming style: `CamelCase` for classes, `snake_case` for functions and
   variables.
+
+## Local quality checks
+
+Run these commands before opening a pull request:
+
+```bash
+poetry run ruff check .
+poetry run mypy
+poetry run pydocstyle src/changepoint_lab
+poetry run pytest
+```
 
 ## Testing
 

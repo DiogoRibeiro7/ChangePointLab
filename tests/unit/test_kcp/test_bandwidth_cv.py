@@ -29,7 +29,7 @@ def test_bandwidth_cv():
     sigma_median = _median_heuristic(X)
     print(f"Median heuristic baseline: σ = {sigma_median:.4f}")
 
-    print(f"\n--- Cross-Validation Methods ---")
+    print("\n--- Cross-Validation Methods ---")
 
     # Test 1: K-fold CV
     print("K-fold cross-validation:")
@@ -49,7 +49,7 @@ def test_bandwidth_cv():
         f"✓ Time series CV selected: σ = {sigma_ts:.4f} (ratio to median: {sigma_ts / sigma_median:.2f})"
     )
 
-    print(f"\n--- Information Criteria ---")
+    print("\n--- Information Criteria ---")
 
     # Test 3: BIC selection
     sigma_bic = select_rbf_bandwidth_information_criterion(X, criterion="bic", n_candidates=15)
@@ -59,7 +59,7 @@ def test_bandwidth_cv():
     sigma_aic = select_rbf_bandwidth_information_criterion(X, criterion="aic", n_candidates=15)
     print(f"✓ AIC selected: σ = {sigma_aic:.4f} (ratio to median: {sigma_aic / sigma_median:.2f})")
 
-    print(f"\n--- Multi-Scale Analysis ---")
+    print("\n--- Multi-Scale Analysis ---")
 
     # Test 5: Multi-scale selection
     multiscale_results = select_rbf_bandwidth_multiscale(X, n_scales=3, base_method="cv")
@@ -67,7 +67,7 @@ def test_bandwidth_cv():
     for scale, sigma in multiscale_results.items():
         print(f"  {scale}: σ = {sigma:.4f} (ratio to median: {sigma / sigma_median:.2f})")
 
-    print(f"\n--- Stability Analysis ---")
+    print("\n--- Stability Analysis ---")
 
     # Test 6: Bootstrap stability
     stability = bandwidth_stability_analysis(X, n_bootstrap=20, subsample_ratio=0.8)

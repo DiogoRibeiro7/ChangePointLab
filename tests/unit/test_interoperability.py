@@ -164,7 +164,5 @@ def test_coarse_pelt_then_bocpd_ensemble():
     # Ensemble: union of coarse PELT and refined BOCPD
     ensemble = sorted(set(cps_coarse) | set(refined))
 
-    f1_coarse = f1_score(cps_coarse, true_cps, tol=5)
-    f1_refined = f1_score(refined, true_cps, tol=5)
     f1_ensemble = f1_score(ensemble, true_cps, tol=5)
     assert f1_ensemble >= 0.1

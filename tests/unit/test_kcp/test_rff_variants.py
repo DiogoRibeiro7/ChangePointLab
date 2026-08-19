@@ -31,7 +31,7 @@ def test_rff_variants():
 
     n_features = 256
 
-    print(f"\n--- Testing RFF Variants ---")
+    print("\n--- Testing RFF Variants ---")
 
     # Test 1: Orthogonal RFF
     print("Testing Orthogonal RFF:")
@@ -55,7 +55,7 @@ def test_rff_variants():
     print(f"✓ Compact RFF: {compact_rff.Z.shape}, γ={compact_rff.gamma:.4f}")
 
     # Test 4: Comparative Analysis
-    print(f"\n--- RFF Variant Comparison ---")
+    print("\n--- RFF Variant Comparison ---")
     comparison = compare_rff_variants(X, n_features=n_features, seed=42)
 
     print("Kernel approximation quality:")
@@ -66,7 +66,7 @@ def test_rff_variants():
         )
 
     # Test 5: Adaptive RFF
-    print(f"\n--- Adaptive RFF Selection ---")
+    print("\n--- Adaptive RFF Selection ---")
     adaptive_rff = adaptive_rff_map(X, base_features=128, max_features=512, tolerance=1e-3, seed=42)
 
     print(f"✓ Adaptive RFF selected {adaptive_rff.config['final_features']} features")

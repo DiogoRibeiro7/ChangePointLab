@@ -406,7 +406,7 @@ def test_documented_broken_paths_raise_recorded_exceptions() -> None:
     )
 
     with pytest.raises(AttributeError) as legacy_error:
-        getattr(cpl, "bocpd")
+        cpl.bocpd
     assert type(legacy_error.value).__name__ == legacy_expected["bocpd_exception_type"]
     assert str(legacy_error.value) == legacy_expected["bocpd_exception_message"]
 

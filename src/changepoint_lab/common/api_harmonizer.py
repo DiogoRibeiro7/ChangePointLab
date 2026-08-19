@@ -10,19 +10,14 @@ through a unified API.
 """
 
 from __future__ import annotations
-import inspect
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 from numpy.typing import NDArray
 
 # Import shared types
 from changepoint_lab.common.types.types import (
-    Array1D,
-    Array1DFloat,
-    ArrayBool,
     ChangePointResult,
-    Tau,
 )
 from changepoint_lab.core.segmentation import (
     CircularChangePoints,
@@ -33,11 +28,12 @@ from changepoint_lab.core.segmentation import (
 try:
     from changepoint_lab import edivisive
     from changepoint_lab.algorithms.kernel import kcp_core as kcp
-    from changepoint_lab.algorithms.kernel import kcp_rff
-    from changepoint_lab.algorithms.kernel import rff_variants
+    from changepoint_lab.algorithms.kernel import kcp_rff as _kcp_rff
+    from changepoint_lab.algorithms.kernel import rff_variants as _rff_variants
     import changepoint_lab.algorithms.bayesian.within_period.within_period_cpd as within_period_cpd
     from changepoint_lab.algorithms.state_space import hsmm
 
+    _OPTIONAL_KERNEL_MODULES = (_kcp_rff, _rff_variants)
     MODULES_AVAILABLE = True
 except ImportError:
     MODULES_AVAILABLE = False
@@ -401,10 +397,9 @@ class AlgorithmRegistry:
 
         # Build kernel matrix
         if kernel == "rbf":
-            K, gamma_used = kcp.gram_rbf(data)
+            K, _ = kcp.gram_rbf(data)
         elif kernel == "linear":
             K = kcp.gram_linear(data)
-            gamma_used = None
         else:
             raise ValueError(f"Unknown kernel: {kernel}")
 

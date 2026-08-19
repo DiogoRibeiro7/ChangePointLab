@@ -241,7 +241,7 @@ def mysense_sensor_example(
         )
         sensors[name] = simulate_periodic_bernoulli(scenario, rng=rng)
 
-    stacked = np.vstack([values for values in sensors.values()])
+    stacked = np.vstack(list(sensors.values()))
     return SensorSeries(
         period=period,
         days=days,

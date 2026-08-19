@@ -6,7 +6,7 @@ Full-covariance Gaussian emissions for HMM/HSMM with numerically stable implemen
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional, Sequence, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -277,7 +277,7 @@ def estimate_gaussian_full_by_kmeans(
     best_inertia = np.inf
     best_params = None
 
-    for init_idx in range(n_init):
+    for _ in range(n_init):
         # k-means++ initialization
         centers = np.zeros((K, D), dtype=float)
 
@@ -297,7 +297,7 @@ def estimate_gaussian_full_by_kmeans(
             centers[k] = X[int(rng.choice(T, p=probs))]
 
         # Run k-means
-        for iter_idx in range(max_iter):
+        for _ in range(max_iter):
             # Assignment step
             distances = np.zeros((T, K), dtype=float)
             for k in range(K):
@@ -516,7 +516,6 @@ if __name__ == "__main__":
     print(f"  Mean log-likelihood: {loglik.mean():.4f}")
 
     # Method 3: From soft responsibilities (simulate E-step output)
-    from scipy.special import softmax  # Would need to implement without scipy
 
     # responsibilities = softmax(loglik, axis=1)  # (T, K)
     # For NumPy-only version:

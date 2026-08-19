@@ -212,8 +212,6 @@ def _energy_stat_scan_from_ps(ps: ArrayF) -> Tuple[ArrayF, ArrayF, ArrayF]:
     S_cross_arr = np.empty(m - 1, dtype=float)
     S_within_arr = np.empty(m - 1, dtype=float)
 
-    S_total = _sum_rect(ps, 0, m, 0, m)  # full sum
-
     for a in range(1, m):  # split point
         nL, nR = a, m - a
         S_LL = _sum_rect(ps, 0, a, 0, a)
@@ -387,16 +385,16 @@ def edivisive(
 
             # Build resampler for this segment
             if resample == "iid":
-                def _draw_idx() -> ArrayI:
-                    return _resample_iid_permutation(m, rng)
+                def _draw_idx(segment_length: int = m) -> ArrayI:
+                    return _resample_iid_permutation(segment_length, rng)
             elif resample == "block-permutation":
                 b = _choose_block_size(m, block_size)
-                def _draw_idx(b=b) -> ArrayI:
-                    return _resample_block_permutation(m, b, rng)
+                def _draw_idx(segment_length: int = m, block_len: int = b) -> ArrayI:
+                    return _resample_block_permutation(segment_length, block_len, rng)
             else:  # "circular-block-bootstrap"
                 b = _choose_block_size(m, block_size)
-                def _draw_idx(b=b) -> ArrayI:
-                    return _resample_circular_block_bootstrap(m, b, rng)
+                def _draw_idx(segment_length: int = m, block_len: int = b) -> ArrayI:
+                    return _resample_circular_block_bootstrap(segment_length, block_len, rng)
 
             # Null distribution of the max statistic under chosen resampling
             max_null = np.empty(R, dtype=float)

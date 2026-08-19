@@ -112,8 +112,6 @@ def test_binary_bocpd_vs_pelt(binary_data):
     plt.close(fig)
 
     f1 = f1_score(bocpd_cps, pelt_cps, tol=2)
-    mae = mean_abs_error(bocpd_cps, pelt_cps)
-    haus = hausdorff_distance(bocpd_cps, pelt_cps)
     assert f1 >= 0.05
 
 

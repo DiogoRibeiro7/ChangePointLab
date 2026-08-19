@@ -7,7 +7,7 @@ Centralizes shared types to avoid circular imports.
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray

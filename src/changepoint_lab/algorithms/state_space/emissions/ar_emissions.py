@@ -419,9 +419,7 @@ def estimate_ar_from_responsibilities(
             for lag in range(order):
                 pred_response[t] += coeffs[k, lag] @ X[order + t - lag - 1]
 
-        # Weighted residuals
         residuals = response - pred_response  # (T-p, D)
-        weighted_residuals = residuals * sqrt_w_k[:, None]
 
         # Weighted covariance: Cov = (1/W) * sum_t w_t * r_t * r_t^T
         noise_cov_k = np.zeros((D, D), dtype=float)

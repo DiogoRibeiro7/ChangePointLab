@@ -310,7 +310,8 @@ class SlicedPoissonCost:
         value = self._objective(weights, exposure_weights, event_sums)
         iterations = 0
 
-        for iterations in range(1, self.config.optimizer_max_iter + 1):
+        for current_iteration in range(1, self.config.optimizer_max_iter + 1):
+            iterations = current_iteration
             value, grad, hess = self._objective_grad_hess(weights, exposure_weights, event_sums)
             grad_norm = float(np.linalg.norm(grad, ord=2))
             if grad_norm < self.config.optimizer_tol:

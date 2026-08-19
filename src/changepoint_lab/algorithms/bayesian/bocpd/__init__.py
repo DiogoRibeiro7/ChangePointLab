@@ -26,7 +26,7 @@ class BOCPD(_BOCPD, BaseDetector):
 
     def fit(self, x: np.ndarray) -> BOCPD:
         self._validate_input(x)
-        self._result = super().run(cast(Sequence[object], x))
+        self._result = super().run(cast("Sequence[object]", x))
         return self
 
     def get_params(self) -> dict[str, object]:

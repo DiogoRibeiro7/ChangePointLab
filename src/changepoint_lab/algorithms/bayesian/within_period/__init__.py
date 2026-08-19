@@ -56,7 +56,7 @@ class WithinPeriodCPD(BaseDetector):
         if self.rng is not None and cfg.seed is not None:
             cfg = replace(cfg, seed=None)
         self._result = self._model.fit(
-            cast(Sequence[int | bool], x_arr),
+            cast("Sequence[int | bool]", x_arr),
             cfg=cfg,
             init=init,
             rng=self.rng,

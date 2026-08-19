@@ -6,7 +6,7 @@ Provides common statistical, numerical, and matrix operations used across module
 """
 
 from __future__ import annotations
-from typing import Callable, List, Optional, Sequence, Tuple, Union, TypeVar
+from typing import Optional, Tuple, TypeVar
 
 import numpy as np
 from numpy.typing import NDArray

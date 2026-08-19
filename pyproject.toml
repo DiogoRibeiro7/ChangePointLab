@@ -93,10 +93,24 @@ types-setuptools = "*"
 line-length = 100
 target-version = "py310"
 exclude = ["build", "dist", "*.egg-info"]
+extend-exclude = ["docs/_build", "docs/notebooks", "examples"]
 
 [tool.ruff.lint]
-select = ["E9", "F63", "F7", "F82"]
+select = [
+  "E9", "F63", "F7", "F82",
+  "F401", "F541", "F841",
+  "B007", "B009", "B023",
+  "C4", "PIE",
+  "NPY",
+  "PTH123", "PTH201",
+  "TC006"
+]
 ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/doc_generator.py" = ["F401", "PTH123"]
+"scripts/generate_figures.py" = ["F401", "F841", "C408"]
+"tests/**" = ["NPY002"]
 
 [tool.mypy]
 python_version = "3.10"

@@ -283,7 +283,6 @@ def _pairwise_sqdist_normalized(
     X = np.asarray(X, dtype=float)
     C = np.asarray(centers, dtype=float)
     T, D = X.shape
-    K = C.shape[0]
     if C.shape[1] != D:
         raise ValueError("centers must have shape (K, D) matching X.")
     if not allow_nan:
@@ -420,11 +419,13 @@ def kmeanspp_fit(
     rng = np.random.default_rng(seed)
 
     best = None
-    for rep in range(n_init):
+    for _ in range(n_init):
         centers = _kmeanspp_seed(X, K, rng=rng, allow_nan=allow_nan)
         inertia_prev = np.inf
         labels = np.zeros(X.shape[0], dtype=int)
-        for it in range(1, max_iter + 1):
+        n_iter = 0
+        for current_iter in range(1, max_iter + 1):
+            n_iter = current_iter
             # Assign
             D2 = _pairwise_sqdist_normalized(X, centers, allow_nan=allow_nan)
             labels = np.argmin(D2, axis=1)
@@ -450,7 +451,7 @@ def kmeanspp_fit(
                     break
             inertia_prev = inertia
 
-        res = KMeansResult(centers=centers.copy(), labels=labels.copy(), inertia=inertia, n_iter=it)
+        res = KMeansResult(centers=centers.copy(), labels=labels.copy(), inertia=inertia, n_iter=n_iter)
         if (best is None) or (res.inertia < best.inertia):
             best = res
 
