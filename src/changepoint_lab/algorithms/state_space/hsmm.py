@@ -13,7 +13,7 @@ from .._base import BaseDetector
 class HSMM(_HSMM, BaseDetector):
     """HSMM wrapper exposing fit/predict methods."""
 
-    def fit(self, loglik_tk: np.ndarray) -> HSMM:
+    def fit(self, loglik_tk: np.ndarray) -> HSMM:  # type: ignore[override]
         self._validate_input(loglik_tk)
         self.params, _ = super().fit(loglik_tk)
         self._loglik = loglik_tk

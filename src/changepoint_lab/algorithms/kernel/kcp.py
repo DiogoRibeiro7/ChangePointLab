@@ -97,9 +97,9 @@ class KernelCPD(BaseDetector):
         if self._approximation == "rff":
             cfg = self.rff_config or RFFConfig()
             rff = rbf_rff_map(x, cfg=cfg, sigma=self.bandwidth)
-            pref = build_feature_prefix(rff.Z)
+            feature_pref = build_feature_prefix(rff.Z)
             self._result = rff_kcp_penalized(
-                pref,
+                feature_pref,
                 gamma_pen=self.penalty,
                 min_size=self.min_size,
                 method=self.method,
@@ -124,13 +124,13 @@ class KernelCPD(BaseDetector):
             self._kernel_gamma = metadata.get("kernel_gamma")
             if self._kernel_gamma is not None:
                 self._kernel_gamma = float(self._kernel_gamma)
-            pref = build_kernel_prefix(
+            kernel_pref = build_kernel_prefix(
                 kernel_matrix.gram,
                 psd_tol=self.kernel_psd_tol,
                 max_bytes=self.max_gram_bytes,
             )
             self._result = kcp_penalized(
-                pref,
+                kernel_pref,
                 penalty=self.penalty,
                 min_size=self.min_size,
                 method=self.method,

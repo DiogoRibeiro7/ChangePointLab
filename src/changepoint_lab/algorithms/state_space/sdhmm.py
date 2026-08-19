@@ -439,7 +439,7 @@ class _SDHMM:
 class SDHMM(_SDHMM, BaseDetector):
     """SD-HMM wrapper exposing fit/predict methods."""
 
-    def fit(self, X: ArrayF) -> SDHMM:
+    def fit(self, X: ArrayF) -> SDHMM:  # type: ignore[override]
         self._validate_input(X)
         self.result_ = super().fit(X)
         self._X = X

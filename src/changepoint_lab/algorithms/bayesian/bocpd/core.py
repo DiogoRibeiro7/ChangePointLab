@@ -291,13 +291,13 @@ class BOCPD:
     def alpha(self) -> ArrayF:
         if not hasattr(self.lik, "stats") or not hasattr(self.lik.stats, "alpha"):
             raise AttributeError("alpha is only available for BetaBernoulli likelihoods.")
-        return self.lik.stats.alpha  # type: ignore[union-attr]
+        return self.lik.stats.alpha
 
     @property
     def beta(self) -> ArrayF:
         if not hasattr(self.lik, "stats") or not hasattr(self.lik.stats, "beta"):
             raise AttributeError("beta is only available for BetaBernoulli likelihoods.")
-        return self.lik.stats.beta  # type: ignore[union-attr]
+        return self.lik.stats.beta
 
     # ----------------------- Public API -----------------------
 

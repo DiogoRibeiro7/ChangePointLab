@@ -101,11 +101,22 @@ ignore = []
 [tool.mypy]
 python_version = "3.10"
 files = [
-  "src/changepoint_lab/core/datatypes.py",
+  "src/changepoint_lab/__init__.py",
+  "src/changepoint_lab/core",
   "src/changepoint_lab/algorithms/_base.py",
-  "tests/typecheck/result_contracts.py"
+  "src/changepoint_lab/algorithms/optimization/pelt.py",
+  "src/changepoint_lab/algorithms/nonparametric/edivisive.py",
+  "src/changepoint_lab/algorithms/kernel/kcp.py",
+  "src/changepoint_lab/algorithms/bayesian/bocpd",
+  "src/changepoint_lab/algorithms/bayesian/within_period/__init__.py",
+  "src/changepoint_lab/algorithms/bayesian/within_period/within_period_cpd.py",
+  "src/changepoint_lab/algorithms/point_process/sliced_poisson.py",
+  "src/changepoint_lab/algorithms/state_space/hsmm.py",
+  "src/changepoint_lab/algorithms/state_space/sdhmm.py",
+  "src/changepoint_lab/algorithms/state_space/sdhmm_mix_vi.py",
+  "tests/typecheck"
 ]
-follow_imports = "skip"
+follow_imports = "normal"
 warn_unused_ignores = true
 warn_redundant_casts = true
 warn_unreachable = true

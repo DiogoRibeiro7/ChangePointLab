@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+from typing import cast
+
 import numpy as np
 
 from .core import (
@@ -23,7 +26,7 @@ class BOCPD(_BOCPD, BaseDetector):
 
     def fit(self, x: np.ndarray) -> BOCPD:
         self._validate_input(x)
-        self._result = super().run(x)
+        self._result = super().run(cast(Sequence[object], x))
         return self
 
     def get_params(self) -> dict[str, object]:

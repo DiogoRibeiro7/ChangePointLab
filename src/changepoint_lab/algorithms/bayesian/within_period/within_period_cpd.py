@@ -429,7 +429,7 @@ class WithinPeriodCore:
 
     # -------------------- Proposal mechanisms --------------------
 
-    def _uniform_move_targets(self, tau: Tau, j: int) -> Tau:
+    def _uniform_move_targets(self, tau: Tau, j: int) -> Tuple[Tau, ...]:
         """
         Enumerate all valid new positions for changepoint index j, under min-length constraint.
         Returns one tau for each non-stay candidate value.
