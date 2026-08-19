@@ -1,0 +1,370 @@
+{
+  "captured_at": "2026-08-19T15:43:57.234711+00:00",
+  "commands": {
+    "benchmark_tests": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "pytest",
+        "tests/unit/test_performance.py"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 5.015,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "............                                                             [100%]\n============================== warnings summary ===============================\ntests\\unit\\test_performance.py:10\ntests\\unit\\test_performance.py:10\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_performance.py:10: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import edivisive, pelt\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n12 passed, 2 warnings in 3.78s\n",
+      "summary": {
+        "passed": 12,
+        "warnings": 2
+      }
+    },
+    "bocpd_help": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "changepoint_lab.cli.bocpd_cli",
+        "--help"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 0.494,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "usage: bocpd_cli.py [-h] (--demo | --csv CSV) [--bin-minutes BIN_MINUTES]\n                    [--start-hour START_HOUR] [--timestamp-col TIMESTAMP_COL]\n                    [--value-col VALUE_COL]\n                    [--value-threshold VALUE_THRESHOLD]\n                    [--days-span DAYS_SPAN] [--timezone TIMEZONE]\n                    [--alpha0 ALPHA0] [--beta0 BETA0] [--Rmax RMAX]\n                    [--mean-rl MEAN_RL] [--schedule SCHEDULE]\n                    [--period PERIOD] [--boost-boundary BOOST_BOUNDARY]\n                    [--boost-factor BOOST_FACTOR] [--prune-eps PRUNE_EPS]\n                    [--abs-prune] [--outdir OUTDIR] [--out-csv OUT_CSV]\n                    [--seed SEED] [--days DAYS] [--cp-threshold CP_THRESHOLD]\n\nBOCPD (Beta\u2013Bernoulli) streaming CLI\n\noptions:\n  -h, --help            show this help message and exit\n  --demo                Synthetic demo.\n  --csv CSV             Path to CSV of timestamps (events).\n  --bin-minutes BIN_MINUTES\n                        Minutes per bin (CSV).\n  --start-hour START_HOUR\n                        Local hour mapped to index 0 (CSV).\n  --timestamp-col TIMESTAMP_COL\n                        CSV timestamp column.\n  --value-col VALUE_COL\n                        Optional numeric column to threshold for events.\n  --value-threshold VALUE_THRESHOLD\n                        Threshold for value_col.\n  --days-span DAYS_SPAN\n                        Force exact #local days from first anchor (CSV).\n  --timezone TIMEZONE   IANA timezone (e.g., Europe/Lisbon).\n  --alpha0 ALPHA0       Beta prior alpha0.\n  --beta0 BETA0         Beta prior beta0.\n  --Rmax RMAX           Max run-length support.\n  --mean-rl MEAN_RL     Mean run length for ConstantHazard.\n  --schedule SCHEDULE   Optional comma-separated hazard schedule per period\n                        (overrides mean-rl).\n  --period PERIOD       Period for schedule / boundary boost.\n  --boost-boundary BOOST_BOUNDARY\n                        Optional comma-separated boundary indices to boost\n                        (e.g., '0' for t%N==0).\n  --boost-factor BOOST_FACTOR\n                        Boundary hazard multiplier if boosting.\n  --prune-eps PRUNE_EPS\n                        Tail-pruning threshold; relative to max unless --abs-\n                        prune.\n  --abs-prune           Use absolute pruning (R[r] < eps -> 0) instead of\n                        relative.\n  --outdir OUTDIR       Directory for outputs.\n  --out-csv OUT_CSV     Optional path to write per-step results CSV.\n  --seed SEED           RNG seed (demo).\n  --days DAYS           Days (demo).\n  --cp-threshold CP_THRESHOLD\n                        Threshold to flag CP events.\n",
+      "summary": {}
+    },
+    "bocpd_tiny_execution": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "changepoint_lab.cli.bocpd_cli",
+        "--demo",
+        "--days",
+        "2",
+        "--period",
+        "4",
+        "--Rmax",
+        "8",
+        "--outdir",
+        "C:\\Users\\diogo\\AppData\\Local\\Temp\\cpl-audit-eduzs0m3\\bocpd-out"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 1.647,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "[OK] Wrote heatmap + CP plot + summary to: C:\\Users\\diogo\\AppData\\Local\\Temp\\cpl-audit-eduzs0m3\\bocpd-out\n",
+      "summary": {}
+    },
+    "cpd_help": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "changepoint_lab.cli.cpd_cli",
+        "--help"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 0.461,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "usage: cpd_cli.py [-h] [--output OUTPUT] --input INPUT [--seed SEED]\n                  {edivisive,kcp,rff-kcp,hsmm,within-period} ...\n\nChangePointLab CLI\n\npositional arguments:\n  {edivisive,kcp,rff-kcp,hsmm,within-period}\n                        CPD method to run\n    edivisive           E-Divisive multivariate CPD\n    kcp                 Kernel Change-Point Detection\n    rff-kcp             Random Fourier Features KCP\n    hsmm                Hidden Semi-Markov Model\n    within-period       Within-Period CPD for daily patterns\n\noptions:\n  -h, --help            show this help message and exit\n  --output, -o OUTPUT   Output directory for results and plots (default:\n                        results)\n  --input, -i INPUT     Input CSV file path (default: None)\n  --seed SEED           Random seed for reproducibility (default: 123)\n",
+      "summary": {}
+    },
+    "cpd_tiny_execution": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "changepoint_lab.cli.cpd_cli",
+        "--input",
+        "C:\\Users\\diogo\\AppData\\Local\\Temp\\cpl-audit-eduzs0m3\\counts.csv",
+        "--output",
+        "C:\\Users\\diogo\\AppData\\Local\\Temp\\cpl-audit-eduzs0m3\\cpd-out",
+        "edivisive",
+        "--columns",
+        "count",
+        "--min-size",
+        "2",
+        "--R",
+        "3"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 1.387,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "Running edivisive on C:\\Users\\diogo\\AppData\\Local\\Temp\\cpl-audit-eduzs0m3\\counts.csv\nResults will be saved to C:\\Users\\diogo\\AppData\\Local\\Temp\\cpl-audit-eduzs0m3\\cpd-out\n\nResults saved to C:\\Users\\diogo\\AppData\\Local\\Temp\\cpl-audit-eduzs0m3\\cpd-out\nFound 0 change points: []\n",
+      "summary": {}
+    },
+    "distribution_validation": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "scripts/validate_distribution.py",
+        "dist"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 0.165,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "distribution artifacts validated\n",
+      "summary": {}
+    },
+    "fresh_process_import": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-c",
+        "import changepoint_lab; print(changepoint_lab.__version__)"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 0.389,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "0.1.14\n",
+      "summary": {}
+    },
+    "installed_wheel_smoke": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-c",
+        "\nimport pathlib\nimport subprocess\nimport sys\nimport venv\n\nroot = pathlib.Path('C:\\\\Users\\\\diogo\\\\work_code\\\\ChangePointLab')\ntmp = pathlib.Path('C:\\\\Users\\\\diogo\\\\AppData\\\\Local\\\\Temp\\\\cpl-audit-eduzs0m3')\nwheel = sorted((root / \"dist\").glob(\"*.whl\"))[-1]\nvenv_dir = tmp / \"wheel-venv\"\nvenv.EnvBuilder(with_pip=True, system_site_packages=True).create(venv_dir)\npython = venv_dir / (\"Scripts/python.exe\" if sys.platform == \"win32\" else \"bin/python\")\nsubprocess.check_call([str(python), \"-m\", \"pip\", \"install\", \"--no-deps\", \"--force-reinstall\", str(wheel)])\ncode = '\\nimport changepoint_lab as cpl\\n\\nmissing = []\\nfor name in cpl.__all__:\\n    try:\\n        getattr(cpl, name)\\n    except Exception as exc:\\n        missing.append((name, type(exc).__name__, str(exc)))\\nif missing:\\n    raise SystemExit(repr(missing))\\nprint(f\"stable exports ok: {len(cpl.__all__)}\")\\n\\n\\nimport numpy as np\\nfrom changepoint_lab import BOCPD, EDivisive, KernelCPD, PELT\\nfrom changepoint_lab.algorithms.bayesian.bocpd import BOCPDConfig, ConstantHazard\\nfrom changepoint_lab.algorithms.optimization.pelt import NormalMeanKnownVar\\n\\nx = np.r_[np.zeros(4), np.ones(4)]\\ncost = NormalMeanKnownVar(sigma2=1.0)\\nresult = PELT(cost_fn=cost, penalty=1.0, min_seg_len=2).fit_predict(x)\\nassert result.indices.ndim == 1\\nassert KernelCPD(penalty=0.1).fit_predict(x.reshape(-1, 1)).indices.ndim == 1\\nassert EDivisive(min_size=2, R=3, seed=0).fit_predict(x.reshape(-1, 1)).indices.ndim == 1\\nstream = np.array([0, 0, 1, 1], dtype=bool)\\nbocpd = BOCPD(ConstantHazard(mean_run_length=4), BOCPDConfig(max_run_length=8))\\nassert bocpd.run(stream).cp_prob.shape == stream.shape\\nprint(\"tiny executions ok\")\\n'\nsubprocess.check_call([str(python), \"-c\", code], cwd=tmp)\nprint(f\"installed wheel smoke ok: {wheel.name}\")\n"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 16.773,
+      "returncode": 0,
+      "stderr": "\n[notice] A new release of pip is available: 25.1.1 -> 26.2.1\n[notice] To update, run: C:\\Users\\diogo\\AppData\\Local\\Temp\\cpl-audit-eduzs0m3\\wheel-venv\\Scripts\\python.exe -m pip install --upgrade pip\n<string>:7: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n<string>:7: DeprecationWarning: `hsmm` is deprecated; import via the new algorithms namespace\n<string>:7: DeprecationWarning: `sdhmm` is deprecated; import via the new algorithms namespace\n<string>:7: DeprecationWarning: `sdhmm_mix_vi` is deprecated; import via the new algorithms namespace\n<string>:7: DeprecationWarning: `within_period` is deprecated; import via the new algorithms namespace\n",
+      "stdout": "Processing c:\\users\\diogo\\work_code\\changepointlab\\dist\\changepoint_lab-0.1.14-py3-none-any.whl\nInstalling collected packages: changepoint-lab\n  Attempting uninstall: changepoint-lab\n    Found existing installation: changepoint-lab 0.1.0\n    Not uninstalling changepoint-lab at c:\\users\\diogo\\appdata\\roaming\\python\\python313\\site-packages, outside environment C:\\Users\\diogo\\AppData\\Local\\Temp\\cpl-audit-eduzs0m3\\wheel-venv\n    Can't uninstall 'changepoint-lab'. No files were found to uninstall.\nSuccessfully installed changepoint-lab-0.1.14\nstable exports ok: 71\ntiny executions ok\ninstalled wheel smoke ok: changepoint_lab-0.1.14-py3-none-any.whl\n",
+      "summary": {}
+    },
+    "integration_tests": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "pytest",
+        "-m",
+        "integration",
+        "tests/integration"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 10.936,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "...                                                                      [100%]\n============================== warnings summary ===============================\ntests\\integration\\test_methods_interoperability.py:2\ntests\\integration\\test_methods_interoperability.py:2\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\integration\\test_methods_interoperability.py:2: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import edivisive, pelt\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n3 passed, 1 deselected, 2 warnings in 9.50s\n",
+      "summary": {
+        "passed": 3,
+        "warnings": 2
+      }
+    },
+    "mypy": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "mypy"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 0.447,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "Success: no issues found in 3 source files\n",
+      "summary": {}
+    },
+    "package_build": {
+      "command": [
+        "poetry",
+        "build"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 3.927,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "Building changepoint-lab (0.1.14)\nBuilding sdist\n  - Building sdist\n  - Built changepoint_lab-0.1.14.tar.gz\nBuilding wheel\n  - Building wheel\n  - Built changepoint_lab-0.1.14-py3-none-any.whl\n",
+      "summary": {}
+    },
+    "pdoc_docs": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "pdoc",
+        "-o",
+        "docs/_build/pdoc",
+        "changepoint_lab"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 1.937,
+      "returncode": 0,
+      "stderr": "Warn: Found 'pelt' in changepoint_lab.__all__, but it does not resolve: Error importing changepoint_lab.pelt (C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Lib\\site-packages\\pdoc\\doc.py:529)\nWarn: Found 'hsmm' in changepoint_lab.__all__, but it does not resolve: Error importing changepoint_lab.hsmm (C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Lib\\site-packages\\pdoc\\doc.py:529)\nWarn: Found 'sdhmm' in changepoint_lab.__all__, but it does not resolve: Error importing changepoint_lab.sdhmm (C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Lib\\site-packages\\pdoc\\doc.py:529)\nWarn: Found 'sdhmm_mix_vi' in changepoint_lab.__all__, but it does not resolve: Error importing changepoint_lab.sdhmm_mix_vi (C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Lib\\site-packages\\pdoc\\doc.py:529)\nWarn: Found 'within_period' in changepoint_lab.__all__, but it does not resolve: Error importing changepoint_lab.within_period (C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Lib\\site-packages\\pdoc\\doc.py:529)\n",
+      "stdout": "",
+      "summary": {}
+    },
+    "pydocstyle": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "pydocstyle",
+        "src/changepoint_lab"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 3.051,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "summary": {}
+    },
+    "ruff": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "ruff",
+        "check",
+        "."
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 0.168,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "All checks passed!\n",
+      "summary": {}
+    },
+    "slow_tests": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "pytest",
+        "-m",
+        "slow",
+        "tests"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 38.568,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "....................................                                     [100%]\n============================== warnings summary ===============================\ntests\\integration\\test_methods_interoperability.py:2\ntests\\integration\\test_methods_interoperability.py:2\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\integration\\test_methods_interoperability.py:2: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import edivisive, pelt\n\ntests\\unit\\test_algorithm_parity.py:4\ntests\\unit\\test_algorithm_parity.py:4\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_algorithm_parity.py:4: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import pelt as legacy_pelt\n\ntests\\unit\\test_interoperability.py:6\ntests\\unit\\test_interoperability.py:6\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_interoperability.py:6: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import edivisive, pelt\n\ntests\\unit\\test_method_comparison.py:6\ntests\\unit\\test_method_comparison.py:6\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_method_comparison.py:6: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import edivisive, pelt\n\ntests\\unit\\test_numerical_stability.py:6\ntests\\unit\\test_numerical_stability.py:6\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_numerical_stability.py:6: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import edivisive, pelt\n\ntests\\unit\\test_pelt_result_fields.py:2\ntests\\unit\\test_pelt_result_fields.py:2\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_pelt_result_fields.py:2: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import pelt\n\ntests\\unit\\test_performance.py:10\ntests\\unit\\test_performance.py:10\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_performance.py:10: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import edivisive, pelt\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n36 passed, 141 deselected, 14 warnings in 35.92s\n",
+      "summary": {
+        "passed": 36,
+        "warnings": 14
+      }
+    },
+    "sphinx_docs": {
+      "command": [
+        "sphinx-build",
+        "-b",
+        "html",
+        "docs",
+        "docs/_build/html"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 1.481,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "\u001b[01mRunning Sphinx v9.1.0\u001b[39;49;00m\n\u001b[01mloading translations [en]... \u001b[39;49;00mdone\n\u001b[01mloading pickled environment... \u001b[39;49;00mdone\n\u001b[01mbuilding [mo]: \u001b[39;49;00mtargets for 0 po files that are out of date\n\u001b[01mwriting output... \u001b[39;49;00m\n\u001b[01mbuilding [html]: \u001b[39;49;00mtargets for 0 source files that are out of date\n\u001b[01mupdating environment: \u001b[39;49;00m0 added, 0 changed, 0 removed\n\u001b[01mreading sources... \u001b[39;49;00m\n\u001b[01mlooking for now-outdated files... \u001b[39;49;00mnone found\n\u001b[01mno targets are out of date.\u001b[39;49;00m\n\u001b[01mpreparing documents... \u001b[39;49;00mdone\n\u001b[01mcopying assets... \u001b[39;49;00m\n\u001b[01mcopying static files... \u001b[39;49;00m\nWriting evaluated template result to C:\\Users\\diogo\\work_code\\ChangePointLab\\docs\\_build\\html\\_static\\basic.css\nWriting evaluated template result to C:\\Users\\diogo\\work_code\\ChangePointLab\\docs\\_build\\html\\_static\\documentation_options.js\nWriting evaluated template result to C:\\Users\\diogo\\work_code\\ChangePointLab\\docs\\_build\\html\\_static\\language_data.js\nWriting evaluated template result to C:\\Users\\diogo\\work_code\\ChangePointLab\\docs\\_build\\html\\_static\\alabaster.css\n\u001b[01mcopying static files: \u001b[39;49;00mdone\n\u001b[01mcopying extra files... \u001b[39;49;00m\n\u001b[01mcopying extra files: \u001b[39;49;00mdone\n\u001b[01mcopying assets: \u001b[39;49;00mdone\n\u001b[01mgenerating indices... \u001b[39;49;00mgenindex py-modindex done\n\u001b[01mwriting additional pages... \u001b[39;49;00msearch done\n\u001b[01mdumping search index in English (code: en)... \u001b[39;49;00mdone\n\u001b[01mdumping object inventory... \u001b[39;49;00mdone\n\u001b[01mbuild succeeded.\u001b[39;49;00m\n\nThe HTML pages are in docs\\_build\\html.\n",
+      "summary": {}
+    },
+    "stable_top_level_exports": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-c",
+        "\nimport changepoint_lab as cpl\n\nmissing = []\nfor name in cpl.__all__:\n    try:\n        getattr(cpl, name)\n    except Exception as exc:\n        missing.append((name, type(exc).__name__, str(exc)))\nif missing:\n    raise SystemExit(repr(missing))\nprint(f\"stable exports ok: {len(cpl.__all__)}\")\n"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 0.423,
+      "returncode": 0,
+      "stderr": "<string>:7: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n<string>:7: DeprecationWarning: `hsmm` is deprecated; import via the new algorithms namespace\n<string>:7: DeprecationWarning: `sdhmm` is deprecated; import via the new algorithms namespace\n<string>:7: DeprecationWarning: `sdhmm_mix_vi` is deprecated; import via the new algorithms namespace\n<string>:7: DeprecationWarning: `within_period` is deprecated; import via the new algorithms namespace\n",
+      "stdout": "stable exports ok: 71\n",
+      "summary": {}
+    },
+    "tiny_public_executions": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-c",
+        "\nimport numpy as np\nfrom changepoint_lab import BOCPD, EDivisive, KernelCPD, PELT\nfrom changepoint_lab.algorithms.bayesian.bocpd import BOCPDConfig, ConstantHazard\nfrom changepoint_lab.algorithms.optimization.pelt import NormalMeanKnownVar\n\nx = np.r_[np.zeros(4), np.ones(4)]\ncost = NormalMeanKnownVar(sigma2=1.0)\nresult = PELT(cost_fn=cost, penalty=1.0, min_seg_len=2).fit_predict(x)\nassert result.indices.ndim == 1\nassert KernelCPD(penalty=0.1).fit_predict(x.reshape(-1, 1)).indices.ndim == 1\nassert EDivisive(min_size=2, R=3, seed=0).fit_predict(x.reshape(-1, 1)).indices.ndim == 1\nstream = np.array([0, 0, 1, 1], dtype=bool)\nbocpd = BOCPD(ConstantHazard(mean_run_length=4), BOCPDConfig(max_run_length=8))\nassert bocpd.run(stream).cp_prob.shape == stream.shape\nprint(\"tiny executions ok\")\n"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 0.4,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "tiny executions ok\n",
+      "summary": {}
+    },
+    "unit_tests": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "pytest",
+        "-m",
+        "not slow",
+        "tests/unit"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 103.93,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "........................................................................ [ 53%]\n..............................................................           [100%]\n============================== warnings summary ===============================\ntests\\unit\\test_algorithm_parity.py:4\ntests\\unit\\test_algorithm_parity.py:4\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_algorithm_parity.py:4: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import pelt as legacy_pelt\n\ntests\\unit\\test_interoperability.py:6\ntests\\unit\\test_interoperability.py:6\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_interoperability.py:6: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import edivisive, pelt\n\ntests\\unit\\test_method_comparison.py:6\ntests\\unit\\test_method_comparison.py:6\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_method_comparison.py:6: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import edivisive, pelt\n\ntests\\unit\\test_numerical_stability.py:6\ntests\\unit\\test_numerical_stability.py:6\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_numerical_stability.py:6: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import edivisive, pelt\n\ntests\\unit\\test_pelt_result_fields.py:2\ntests\\unit\\test_pelt_result_fields.py:2\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_pelt_result_fields.py:2: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import pelt\n\ntests\\unit\\test_performance.py:10\ntests\\unit\\test_performance.py:10\n  C:\\Users\\diogo\\work_code\\ChangePointLab\\tests\\unit\\test_performance.py:10: DeprecationWarning: `pelt` is deprecated; import via the new algorithms namespace\n    from changepoint_lab import edivisive, pelt\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n134 passed, 36 deselected, 12 warnings in 102.02s (0:01:42)\n",
+      "summary": {
+        "passed": 134,
+        "warnings": 12
+      }
+    },
+    "within_period_help": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "changepoint_lab.algorithms.bayesian.within_period.cli",
+        "--help"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 0.482,
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "usage: cli.py [-h] (--demo | --csv CSV | --load LOAD)\n              [--timestamp-col TIMESTAMP_COL] [--value-col VALUE_COL]\n              [--value-threshold VALUE_THRESHOLD] [--bin-minutes BIN_MINUTES]\n              [--start-hour START_HOUR] [--N N] [--l L] [--iters ITERS]\n              [--burn BURN] [--thin THIN] [--seed SEED] [--pt] [--T-hot T_HOT]\n              [--swap-every SWAP_EVERY] [--days DAYS] [--outdir OUTDIR]\n              [--save-npz SAVE_NPZ] [--plot-only] [--days-span DAYS_SPAN]\n\nWithin-period CPD: short CLI\n\noptions:\n  -h, --help            show this help message and exit\n  --demo                Run a synthetic demo.\n  --csv CSV             Path to CSV with timestamps (use with --timestamp-\n                        col).\n  --load LOAD           Load a previous NPZ result and (re)plot.\n  --timestamp-col TIMESTAMP_COL\n                        CSV column with ISO timestamps.\n  --value-col VALUE_COL\n                        Optional numeric column to threshold for events.\n  --value-threshold VALUE_THRESHOLD\n                        Threshold for value_col to mark an event.\n  --bin-minutes BIN_MINUTES\n                        Minutes per bin (CSV path).\n  --start-hour START_HOUR\n                        Hour that maps to index 0 (CSV path).\n  --N N                 Bins per day (demo path).\n  --l L                 Minimum segment length in bins.\n  --iters ITERS         MCMC iterations.\n  --burn BURN           Burn-in.\n  --thin THIN           Thinning.\n  --seed SEED           RNG seed.\n  --pt                  Use two-chain parallel tempering.\n  --T-hot T_HOT         Hot chain temperature (PT).\n  --swap-every SWAP_EVERY\n                        Swap frequency in iterations (PT).\n  --days DAYS           Number of synthetic days (demo).\n  --outdir OUTDIR       Directory for outputs (plots, npz).\n  --save-npz SAVE_NPZ   Filename for saved NPZ (fit paths).\n  --plot-only           Only plot (used with --load).\n  --days-span DAYS_SPAN\n                        Force an exact # of days when reading CSV.\n",
+      "summary": {}
+    },
+    "within_period_tiny_execution": {
+      "command": [
+        "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+        "-m",
+        "changepoint_lab.algorithms.bayesian.within_period.cli",
+        "--demo",
+        "--N",
+        "8",
+        "--l",
+        "2",
+        "--days",
+        "2",
+        "--iters",
+        "20",
+        "--burn",
+        "5",
+        "--thin",
+        "5",
+        "--outdir",
+        "C:\\Users\\diogo\\AppData\\Local\\Temp\\cpl-audit-eduzs0m3\\within-out"
+      ],
+      "cwd": "C:\\Users\\diogo\\work_code\\ChangePointLab",
+      "duration_seconds": 0.419,
+      "returncode": 1,
+      "stderr": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"C:\\Users\\diogo\\work_code\\ChangePointLab\\src\\changepoint_lab\\algorithms\\bayesian\\within_period\\cli.py\", line 334, in <module>\n    main()\n    ~~~~^^\n  File \"C:\\Users\\diogo\\work_code\\ChangePointLab\\src\\changepoint_lab\\algorithms\\bayesian\\within_period\\cli.py\", line 294, in main\n    samples_tau, cp_hist, mode_tau, log_posts = _fit_rjmcmc(\n                                                ~~~~~~~~~~~^\n        x=x, prior=prior, iters=args.iters, burn=args.burn, thin=args.thin, seed=args.seed\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\diogo\\work_code\\ChangePointLab\\src\\changepoint_lab\\algorithms\\bayesian\\within_period\\cli.py\", line 162, in _fit_rjmcmc\n    return result.samples_tau, result.changepoint_hist, result.mode_tau, result.log_posteriors\n           ^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\diogo\\work_code\\ChangePointLab\\src\\changepoint_lab\\algorithms\\bayesian\\within_period\\__init__.py\", line 93, in __getattr__\n    raise AttributeError(name)\nAttributeError: samples_tau\n",
+      "stdout": "",
+      "summary": {
+        "contains_error_text": true
+      }
+    }
+  },
+  "environment": {
+    "executable": "C:\\Users\\diogo\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\changepoint-lab-Qq5JC4H8-py3.13\\Scripts\\python.exe",
+    "machine": "AMD64",
+    "numpy": "2.2.6",
+    "packages": {
+      "changepoint-lab": "0.1.3",
+      "mypy": "2.3.0",
+      "numpy": "2.2.6",
+      "pdoc": "16.0.0",
+      "pydocstyle": "6.3.0",
+      "pytest": "9.1.1",
+      "ruff": "0.15.22",
+      "sphinx": "9.1.0"
+    },
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]"
+  },
+  "git": {
+    "branch": "main",
+    "commit": "bf3532814c1bb5c7598e4d68cadedfede8c22027",
+    "status_short": "?? artifacts/\n?? docs/audit/baseline_test_truth.md\n?? scripts/capture_baseline_audit.py"
+  },
+  "schema_version": "1.0"
+}
