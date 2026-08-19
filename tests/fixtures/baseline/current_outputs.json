@@ -139,7 +139,7 @@
     "legacy_current": {
       "label": "compatibility",
       "pelt_warning_category": "DeprecationWarning",
-      "pelt_warning_message": "`pelt` is deprecated; import via the new algorithms namespace",
+      "pelt_warning_message": "`pelt` is deprecated and will be removed in 0.3.0; use `changepoint_lab.algorithms.optimization.pelt.pelt` instead.",
       "bocpd_exception_type": "AttributeError",
       "bocpd_exception_message": "module 'changepoint_lab._compat' has no attribute 'bocpd'"
     }
