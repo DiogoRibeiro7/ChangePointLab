@@ -3,6 +3,13 @@
 Date: 2026-07-23
 Scope: repository forensic audit only
 
+Current review update: 2026-08-19 at commit
+`741e6cce0edf517dd0c9e4f9a2b562c55f2e5cfe`.
+
+Historical statements below are preserved for traceability. Current open risks
+must not be closed until the cited method-registry entry, executable tests, and
+independent oracle or documented external evidence support the closure.
+
 Severity levels:
 
 - Critical: likely to invalidate scientific results or block basic package use.
@@ -25,6 +32,12 @@ Severity levels:
 | R-016 | Low | Repository hygiene | Empty marker files are expected, but package `__init__.py` files are inconsistent about exports. | Discoverability and API boundaries are unclear. | Normalize package exports after public API contract decision. |
 | R-017 | Medium | Scientific reproducibility | Taylor et al. case-study sensor data are not bundled; `scripts/run_within_period_reproduction.py` generates synthetic analogues and records discrepancies. | Users may mistake synthetic MySense outputs for recreation of the proprietary case-study figures. | Keep paper-consistent and MySense-extension artifacts separated, and add real cached data only with license and checksum documentation. |
 | R-018 | Medium | Scientific reproducibility | Sliced Poisson tests cover analytical and simulated cases, but the Howz data and supplementary code parity are not bundled. | Users may overinterpret the implementation as full reproduction of Martínez-Hernández and Killick (2024). | Keep the method marked `partially_verified`; add licensed reference data or supplementary-code parity only when available. |
+| R-019 | High | Scientific correctness | `src/changepoint_lab/algorithms/point_process/sliced_poisson.py` accumulates every exposure interval into the quadrature mask; registry method `sliced_poisson_process` remains `partially_verified`. | Overlapping, nested, or duplicate exposure intervals can double-count observed time and bias segment likelihoods. | Canonicalize exposure intervals into a non-overlapping union before integration; add overlap/nesting/duplicate tests and keep verification unchanged until an independent exposure oracle passes. |
+| R-020 | High | Scientific correctness | `src/changepoint_lab/algorithms/point_process/sliced_poisson.py` uses a fixed midpoint grid for exposure integration; `tests/unit/test_sliced_poisson.py` does not cover sub-grid exposure windows; registry method `sliced_poisson_process` remains `partially_verified`. | Valid narrow observation windows can contribute zero numerical exposure, producing invalid likelihood geometry. | Replace or augment midpoint quadrature with interval-aware integration; add narrow-window analytical tests. |
+| R-021 | High | Scientific correctness | `src/changepoint_lab/algorithms/point_process/sliced_poisson.py` records segment optimizer failures but `SlicedPoissonCost.cost()` still returns the fitted segment cost; registry method `sliced_poisson_process` remains `partially_verified`. | Non-converged segment fits can influence PELT changepoint selection. | Define a failure policy that makes invalid segment fits ineligible or raises; add line-search/max-iteration characterization tests before changing behavior. |
+| R-022 | Medium | Type/quality | `pyproject.toml` scopes mypy to a small stable subset and Ruff still selects only critical syntax/name rules; `.github/workflows/ci.yml` mirrors those gates. | Public typed-package surfaces can drift despite the `py.typed` marker. | Broaden static checks in controlled steps after baseline truth; keep failures explicit while expanding coverage. |
+| R-023 | Medium | Documentation | `docs/architecture/index.md` is not synchronized with the current `src/changepoint_lab` package tree and BOCPD layout. | Architecture documentation can mislead contributors about active modules and ownership boundaries. | Regenerate or rewrite architecture docs from the current tree and add a docs consistency check. |
+| R-024 | Medium | Process | `.github/workflows/ci.yml` runs `coverage report`, but neither `pyproject.toml` nor CI enforces a minimum threshold. | Coverage regressions can pass silently while broadening the package surface. | Add a measured coverage floor only after the baseline capture is accepted; document exclusions and ratchet policy. |
 
 ## Resolved or Partially Resolved Findings
 
@@ -59,8 +72,13 @@ Severity levels:
 
 ## Blockers Before External Scientific Readiness
 
-1. Fix or document broken public compatibility paths such as legacy `bocpd`.
-2. Establish method-to-source traceability and claim audit.
-3. Freeze current behavior with golden characterization tests before correcting scientific algorithms.
-4. Add independent oracles for HSMM and SD-HMM, and broaden existing within-period, KCP/RFF, and E-Divisive oracle coverage.
-5. Replace unsupported docs and paper claims with executable evidence.
+1. Fix sliced-Poisson exposure geometry and optimizer-failure propagation before
+   adding new point-process features.
+2. Fix or document broken public compatibility paths such as legacy `bocpd`.
+3. Broaden result/input invariants, static checks, docs consistency, and coverage
+   gates without changing scientific behavior.
+4. Add independent oracles for HSMM, SD-HMM, BOCPD Gaussian paths, KCP/RFF
+   approximation behavior, and E-Divisive multiple-testing calibration before
+   upgrading verification status.
+5. Keep benchmark, paper-parity, and release claims blocked until generated
+   artifacts and external validation exist.

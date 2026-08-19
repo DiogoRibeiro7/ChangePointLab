@@ -8,6 +8,12 @@ This inventory classifies the tracked repository state before scientific or API
 modernization work. It is intentionally descriptive: no production behavior was
 changed during this audit.
 
+Current review update: 2026-08-19 at commit
+`741e6cce0edf517dd0c9e4f9a2b562c55f2e5cfe`. This document is a historical
+inventory of the July audit state, not the current package tree. Current
+baseline command evidence lives in `docs/audit/baseline_test_truth.md` and
+`artifacts/audit/baseline_test_truth.json`.
+
 ## Summary
 
 - Tracked files: 179 (`git ls-files`)
