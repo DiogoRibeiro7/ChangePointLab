@@ -2,9 +2,8 @@
 # MIT License
 from __future__ import annotations
 
-from dataclasses import asdict
 from pathlib import Path
-from typing import Iterable, List, Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -95,30 +94,30 @@ def load_result_npz(path: str | Path):
     cp_hist = z["cp_hist"].astype(np.int64)
     mode_tau = tuple(z["mode_tau"].astype(int).tolist())
 
-    prior = dict(
-        N=int(z["prior_N"]),
-        l=int(z["prior_l"]),
-        gamma=float(z["prior_gamma"]),
-        pois_lambda=float(z["prior_pois_lambda"]),
-    )
-    cfg = dict(
-        iters=int(z["cfg_iters"]),
-        burn=int(z["cfg_burn"]),
-        thin=int(z["cfg_thin"]),
-        seed=None if int(z["cfg_seed"]) < 0 else int(z["cfg_seed"]),
-        move_prob=float(z["cfg_move_prob"]),
-        birth_prob=float(z["cfg_birth_prob"]),
-        death_prob=float(z["cfg_death_prob"]),
-    )
+    prior = {
+        "N": int(z["prior_N"]),
+        "l": int(z["prior_l"]),
+        "gamma": float(z["prior_gamma"]),
+        "pois_lambda": float(z["prior_pois_lambda"]),
+    }
+    cfg = {
+        "iters": int(z["cfg_iters"]),
+        "burn": int(z["cfg_burn"]),
+        "thin": int(z["cfg_thin"]),
+        "seed": None if int(z["cfg_seed"]) < 0 else int(z["cfg_seed"]),
+        "move_prob": float(z["cfg_move_prob"]),
+        "birth_prob": float(z["cfg_birth_prob"]),
+        "death_prob": float(z["cfg_death_prob"]),
+    }
 
-    return dict(
-        samples_tau=samples_tau,
-        log_posteriors=log_post,
-        changepoint_hist=cp_hist,
-        mode_tau=mode_tau,
-        prior=prior,
-        cfg=cfg,
-    )
+    return {
+        "samples_tau": samples_tau,
+        "log_posteriors": log_post,
+        "changepoint_hist": cp_hist,
+        "mode_tau": mode_tau,
+        "prior": prior,
+        "cfg": cfg,
+    }
 
 
 # from io_utils import save_result_npz, load_result_npz

@@ -25,7 +25,7 @@ import argparse
 import csv
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -51,7 +51,7 @@ def load_csv_data(
         column_names: list of selected column names
         timestamps: optional timestamp array if timestamp_col provided
     """
-    with open(filepath, "r") as f:
+    with Path(filepath).open() as f:
         reader = csv.DictReader(f)
         fieldnames = reader.fieldnames
 
@@ -113,7 +113,7 @@ def save_results(
     metadata = {
         k: v for k, v in results.items() if not isinstance(v, np.ndarray) and not callable(v)
     }
-    with open(output_dir / f"{method_name}_metadata.json", "w") as f:
+    with (output_dir / f"{method_name}_metadata.json").open("w") as f:
         json.dump(metadata, f, indent=2, default=str)
 
     # Save plots
@@ -125,7 +125,7 @@ def save_results(
     if "change_points" in results:
         cps = results["change_points"]
         if len(cps) > 0:
-            with open(output_dir / f"{method_name}_changepoints.csv", "w", newline="") as f:
+            with (output_dir / f"{method_name}_changepoints.csv").open("w", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(["change_point_index", "position"])
                 for i, cp in enumerate(cps):
@@ -185,7 +185,6 @@ def run_kcp(args) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         gram_linear,
         build_kernel_prefix,
         kcp_penalized,
-        kcp_select_bic,
         kcp_fixed_m,
     )
     from changepoint_lab.common.plotting import plot_segments_1d, plot_model_scree

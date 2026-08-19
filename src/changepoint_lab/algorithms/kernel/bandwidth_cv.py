@@ -13,7 +13,7 @@ Implements multiple strategies:
 
 from __future__ import annotations
 from dataclasses import dataclass, replace
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -205,9 +205,6 @@ def _compute_kernel_loglikelihood(
     # Cross kernel matrix (test vs train)
     K_cross = np.exp(-gamma * np.sum((X_test[:, None, :] - X_train[None, :, :]) ** 2, axis=2))
 
-    # Test kernel matrix
-    K_test = np.exp(-gamma * np.sum((X_test[:, None, :] - X_test[None, :, :]) ** 2, axis=2))
-
     # Regularization for numerical stability
     reg = 1e-6
     K_train_reg = K_train + reg * np.eye(K_train.shape[0])
@@ -355,8 +352,6 @@ def select_rbf_bandwidth_cv(
 
     # Aggregate scores across folds
     mean_scores = np.mean(scores, axis=1)
-    std_scores = np.std(scores, axis=1)
-
     # Select best bandwidth
     valid_scores = np.isfinite(mean_scores)
     if not np.any(valid_scores):
@@ -497,7 +492,7 @@ def select_rbf_bandwidth_multiscale(
 
     results = {}
 
-    for i, (percentile, scale_val) in enumerate(zip(percentiles, scale_values)):
+    for percentile, scale_val in zip(percentiles, scale_values):
         scale_name = f"scale_{int(percentile)}pct"
 
         # Adjust search range around this scale
@@ -549,7 +544,7 @@ def bandwidth_stability_analysis(
 
     selected_sigmas = []
 
-    for i in range(n_bootstrap):
+    for _ in range(n_bootstrap):
         # Bootstrap sample
         idx = rng.choice(n, size=subsample_size, replace=True)
         X_boot = X[idx]

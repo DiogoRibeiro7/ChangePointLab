@@ -5,9 +5,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Tuple
 
-import math
 import numpy as np
 from numpy.typing import NDArray
 
@@ -17,8 +16,6 @@ from .kcp_rff import (
     RFFConfig,
     build_feature_prefix as build_rff_prefix,
     rbf_rff_map,
-    rff_kcp_fixed_m,
-    rff_kcp_penalized,
 )
 
 # Scientific traceability:
@@ -162,7 +159,6 @@ def build_kernel_prefix(
         psd_check_max_n=psd_check_max_n,
         max_bytes=max_bytes,
     )
-    n = K.shape[0]
     diag_ps = np.concatenate([[0.0], np.cumsum(np.diag(K))])
     K_ps2d = _prefix2d_inclusive(K)
     return KernelPrefix(K=K, diag_ps=diag_ps, K_ps2d=K_ps2d)
@@ -460,7 +456,7 @@ def kcp_fixed_m(
             # candidates i are endpoints[:j] with min_size
             best_val = float("inf")
             best_i = -1
-            for i_idx in range(0, j):
+            for i_idx in range(j):
                 i = endpoints[i_idx]
                 if t - i < min_size:
                     continue

@@ -2,7 +2,7 @@
 # MIT License
 from __future__ import annotations
 
-from typing import Iterable, List, Sequence, Tuple, Dict
+from typing import List, Sequence, Tuple, Dict
 
 import numpy as np
 from numpy.typing import NDArray

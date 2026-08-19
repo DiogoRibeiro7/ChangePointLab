@@ -35,7 +35,8 @@ def test_cli_edges(tmp_path: Path):
     data = np.load(out_dir / "edivisive_results.npz")
     cps = data["change_points"]
     assert cps.ndim == 1
-    meta = json.load(open(out_dir / "edivisive_metadata.json"))
+    with (out_dir / "edivisive_metadata.json").open() as f:
+        meta = json.load(f)
     assert meta["method"] == "edivisive"
 
 
@@ -77,7 +78,8 @@ def test_cli_export_formats(tmp_path: Path):
     out_dir = tmp_path / "out"
     res = _run_cli(csv_path, out_dir, tmp_path)
     assert res.returncode == 0, res.stderr
-    meta = json.load(open(out_dir / "edivisive_metadata.json"))
+    with (out_dir / "edivisive_metadata.json").open() as f:
+        meta = json.load(f)
     json_path = tmp_path / "export.json"
     with json_path.open("w") as f:
         json.dump(meta, f)

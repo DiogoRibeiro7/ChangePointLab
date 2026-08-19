@@ -134,7 +134,7 @@ def main() -> None:
             raise ValueError("--boost-boundary provided but --period is None")
         hazard = BoostedBoundaryHazard(
             base=hazard,
-            boundary_indices=set(int(i) for i in boost_idx),
+            boundary_indices={int(i) for i in boost_idx},
             period=int(args.period),
             boost_factor=float(args.boost_factor),
         )

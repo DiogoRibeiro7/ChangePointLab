@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence
 
 import math
 import numpy as np
@@ -363,7 +363,7 @@ def rff_kcp_fixed_m(
             t = endpoints[j]
             best = float("inf")
             best_i = -1
-            for i_idx in range(0, j):
+            for i_idx in range(j):
                 i = endpoints[i_idx]
                 if t - i < min_size:
                     continue

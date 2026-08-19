@@ -106,7 +106,7 @@ def rewrite_file(path: pathlib.Path) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("paths", nargs="*", type=pathlib.Path, default=[pathlib.Path(".")])
+    parser.add_argument("paths", nargs="*", type=pathlib.Path, default=[pathlib.Path()])
     args = parser.parse_args()
     changed_any = False
     for py_file in iter_py_files(args.paths):

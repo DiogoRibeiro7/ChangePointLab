@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from changepoint_lab._optional import require_matplotlib_pyplot
 
-from ...algorithms.kernel.kcp_core import KCPResult, KCPModelSel
+from ...algorithms.kernel.kcp_core import KCPModelSel
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes

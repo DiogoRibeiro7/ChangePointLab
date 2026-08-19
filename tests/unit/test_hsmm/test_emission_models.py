@@ -17,7 +17,7 @@ def test_emission_models():
     true_states = np.random.choice(K, size=T)
 
     # Test 1: Full Covariance Gaussian Emissions
-    print(f"\n--- Testing Full Covariance Gaussian Emissions ---")
+    print("\n--- Testing Full Covariance Gaussian Emissions ---")
 
     from changepoint_lab.algorithms.state_space.emissions.gaussian_full import (
         GaussianFullEmissions,
@@ -45,7 +45,7 @@ def test_emission_models():
     gaussian_emissions.initialize_kmeans(X_gaussian, n_init=3, seed=42)
     loglik_gaussian = gaussian_emissions.compute_loglik(X_gaussian)
 
-    print(f"✓ Full covariance Gaussian emissions initialized")
+    print("✓ Full covariance Gaussian emissions initialized")
     print(f"  Log-likelihood shape: {loglik_gaussian.shape}")
     print(f"  Mean log-likelihood: {loglik_gaussian.mean():.4f}")
     print(f"  Number of parameters: {gaussian_emissions.n_parameters}")
@@ -58,7 +58,7 @@ def test_emission_models():
     print(f"  After parameter update: {new_loglik.mean():.4f}")
 
     # Test 2: AR Emissions
-    print(f"\n--- Testing AR Emissions ---")
+    print("\n--- Testing AR Emissions ---")
 
     from changepoint_lab.algorithms.state_space.emissions.ar_emissions import AREmissions
 

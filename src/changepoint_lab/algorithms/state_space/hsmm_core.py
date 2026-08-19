@@ -14,7 +14,7 @@ References
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import math
 import numpy as np
@@ -277,7 +277,6 @@ class HSMM:
             )
         if T in self._dur_cache:
             return self._dur_cache[T]
-        K = self.cfg.K
         Dcap = min(self.cfg.Dmax, T)
         d_vals = np.arange(1, Dcap + 1, dtype=float)
 

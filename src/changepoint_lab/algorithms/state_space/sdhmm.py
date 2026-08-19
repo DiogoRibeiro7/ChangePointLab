@@ -63,7 +63,6 @@ def _digamma(x: ArrayF) -> ArrayF:
         # reflect small/invalid to a small positive to avoid NaNs
         x = np.clip(x, 1e-8, None)
     y = x.copy()
-    mask = y < 6.0
     # recurrence: psi(x) = psi(x+1) - 1/x
     k = np.zeros_like(y)
     while True:
@@ -140,14 +139,7 @@ def _sd_grad_alpha_beta(
     bx = np.clip(bx, 1e-12, None)
 
     # alpha gradient
-    g_alpha = np.zeros(D, dtype=float)
     log_beta = np.log(beta)
-    # precompute weighted sums
-    w_sum = float(np.sum(w))
-    # per-dimension pieces
-    part_common = np.sum(w[:, None] * (np.log(X) - np.log(bx)[:, None]), axis=0)  # (D,)
-    g_alpha = w_sum * psi_sum - np.sum(w[:, None] * psi_alpha[None, :], axis=0)  # but psi_alpha has shape (D,)
-    # The line above is not correct shape-wise; do per-d:
     g_alpha = np.empty(D, dtype=float)
     for d in range(D):
         term = np.sum(w * (psi_sum - psi_alpha[d] + log_beta[d] + np.log(X[:, d]) - np.log(bx)))
@@ -302,8 +294,6 @@ class _SDHMM:
 
     def _mstep_transitions(self, gamma: ArrayF, xi: ArrayF) -> None:
         assert self.A is not None and self.pi is not None
-        K = self.cfg.K
-
         # priors
         a0 = float(self.cfg.trans_dirichlet)
         p0 = float(self.cfg.init_dirichlet)

@@ -484,7 +484,6 @@ class GaussianNIW(ConjugateLikelihood):
         self.stats = GaussianNIWStats()
 
     def init_stats(self, R: int) -> None:
-        d = self.d
         self.stats.m = np.repeat(self.m0[None, :], R, axis=0)
         self.stats.kappa = np.full(R, self.kappa0, dtype=float)
         self.stats.nu = np.full(R, self.nu0, dtype=float)
