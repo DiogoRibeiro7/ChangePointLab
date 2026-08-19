@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, Optional
+from typing import Any, Protocol, Optional
 
 import math
 import numpy as np
 from numpy.typing import NDArray
 
-ArrayF = NDArray[np.floating]
+ArrayF = NDArray[np.floating[Any]]
 
 
 class SegmentCost(Protocol):

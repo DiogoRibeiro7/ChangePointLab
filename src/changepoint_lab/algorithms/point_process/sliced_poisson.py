@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
 import math
 
 import numpy as np
@@ -17,8 +17,8 @@ from ...core.random import make_rng, spawn_rngs
 from ...core.segmentation import labels_from_changepoints
 from ..optimization.pelt import pelt
 
-ArrayF = NDArray[np.float64]
-ArrayI = NDArray[np.int64]
+ArrayF = NDArray[np.floating[Any]]
+ArrayI = NDArray[np.integer[Any]]
 Interval = tuple[float, float]
 Penalty = Literal["sic", "bic", "aic"]
 MarkedMode = Literal["independent", "shared_baseline"]

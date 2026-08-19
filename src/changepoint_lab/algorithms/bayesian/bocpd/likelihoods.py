@@ -502,7 +502,7 @@ class GaussianNIW(ConjugateLikelihood):
         if self.stats.m is None:
             raise RuntimeError("Call init_stats(R) before predictive_mean().")
         # Return the *component-wise* means; BOCPD may not use this directly for multivariate data.
-        return self.stats.m  # type: ignore[return-value]
+        return self.stats.m
 
     def update_cp(self, x_t) -> None:
         # TODO: Update r=0 NIW params with one new x_t (rank-1 updates).

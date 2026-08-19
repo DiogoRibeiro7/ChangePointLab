@@ -491,7 +491,7 @@ class _SDHMMMixVI:
 class SDHMMMixVI(_SDHMMMixVI, BaseDetector):
     """SD-HMM mixture VI wrapper with sklearn-like API."""
 
-    def fit(self, X: ArrayF) -> SDHMMMixVI:
+    def fit(self, X: ArrayF) -> SDHMMMixVI:  # type: ignore[override]
         self._validate_input(X)
         self.result_ = super().fit(X)
         self._X = X

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Sequence
+from typing import Sequence, cast
 
 import numpy as np
 
@@ -41,7 +41,7 @@ class WithinPeriodCPD(BaseDetector):
     _model: WithinPeriodCore | None = None
     _result: MCMCResult | None = None
 
-    def fit(
+    def fit(  # type: ignore[override]
         self,
         x: Sequence[int | bool],
         cfg: RJConfig | None = None,
@@ -55,10 +55,18 @@ class WithinPeriodCPD(BaseDetector):
         init = self.init if init is None else init
         if self.rng is not None and cfg.seed is not None:
             cfg = replace(cfg, seed=None)
-        self._result = self._model.fit(x_arr, cfg=cfg, init=init, rng=self.rng)
+        self._result = self._model.fit(
+            cast(Sequence[int | bool], x_arr),
+            cfg=cfg,
+            init=init,
+            rng=self.rng,
+        )
         return self
 
-    def predict(self, x: Sequence[int | bool] | None = None) -> PosteriorSampleResult:
+    def predict(  # type: ignore[override]
+        self,
+        x: Sequence[int | bool] | None = None,
+    ) -> PosteriorSampleResult:
         if x is not None:
             return self.fit(x).predict()
         if self._result is None:
@@ -81,7 +89,7 @@ class WithinPeriodCPD(BaseDetector):
             method_name="within_period",
             boundary_convention="periodic_bin_end",
             samples=tuple(tuple(sample) for sample in self._result.samples_tau),
-            log_posteriors=self._result.log_posteriors,
+            log_posteriors=np.asarray(self._result.log_posteriors, dtype=float),
             changepoint_hist=self._result.changepoint_hist,
             metadata=meta,
             provenance=self._result.provenance,

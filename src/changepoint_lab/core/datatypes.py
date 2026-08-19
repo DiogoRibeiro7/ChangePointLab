@@ -14,8 +14,8 @@ BoundaryConvention: TypeAlias = Literal[
     "periodic_bin_end",
 ]
 ObjectiveOrientation: TypeAlias = Literal["minimize", "maximize"]
-ArrayI: TypeAlias = NDArray[np.int_]
-ArrayF: TypeAlias = NDArray[np.float64]
+ArrayI: TypeAlias = NDArray[np.integer[Any]]
+ArrayF: TypeAlias = NDArray[np.floating[Any]]
 
 
 def _array(values: Sequence[Any] | np.ndarray, *, dtype: type) -> np.ndarray:
