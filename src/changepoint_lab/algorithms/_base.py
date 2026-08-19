@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 
 from ..core.datatypes import ChangePointResult
+from ..core.validation import require_ndarray, validate_array_shape
 
 ArrayLike = np.ndarray
 
@@ -36,11 +37,5 @@ class BaseDetector(ABC):
             if not name.startswith("_")
         }
 
-    # minimal input validation
     def _validate_input(self, x: ArrayLike) -> None:
-        if not isinstance(x, np.ndarray):
-            raise TypeError(f"`x` must be np.ndarray, got {type(x)!r}")
-        if x.ndim not in (1, 2):
-            raise ValueError(f"`x` must be 1D or 2D, got x.ndim = {x.ndim}")
-        if x.size == 0:
-            raise ValueError("`x` cannot be empty.")
+        validate_array_shape(require_ndarray(x), name="x", ndim=(1, 2), non_empty=True)

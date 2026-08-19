@@ -7,6 +7,7 @@ import numpy as np
 
 from ....core.datatypes import PosteriorSampleResult
 from ....core.segmentation import CircularChangePoints
+from ....core.validation import as_binary_array
 from ..._base import BaseDetector
 
 from .within_period_cpd import (
@@ -48,7 +49,7 @@ class WithinPeriodCPD(BaseDetector):
         init: Tau | None = None,
     ) -> WithinPeriodCPD:
         """Fit the within-period model using RJMCMC."""
-        x_arr = np.asarray(x, dtype=bool)
+        x_arr = as_binary_array(x, name="x")
         self._validate_input(x_arr)
         self._model = WithinPeriodCore(self.prior)
         cfg = cfg or self.cfg

@@ -21,6 +21,16 @@ from .segmentation import (
     normalize_linear_changepoints,
     segment_slices,
 )
+from .validation import (
+    as_binary_array,
+    as_count_array,
+    as_finite_float_array,
+    as_probability_array,
+    as_square_matrix,
+    as_strictly_increasing_times,
+    require_ndarray,
+    validate_array_shape,
+)
 
 __all__ = [
     "ChangePointResult",
@@ -44,4 +54,12 @@ __all__ = [
     "make_rng",
     "spawn_rngs",
     "choose_from_sequence",
+    "require_ndarray",
+    "validate_array_shape",
+    "as_finite_float_array",
+    "as_binary_array",
+    "as_count_array",
+    "as_probability_array",
+    "as_strictly_increasing_times",
+    "as_square_matrix",
 ]
