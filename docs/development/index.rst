@@ -9,6 +9,7 @@ Development Notes
    result_invariants
    input_contracts
    api_status
+   ci_workflow
    documentation_workflow
    randomness_reproducibility
    within_period_rjmcmc

@@ -28,7 +28,7 @@ The core package must import and run without Matplotlib or pandas installed.
 | pytest | Test execution | `[tool.poetry.group.dev.dependencies]` |
 | coverage, pytest-cov, Ruff, Mypy, pydocstyle, types-setuptools, tomli | Development quality gates | `[tool.poetry.group.dev.dependencies]` |
 | LibCST | Development migration helper | `[tool.poetry.group.dev.dependencies]` |
-| pip-audit, pip-licenses | Manual supply-chain checks | `[tool.poetry.group.dev.dependencies]` |
+| pip-audit, pip-licenses | CI and manual supply-chain checks | `[tool.poetry.group.dev.dependencies]` |
 
 Examples and tutorials may require `plot` and `data`, but those extras must not
 be imported by core package initialization.
@@ -54,6 +54,10 @@ poetry check --lock
 poetry run ruff check .
 poetry run mypy
 poetry run pydocstyle src/changepoint_lab
+poetry run coverage run -m pytest -m "not slow" tests/unit
+poetry run coverage report
+poetry run coverage json -o coverage.json
+poetry run python scripts/validate_coverage_policy.py coverage.json
 poetry run sphinx-build -W --keep-going -b html docs docs/_build/html
 poetry run python scripts/validate_docs_links.py
 poetry run pytest
@@ -62,15 +66,15 @@ poetry run python scripts/validate_distribution.py dist
 poetry run python scripts/validate_docs_examples.py --dist-dir dist
 ```
 
-Manual dependency review commands:
+Dependency review commands:
 
 ```bash
-poetry run pip-licenses --format=markdown
-poetry run pip-audit
+poetry run pip-licenses --format=plain --fail-on="UNKNOWN;Proprietary" --partial-match
+poetry run pip-audit --local --skip-editable --progress-spinner off --desc off --aliases off
 ```
 
-These audit commands may need network access or current vulnerability data and
-are not part of the normal unit test suite.
+The vulnerability audit may need network access and current advisory data. It is
+part of CI, but it is not part of the normal unit test suite.
 
 ## Update policy
 
