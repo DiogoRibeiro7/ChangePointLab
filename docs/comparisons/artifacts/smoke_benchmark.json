@@ -1,0 +1,338 @@
+{
+  "accuracy": [
+    {
+      "dataset": "piecewise_gaussian_n32",
+      "detector": "pelt_gaussian",
+      "f1": 1.0,
+      "mean_abs_error": 0.0,
+      "precision": 1.0,
+      "predicted_changepoints": [
+        16
+      ],
+      "recall": 1.0,
+      "tolerance": 2,
+      "true_changepoints": [
+        16
+      ]
+    },
+    {
+      "dataset": "piecewise_gaussian_n32",
+      "detector": "kernel_exact",
+      "f1": 1.0,
+      "mean_abs_error": 0.0,
+      "precision": 1.0,
+      "predicted_changepoints": [
+        16
+      ],
+      "recall": 1.0,
+      "tolerance": 2,
+      "true_changepoints": [
+        16
+      ]
+    },
+    {
+      "dataset": "piecewise_gaussian_n32",
+      "detector": "kernel_rff",
+      "f1": 1.0,
+      "mean_abs_error": 0.0,
+      "precision": 1.0,
+      "predicted_changepoints": [
+        16
+      ],
+      "recall": 1.0,
+      "tolerance": 2,
+      "true_changepoints": [
+        16
+      ]
+    },
+    {
+      "dataset": "piecewise_gaussian_n32",
+      "detector": "edivisive",
+      "f1": 1.0,
+      "mean_abs_error": 0.0,
+      "precision": 1.0,
+      "predicted_changepoints": [
+        16
+      ],
+      "recall": 1.0,
+      "tolerance": 2,
+      "true_changepoints": [
+        16
+      ]
+    },
+    {
+      "dataset": "piecewise_gaussian_n64",
+      "detector": "pelt_gaussian",
+      "f1": 1.0,
+      "mean_abs_error": 0.0,
+      "precision": 1.0,
+      "predicted_changepoints": [
+        32
+      ],
+      "recall": 1.0,
+      "tolerance": 2,
+      "true_changepoints": [
+        32
+      ]
+    },
+    {
+      "dataset": "piecewise_gaussian_n64",
+      "detector": "kernel_exact",
+      "f1": 1.0,
+      "mean_abs_error": 0.0,
+      "precision": 1.0,
+      "predicted_changepoints": [
+        32
+      ],
+      "recall": 1.0,
+      "tolerance": 2,
+      "true_changepoints": [
+        32
+      ]
+    },
+    {
+      "dataset": "piecewise_gaussian_n64",
+      "detector": "kernel_rff",
+      "f1": 1.0,
+      "mean_abs_error": 0.0,
+      "precision": 1.0,
+      "predicted_changepoints": [
+        32
+      ],
+      "recall": 1.0,
+      "tolerance": 2,
+      "true_changepoints": [
+        32
+      ]
+    },
+    {
+      "dataset": "piecewise_gaussian_n64",
+      "detector": "edivisive",
+      "f1": 1.0,
+      "mean_abs_error": 0.0,
+      "precision": 1.0,
+      "predicted_changepoints": [
+        32
+      ],
+      "recall": 1.0,
+      "tolerance": 2,
+      "true_changepoints": [
+        32
+      ]
+    }
+  ],
+  "approximation": [
+    {
+      "approximate_detector": "kernel_rff",
+      "baseline_detector": "kernel_exact",
+      "boundary_f1": 1.0,
+      "dataset": "piecewise_gaussian_n32",
+      "score_abs_error": 0.08302096182356955,
+      "score_relative_error": 0.07197232183341926
+    },
+    {
+      "approximate_detector": "kernel_rff",
+      "baseline_detector": "kernel_exact",
+      "boundary_f1": 1.0,
+      "dataset": "piecewise_gaussian_n64",
+      "score_abs_error": 0.23495849461867735,
+      "score_relative_error": 0.09737572687173694
+    }
+  ],
+  "datasets": [
+    {
+      "hash_sha256": "350b1fe9bcbaf0ca406f730e617d44e498be0bc40d673aaaae42d3beef05917d",
+      "kind": "piecewise_gaussian",
+      "name": "piecewise_gaussian_n32",
+      "seed": 20260852,
+      "size": 32,
+      "true_changepoints": [
+        16
+      ]
+    },
+    {
+      "hash_sha256": "a06c148f255330b861238dacf95fda9db4f42b8b3114dbeb0150698b9a5c736a",
+      "kind": "piecewise_gaussian",
+      "name": "piecewise_gaussian_n64",
+      "seed": 20260884,
+      "size": 64,
+      "true_changepoints": [
+        32
+      ]
+    }
+  ],
+  "environment": {
+    "commit": "1e8f6771b838f044043293e68bc9cd271e4df288",
+    "deterministic_measurements": true,
+    "generated_at": "2026-08-20T00:00:00Z",
+    "machine": "AMD64",
+    "numpy": "2.2.6",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 170 Stepping 4, GenuineIntel",
+    "python": "3.13.5",
+    "python_implementation": "CPython",
+    "working_tree_dirty": true
+  },
+  "profile": "smoke",
+  "runtime": [
+    {
+      "config": {
+        "cost": "NormalMeanKnownVar",
+        "min_seg_len": 4,
+        "penalty": 6.0,
+        "sigma2": 1.0
+      },
+      "dataset": "piecewise_gaussian_n32",
+      "detector": "pelt_gaussian",
+      "elapsed_ns": 0,
+      "peak_memory_bytes": 0,
+      "predicted_changepoints": [
+        16
+      ],
+      "score": 65.48757359702381,
+      "seed": 20260852,
+      "size": 32
+    },
+    {
+      "config": {
+        "approximation": "exact",
+        "bandwidth": 1.0,
+        "kernel": "rbf",
+        "method": "op",
+        "min_size": 4,
+        "penalty": 0.5
+      },
+      "dataset": "piecewise_gaussian_n32",
+      "detector": "kernel_exact",
+      "elapsed_ns": 0,
+      "peak_memory_bytes": 0,
+      "predicted_changepoints": [
+        16
+      ],
+      "score": 1.1535123462561412,
+      "seed": 20260852,
+      "size": 32
+    },
+    {
+      "config": {
+        "approximation": "rff",
+        "bandwidth": 1.0,
+        "kernel": "rbf",
+        "method": "op",
+        "min_size": 4,
+        "penalty": 0.5,
+        "rff_n_features": 32,
+        "rff_seed": 123
+      },
+      "dataset": "piecewise_gaussian_n32",
+      "detector": "kernel_rff",
+      "elapsed_ns": 0,
+      "peak_memory_bytes": 0,
+      "predicted_changepoints": [
+        16
+      ],
+      "score": 1.0704913844325716,
+      "seed": 20260852,
+      "size": 32
+    },
+    {
+      "config": {
+        "R": 19,
+        "max_cps": 1,
+        "min_size": 4,
+        "seed": 123,
+        "significance": 0.2
+      },
+      "dataset": "piecewise_gaussian_n32",
+      "detector": "edivisive",
+      "elapsed_ns": 0,
+      "peak_memory_bytes": 0,
+      "predicted_changepoints": [
+        16
+      ],
+      "score": 0.0,
+      "seed": 20260852,
+      "size": 32
+    },
+    {
+      "config": {
+        "cost": "NormalMeanKnownVar",
+        "min_seg_len": 4,
+        "penalty": 6.0,
+        "sigma2": 1.0
+      },
+      "dataset": "piecewise_gaussian_n64",
+      "detector": "pelt_gaussian",
+      "elapsed_ns": 0,
+      "peak_memory_bytes": 0,
+      "predicted_changepoints": [
+        32
+      ],
+      "score": 125.6158535940608,
+      "seed": 20260884,
+      "size": 64
+    },
+    {
+      "config": {
+        "approximation": "exact",
+        "bandwidth": 1.0,
+        "kernel": "rbf",
+        "method": "op",
+        "min_size": 4,
+        "penalty": 0.5
+      },
+      "dataset": "piecewise_gaussian_n64",
+      "detector": "kernel_exact",
+      "elapsed_ns": 0,
+      "peak_memory_bytes": 0,
+      "predicted_changepoints": [
+        32
+      ],
+      "score": 2.412906195074303,
+      "seed": 20260884,
+      "size": 64
+    },
+    {
+      "config": {
+        "approximation": "rff",
+        "bandwidth": 1.0,
+        "kernel": "rbf",
+        "method": "op",
+        "min_size": 4,
+        "penalty": 0.5,
+        "rff_n_features": 32,
+        "rff_seed": 123
+      },
+      "dataset": "piecewise_gaussian_n64",
+      "detector": "kernel_rff",
+      "elapsed_ns": 0,
+      "peak_memory_bytes": 0,
+      "predicted_changepoints": [
+        32
+      ],
+      "score": 2.1779477004556256,
+      "seed": 20260884,
+      "size": 64
+    },
+    {
+      "config": {
+        "R": 19,
+        "max_cps": 1,
+        "min_size": 4,
+        "seed": 123,
+        "significance": 0.2
+      },
+      "dataset": "piecewise_gaussian_n64",
+      "detector": "edivisive",
+      "elapsed_ns": 0,
+      "peak_memory_bytes": 0,
+      "predicted_changepoints": [
+        32
+      ],
+      "score": 0.0,
+      "seed": 20260884,
+      "size": 64
+    }
+  ],
+  "schema_version": "1.0"
+}

@@ -20,8 +20,33 @@ artifacts in this repository. Those claims are preserved in
 ## Current Status
 
 No cross-library benchmark table is currently verified for ChangePointLab
-0.1.14. Existing tests exercise package behavior, CLI integration, and selected
-edge cases, but they are not a benchmark suite.
+0.1.15. Existing tests exercise package behavior, CLI integration, selected
+edge cases, and a local benchmark-harness smoke run, but they are not a
+cross-library benchmark suite.
 
-Restoring a comparison report requires a dedicated benchmark harness and review
-against `docs/science/method_registry.yml`.
+## Versioned Smoke Artifact
+
+The first committed harness artifact is intentionally small:
+
+- Raw JSON: `docs/comparisons/artifacts/smoke_benchmark.json`
+- Raw CSV: `docs/comparisons/artifacts/smoke_benchmark.csv`
+- Generated Markdown: `docs/comparisons/benchmark_smoke.md`
+
+The smoke profile uses deterministic measurement placeholders so regeneration is
+stable in CI. It still records environment metadata, dataset hashes, detector
+configuration, boundary accuracy, and exact-vs-approximate kernel error fields.
+
+Regenerate the smoke artifact:
+
+```bash
+python scripts/benchmark_harness.py --profile smoke --deterministic-measurements
+```
+
+Run a local timing and peak-memory profile:
+
+```bash
+python scripts/benchmark_harness.py --profile full
+```
+
+Restoring broader comparison claims still requires reviewed full-profile
+artifacts and method-registry updates.
