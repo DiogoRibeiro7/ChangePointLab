@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security reports
+    url: https://github.com/DiogoRibeiro7/ChangePointLab/security/advisories/new
+    about: Please report vulnerabilities privately.
+  - name: Questions and support
+    url: https://github.com/DiogoRibeiro7/ChangePointLab/discussions
+    about: Use discussions for usage questions and exploratory ideas.

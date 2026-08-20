@@ -51,4 +51,14 @@ Use this table to decide where helpers belong:
 3. Ensure documentation and examples use `from changepoint_lab import ...` imports.
 4. Submit the pull request with a clear description of the change.
 
-We appreciate contributions of all sizes – from typo fixes to new algorithms.
+## Issues and security
+
+- Use the issue templates so reports include enough reproduction, environment,
+  and validation context.
+- Use the scientific validation template for numerical or paper-replication
+  concerns.
+- Report suspected vulnerabilities through GitHub private vulnerability
+  reporting, not public issues.
+- Follow `CODE_OF_CONDUCT.md` in project discussions and reviews.
+
+We appreciate contributions of all sizes - from typo fixes to new algorithms.

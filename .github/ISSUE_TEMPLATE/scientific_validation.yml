@@ -1,0 +1,44 @@
+name: Scientific validation
+description: Report a numerical, statistical, or paper-replication concern.
+title: "[Validation]: "
+labels: ["science", "needs-triage"]
+body:
+  - type: textarea
+    id: claim
+    attributes:
+      label: Claim or behavior under review
+      description: Which method, result, or documented claim should be checked?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Provide the oracle, derivation, simulation, fixture, or reference result.
+    validations:
+      required: true
+  - type: textarea
+    id: reference
+    attributes:
+      label: References
+      description: Include papers, DOI links, datasets, or code references where applicable.
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Include commands, seeds, data shape, parameters, and expected numeric tolerances.
+      render: text
+    validations:
+      required: true
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - Correctness blocker
+        - Calibration concern
+        - Documentation concern
+        - Performance concern
+        - Research extension
+    validations:
+      required: true

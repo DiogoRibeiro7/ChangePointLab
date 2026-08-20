@@ -1,0 +1,46 @@
+name: Feature request
+description: Suggest a new capability or API improvement.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow or limitation should this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior or API you want.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you consider?
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Public API
+        - BOCPD
+        - PELT
+        - E-Divisive
+        - Kernel methods
+        - State-space methods
+        - Within-period methods
+        - Point-process methods
+        - Documentation
+        - Packaging or CI
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      description: Note any analytical, simulation, oracle, or benchmark evidence that should support this change.
