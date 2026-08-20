@@ -324,9 +324,11 @@ def edivisive(
         undefined random-stream ordering.
     resample : {"iid", "block-permutation", "circular-block-bootstrap"}, default="iid"
         Resampling scheme for the null:
-          - "iid": full permutation (independent observations).
-          - "block-permutation": shuffle contiguous, non-overlapping blocks of length `block_size`.
-          - "circular-block-bootstrap": moving blocks with replacement (CBB) of length `block_size`.
+
+        - "iid": full permutation (independent observations).
+        - "block-permutation": shuffle contiguous, non-overlapping blocks of length `block_size`.
+        - "circular-block-bootstrap": moving blocks with replacement (CBB) of length `block_size`.
+
         Block methods preserve short-range dependence inside blocks.
     block_size : Optional[int]
         Block length. If None, an automatic rule is used per tested segment:

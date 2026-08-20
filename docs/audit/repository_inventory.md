@@ -346,7 +346,7 @@ not obsolete files by content alone:
 - Canonical import package: `changepoint_lab`
 - Canonical distribution name in `pyproject.toml`: `changepoint-lab`
 - Historical names to treat as legacy or stale: `cp-ss-toolkit`, `changepoint-toolkit`, `changepoint_toolkit`
-- Current version in package metadata, runtime, CFF, and Zenodo JSON: `0.1.14`
+- Current version in package metadata, runtime, CFF, and Zenodo JSON: `0.1.15`
 
 No tracked generated build artifacts were present before validation. Build
 commands created local `build/`, `dist/`, and `changepoint_lab.egg-info/`
