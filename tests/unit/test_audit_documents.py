@@ -66,6 +66,6 @@ def test_active_audit_path_references_exist() -> None:
 
 def test_new_scientific_risks_link_method_registry_entries() -> None:
     rows = {row[0]: row for row in _table_rows(RISK_REGISTER.read_text(), "## Open Risks")}
-    for risk_id in ("R-019", "R-020", "R-021"):
+    for risk_id in ("R-020", "R-021"):
         row_text = " ".join(rows[risk_id])
         assert "docs/science/method_registry.yml" in row_text or "sliced_poisson_process" in row_text

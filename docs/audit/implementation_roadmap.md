@@ -150,15 +150,13 @@ Exit criteria:
 
 Repair correctness issues in dependency order:
 
-1. Canonicalize exposure intervals into non-overlapping observed windows.
-2. Replace fixed-grid exposure accounting with interval-aware integration.
-3. Track direct integer event sufficient statistics.
-4. Define optimizer-failure propagation policy for segment costs.
+1. Replace fixed-grid exposure accounting with interval-aware integration.
+2. Track direct integer event sufficient statistics.
+3. Define optimizer-failure propagation policy for segment costs.
 
 Exit criteria:
 
-- Overlap, nested-window, duplicate-window, and sub-grid exposure cases have
-  analytical tests.
+- Sub-grid exposure cases have analytical tests.
 - Non-converged segment fits cannot silently affect changepoint selection.
 - The `sliced_poisson_process` registry entry remains `partially_verified` until
   external or independent parity evidence exists.

@@ -12,6 +12,7 @@ from changepoint_lab.algorithms.point_process.sliced_poisson import (
     SlicedPoissonCost,
     bspline_basis,
     fit_marked_sliced_poisson,
+    normalize_event_periods,
     open_uniform_knots,
     simulate_sliced_poisson_segments,
 )
@@ -72,6 +73,84 @@ def test_exposure_windows_change_integral_without_counting_unobserved_time() -> 
     assert full_fit.total_exposure == pytest.approx(4.0)
     assert math.exp(half_fit.weights[0]) == pytest.approx(2.0)
     assert math.exp(full_fit.weights[0]) == pytest.approx(1.0)
+
+
+def test_overlapping_nested_and_duplicate_exposure_windows_are_unioned() -> None:
+    period = EventPeriod(
+        event_times=(0.7, 0.1),
+        exposure_intervals=((0.2, 0.4), (0.0, 0.5), (0.2, 0.4), (0.3, 0.8)),
+    )
+
+    (normalized,) = normalize_event_periods([period], period=1.0)
+
+    assert normalized.event_times == (0.1, 0.7)
+    assert normalized.exposure_intervals == ((0.0, 0.8),)
+
+
+def test_touching_exposure_windows_form_one_half_open_union() -> None:
+    period = EventPeriod(
+        event_times=(0.0, 0.25, 0.5, 0.999),
+        exposure_intervals=((0.0, 0.25), (0.25, 0.5), (0.5, 1.0)),
+    )
+
+    (normalized,) = normalize_event_periods([period], period=1.0)
+
+    assert normalized.exposure_intervals == ((0.0, 1.0),)
+
+
+def test_exposure_event_membership_uses_half_open_boundaries() -> None:
+    normalize_event_periods(
+        [EventPeriod(event_times=(0.0,), exposure_intervals=((0.0, 0.5),))],
+        period=1.0,
+    )
+    normalize_event_periods(
+        [EventPeriod(event_times=(0.5,), exposure_intervals=((0.0, 0.5), (0.5, 1.0)))],
+        period=1.0,
+    )
+
+    with pytest.raises(ValueError, match="observed exposure"):
+        normalize_event_periods(
+            [EventPeriod(event_times=(0.5,), exposure_intervals=((0.0, 0.5),))],
+            period=1.0,
+        )
+    with pytest.raises(ValueError, match=r"\[0, period\)"):
+        normalize_event_periods(
+            [EventPeriod(event_times=(1.0,), exposure_intervals=((0.0, 1.0),))],
+            period=1.0,
+        )
+
+
+def test_total_exposure_counts_union_measure_for_overlapping_windows() -> None:
+    periods = (
+        EventPeriod(
+            event_times=(0.1,),
+            exposure_intervals=((0.0, 0.75), (0.25, 1.0), (0.25, 1.0)),
+        ),
+    )
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=1,
+        degree=0,
+        min_segment_periods=1,
+        penalty=0.0,
+        quadrature_points=32,
+    )
+
+    fit = SlicedPoissonCost(periods, config).fit_segment(0, 1)
+
+    assert fit.total_exposure == pytest.approx(1.0)
+    assert math.exp(fit.weights[0]) == pytest.approx(1.0)
+
+
+def test_non_overlapping_exposure_windows_are_preserved() -> None:
+    period = EventPeriod(
+        event_times=(0.1, 0.6),
+        exposure_intervals=((0.0, 0.25), (0.5, 0.75)),
+    )
+
+    (normalized,) = normalize_event_periods([period], period=1.0)
+
+    assert normalized.exposure_intervals == ((0.0, 0.25), (0.5, 0.75))
 
 
 def test_amplitude_change_simulation_recovers_known_boundary() -> None:
