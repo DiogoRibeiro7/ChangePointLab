@@ -1,13 +1,37 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.1.15] - 2026-08-20
 ### Added
+- Added baseline audit artifacts and tests that pin current behavior before
+  follow-up corrections.
+- Added stable API type-check coverage and documented typing support.
+- Added result invariant tests and documentation for boundary conventions,
+  serialized payloads, and result validation.
+- Added centralized public input validation helpers and coverage.
+- Added machine-readable API lifecycle metadata, public API status docs, and
+  migration guidance.
+- Added an architecture documentation drift test for documented current paths.
 - Added independent E-Divisive energy-statistic, resampling, null-calibration,
   and power-curve validation tests.
 - Exposed E-Divisive significance, recursion, resampling, chunking, memmap,
   progress, and sequential execution controls through the wrapper and CLI.
 
+### Changed
+- Expanded Ruff, mypy, and CI quality gates across stable package surfaces.
+- Reconciled the audit roadmap and risk register with the current dependency
+  order.
+- Separated stable, experimental, and deprecated top-level exports.
+- Rewrote architecture documentation to distinguish current package layout from
+  possible future structure.
+
 ### Fixed
+- Hardened result objects against invalid boundaries, labels, metadata, and
+  non-finite score values.
+- Normalized deprecated compatibility warnings with documented replacement paths
+  and removal versions.
+- Fixed NumPy 1.21 runtime compatibility for eager array type aliases.
 - Corrected E-Divisive split search so the last admissible split
   `m - min_size` is considered.
 
