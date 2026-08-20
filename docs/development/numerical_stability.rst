@@ -34,11 +34,12 @@ finite when the analytical predictive probability is finite.
 Sliced Poisson
 --------------
 
-Sliced Poisson segment fitting evaluates the Poisson objective only on observed
-quadrature exposure. Candidate Newton steps that overflow the intensity have
-infinite objective value and are rejected by the line search. Non-finite
-gradients, Hessians, or Newton steps stop the segment fit with an explicit
-diagnostic message.
+Sliced Poisson segment fitting evaluates the Poisson objective on
+interval-local Gauss-Legendre exposure nodes, so positive observed windows do
+not disappear because of a period-wide grid alignment. Candidate Newton steps
+that overflow the intensity have infinite objective value and are rejected by
+the line search. Non-finite gradients, Hessians, or Newton steps stop the
+segment fit with an explicit diagnostic message.
 
 Kernel CPD
 ----------
