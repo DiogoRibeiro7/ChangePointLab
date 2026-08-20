@@ -8,10 +8,16 @@ from changepoint_lab.algorithms.bayesian.bocpd import (
     BOCPD,
     BOCPDConfig,
     ConstantHazard,
+    PoissonGamma,
 )
+from changepoint_lab.algorithms.kernel.kcp_core import gram_rbf
 from changepoint_lab.algorithms.optimization.cost_functions import (
     NormalMeanKnownVar,
     NormalMeanVarUnknown,
+)
+from changepoint_lab.algorithms.point_process.sliced_poisson import (
+    EventPeriod,
+    normalize_event_periods,
 )
 from changepoint_lab.algorithms.state_space.hsmm import (
     HSMM,
@@ -21,6 +27,11 @@ from changepoint_lab.algorithms.state_space.hsmm import (
 )
 
 from changepoint_lab.algorithms.state_space.sdhmm import SDHMM, SDHMMConfig
+from changepoint_lab.algorithms.state_space.sdhmm_mix_vi import (
+    SDHMMMixVI,
+    SDHMMMixVIConfig,
+)
+from changepoint_lab.core.numerics import NumericalStabilityError
 
 # ------------------------- BOCPD ---------------------------------
 
@@ -58,6 +69,22 @@ def test_bocpd_loglikelihood_finite():
     assert np.all(np.isfinite(logp))
 
 
+def test_bocpd_large_count_uses_log_space_recovery():
+    cfg = BOCPDConfig(max_run_length=16, store_run_length_posterior=False)
+    model = BOCPD(
+        ConstantHazard(mean_run_length=10),
+        cfg,
+        likelihood=PoissonGamma(shape0=1.0, rate0=1.0),
+    )
+
+    out = model.update(1_000_000)
+
+    assert np.isfinite(out["log_evidence"])
+    assert np.isclose(model.R_prev.sum(), 1.0, rtol=1e-12)
+    assert np.all(np.isfinite(model.R_prev))
+    assert model.normalization_issues_ == 1
+
+
 # ------------------------- PELT ---------------------------------
 
 def test_pelt_large_cost_values():
@@ -65,6 +92,15 @@ def test_pelt_large_cost_values():
     cost = NormalMeanKnownVar(sigma2=1e-12)
     res = pelt(y, cost, penalty=1.0)
     assert np.isfinite(res.total_cost)
+
+
+def test_pelt_large_offset_sse_avoids_cancellation():
+    y = 1.0e12 + np.array([0.0, 0.0, 1.0, 1.0])
+    cost = NormalMeanKnownVar(sigma2=1.0)
+    cost.precompute(y)
+
+    expected = 1.0 + 4.0 * np.log(2.0 * np.pi)
+    assert cost.cost(0, 4) == pytest.approx(expected)
 
 
 def test_pelt_pruning_edge_case():
@@ -101,6 +137,25 @@ def test_edivisive_numerical_stability(alpha, resample):
     assert res.change_points.size >= 0
     for sp in res.splits:
         assert 0.0 <= sp.pvalue <= 1.0
+
+
+# ------------------------- KCP ------------------------------------
+
+def test_rbf_kernel_rejects_distance_overflow():
+    X = np.array([[1.0e308], [-1.0e308]])
+
+    with pytest.raises(NumericalStabilityError, match="pairwise squared distances"):
+        gram_rbf(X)
+
+
+# ------------------------- Sliced Poisson -------------------------
+
+def test_sliced_poisson_rejects_zero_exposure_intervals():
+    with pytest.raises(ValueError, match="exposure intervals"):
+        normalize_event_periods(
+            [EventPeriod(event_times=(), exposure_intervals=((0.0, 0.0),))],
+            period=1.0,
+        )
 
 
 # ------------------------- HSMM ---------------------------------
@@ -161,3 +216,19 @@ def test_sdhmm_compositional_boundary(seed):
         assert np.all(p.beta > 0)
         assert np.all(np.isfinite(p.alpha))
         assert np.all(np.isfinite(p.beta))
+
+
+def test_sdhmm_rejects_zero_compositional_rows():
+    cfg = SDHMMConfig(K=2, max_iter=1, min_iter=1, seed=0)
+    X = np.array([[1.0, 0.0], [0.0, 0.0]])
+
+    with pytest.raises(ValueError, match="positive total mass"):
+        SDHMM(cfg).fit(X)
+
+
+def test_sdhmm_mix_rejects_zero_compositional_rows():
+    cfg = SDHMMMixVIConfig(K=2, M=1, max_iter=1, min_iter=1, seed=0)
+    X = np.array([[1.0, 0.0], [0.0, 0.0]])
+
+    with pytest.raises(ValueError, match="positive total mass"):
+        SDHMMMixVI(cfg).fit(X)

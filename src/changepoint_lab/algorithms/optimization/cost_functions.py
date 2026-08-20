@@ -33,8 +33,11 @@ class NormalMeanKnownVar(SegmentCost):
         if self.sigma2 <= 0:
             raise ValueError("sigma2 must be > 0.")
         y = np.asarray(y, dtype=float)
-        self._sum = np.concatenate([[0.0], np.cumsum(y)])
-        self._sum2 = np.concatenate([[0.0], np.cumsum(y * y)])
+        if not np.all(np.isfinite(y)):
+            raise ValueError("y must contain only finite values.")
+        centered = y - float(np.mean(y))
+        self._sum = np.concatenate([[0.0], np.cumsum(centered)])
+        self._sum2 = np.concatenate([[0.0], np.cumsum(centered * centered)])
 
     def cost(self, a: int, b: int) -> float:
         assert self._sum is not None and self._sum2 is not None
@@ -60,8 +63,13 @@ class NormalMeanVarUnknown(SegmentCost):
 
     def precompute(self, y: ArrayF) -> None:
         y = np.asarray(y, dtype=float)
-        self._sum = np.concatenate([[0.0], np.cumsum(y)])
-        self._sum2 = np.concatenate([[0.0], np.cumsum(y * y)])
+        if self.eps <= 0 or not math.isfinite(self.eps):
+            raise ValueError("eps must be positive and finite.")
+        if not np.all(np.isfinite(y)):
+            raise ValueError("y must contain only finite values.")
+        centered = y - float(np.mean(y))
+        self._sum = np.concatenate([[0.0], np.cumsum(centered)])
+        self._sum2 = np.concatenate([[0.0], np.cumsum(centered * centered)])
 
     def cost(self, a: int, b: int) -> float:
         assert self._sum is not None and self._sum2 is not None

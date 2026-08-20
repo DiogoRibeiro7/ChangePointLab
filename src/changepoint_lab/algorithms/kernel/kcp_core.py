@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
+from ...core.numerics import NumericalStabilityError, require_finite_array
 from ...core.segmentation import changepoints_to_edges, labels_from_changepoints
 from .kcp_rff import (
     FeaturePrefix,
@@ -40,8 +41,12 @@ def _pairwise_sq_dists(X: ArrayF) -> ArrayF:
     D2 : (n, n) where D2[i,j] = ||X[i]-X[j]||^2
     """
     X = np.asarray(X, dtype=float)
-    s = np.sum(X * X, axis=1, keepdims=True)
-    D2 = np.maximum(s + s.T - 2.0 * (X @ X.T), 0.0)
+    require_finite_array(X, "X")
+    with np.errstate(over="ignore", invalid="ignore"):
+        s = np.sum(X * X, axis=1, keepdims=True)
+        D2 = np.maximum(s + s.T - 2.0 * (X @ X.T), 0.0)
+    if not np.all(np.isfinite(D2)):
+        raise NumericalStabilityError("pairwise squared distances contain non-finite values.")
     np.fill_diagonal(D2, 0.0)
     return D2
 
@@ -71,9 +76,12 @@ def gram_rbf(
     gamma : float used
     """
     X = np.asarray(X, dtype=float)
+    require_finite_array(X, "X")
     D2 = _pairwise_sq_dists(X)
     if gamma is None:
         if sigma is not None:
+            if not np.isfinite(sigma) or sigma <= 0.0:
+                raise ValueError("sigma must be positive and finite.")
             gamma = 1.0 / (2.0 * (sigma ** 2))
         else:
             # median heuristic
@@ -82,7 +90,14 @@ def gram_rbf(
             if med <= 0:
                 med = 1.0
             gamma = 1.0 / (2.0 * med)
-    K = np.exp(-gamma * D2, dtype=float)
+    if not np.isfinite(gamma) or gamma <= 0.0:
+        raise ValueError("gamma must be positive and finite.")
+    exponent = -float(gamma) * D2
+    if np.any(np.isnan(exponent)):
+        raise NumericalStabilityError("RBF exponent contains NaN values.")
+    K = np.exp(exponent, dtype=float)
+    if not np.all(np.isfinite(K)):
+        raise NumericalStabilityError("RBF Gram matrix contains non-finite values.")
     np.fill_diagonal(K, 1.0)
     return K, float(gamma)
 
