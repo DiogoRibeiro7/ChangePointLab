@@ -1,0 +1,13 @@
+# Default review owner for repository-wide changes.
+* @DiogoRibeiro7
+
+# Public contracts and release metadata.
+/src/changepoint_lab/__init__.py @DiogoRibeiro7
+/src/changepoint_lab/api_status.py @DiogoRibeiro7
+/pyproject.toml @DiogoRibeiro7
+/CHANGELOG.md @DiogoRibeiro7
+/CITATION.cff @DiogoRibeiro7
+/.zenodo.json @DiogoRibeiro7
+
+# CI and community health files.
+/.github/ @DiogoRibeiro7

@@ -77,16 +77,23 @@ from changepoint_lab.algorithms.optimization.pelt import NormalMeanVarUnknown
 ```
 
 Legacy module paths remain available but emit `DeprecationWarning` and will be
-removed in a future release.
+removed in version **0.3.0**.
 
 ## API stability
 
 The top‑level classes re‑exported from `changepoint_lab` form the stable public
-API. Deprecated aliases are scheduled for removal in version **2.0**.
+API. Deprecated aliases are scheduled for removal in version **0.3.0**.
 
 ## Documentation
 
 See the `docs/` folder for tutorials and the API reference.
+
+## Contributing
+
+Contributions are welcome. Please read `CONTRIBUTING.md` before opening a pull
+request, use the issue templates for reproducible reports, and report security
+concerns through GitHub private vulnerability reporting rather than public
+issues.
 
 ## Citation
 
