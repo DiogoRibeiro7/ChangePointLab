@@ -107,6 +107,7 @@
         "tests/unit/test_algorithm_parity.py",
         "tests/unit/test_pelt_cost_oracles.py",
         "tests/unit/test_pelt_result_fields.py",
+        "tests/unit/test_metamorphic_properties.py",
         "tests/integration/test_methods_interoperability.py"
       ],
       "documentation_paths": ["README.md", "docs/api/pelt.rst", "docs/guide/optimization_methods.md"],
@@ -134,6 +135,7 @@
         "tests/unit/test_bocpd_canonical.py",
         "tests/unit/test_algorithm_parity.py",
         "tests/unit/test_bocpd_streaming_likelihoods.py",
+        "tests/unit/test_metamorphic_properties.py",
         "tests/integration/test_cli_integration.py"
       ],
       "documentation_paths": ["docs/api/bocpd.rst", "docs/bocpd_README.md"],
@@ -159,7 +161,7 @@
         "scripts/run_within_period_reproduction.py"
       ],
       "public_api": ["changepoint_lab.WithinPeriodCPD", "within-period-cli"],
-      "tests": ["tests/integration/test_methods_interoperability.py", "tests/integration/test_cli_integration.py", "tests/unit/test_randomness_reproducibility.py", "tests/unit/test_within_period_rjmcmc_math.py", "tests/unit/test_within_period_replication.py"],
+      "tests": ["tests/integration/test_methods_interoperability.py", "tests/integration/test_cli_integration.py", "tests/unit/test_randomness_reproducibility.py", "tests/unit/test_metamorphic_properties.py", "tests/unit/test_within_period_rjmcmc_math.py", "tests/unit/test_within_period_replication.py"],
       "documentation_paths": ["docs/api/within_period.rst", "docs/parameters/within_period_parameters.md", "docs/development/within_period_rjmcmc.rst", "docs/development/within_period_reproduction.rst"],
       "reproduction_artifact": "Tiny complete-state tests verify detailed balance, empirical stationary frequencies, non-unit pois_lambda effects, and rotation invariance. The reproduction script generates deterministic paper-style synthetic scenarios and a MySense-style synthetic extension.",
       "deviations": ["Uses explicit Generator streams; seeded traces changed from legacy module-level RNG behavior.", "Implements binary periodic data with the uniform circular anchor marginalized as a constant.", "The proprietary Taylor et al. case-study data are not bundled, so local artifacts report synthetic analogues and discrepancies."],
@@ -176,7 +178,7 @@
       "implemented_equations_or_algorithms": ["sequence of repeated-period IHPP observations", "open-uniform B-spline log-intensity basis", "optimized Poisson segment negative log-likelihood", "PELT across-period segmentation", "deterministic midpoint exposure integrals"],
       "code_paths": ["src/changepoint_lab/algorithms/point_process/sliced_poisson.py"],
       "public_api": ["changepoint_lab.SlicedPoissonCPD", "changepoint_lab.SlicedPoissonConfig", "changepoint_lab.EventPeriod"],
-      "tests": ["tests/unit/test_sliced_poisson.py", "tests/test_public_api.py"],
+      "tests": ["tests/unit/test_sliced_poisson.py", "tests/unit/test_metamorphic_properties.py", "tests/test_public_api.py"],
       "documentation_paths": ["docs/api/sliced_poisson.rst", "docs/development/sliced_poisson_process.rst"],
       "reproduction_artifact": "Analytical constant-intensity test, deterministic exposure test, simulated amplitude recovery, timing-shape recovery, and explicit marked-extension tests.",
       "deviations": ["Uses a NumPy-only Newton optimizer and midpoint quadrature.", "Shared-baseline marked processes are not implemented; independent mark fitting is an explicit extension.", "No Howz paper dataset or supplementary code parity is bundled."],
@@ -200,6 +202,7 @@
         "tests/unit/test_edivisive_statistics.py",
         "tests/unit/test_edivisive_memmap.py",
         "tests/unit/test_algorithm_parity.py",
+        "tests/unit/test_metamorphic_properties.py",
         "tests/integration/test_methods_interoperability.py"
       ],
       "documentation_paths": ["docs/api/edivisive.rst", "docs/guide/nonparametric_methods.md"],
@@ -226,6 +229,7 @@
         "tests/unit/test_kernel_cpd_correctness.py",
         "tests/unit/test_kcp/test_bandwidth_cv.py",
         "tests/unit/test_kcp_segment_bounds.py",
+        "tests/unit/test_metamorphic_properties.py",
         "tests/unit/test_algorithm_parity.py"
       ],
       "documentation_paths": ["docs/api/kcp.rst", "docs/cpd.md"],
@@ -275,6 +279,7 @@
       "tests": [
         "tests/unit/test_hsmm_duration_cache.py",
         "tests/unit/test_hsmm/test_emission_models.py",
+        "tests/unit/test_metamorphic_properties.py",
         "tests/unit/test_algorithm_parity.py"
       ],
       "documentation_paths": ["docs/api/hsmm.rst", "docs/guide/state_space_methods.md"],
@@ -293,7 +298,7 @@
       "implemented_equations_or_algorithms": ["scaled-Dirichlet log density", "forward-backward", "MAP gradient emission updates", "Viterbi decoding"],
       "code_paths": ["src/changepoint_lab/algorithms/state_space/sdhmm.py"],
       "public_api": ["changepoint_lab.SDHMM", "changepoint_lab.SDHMMConfig"],
-      "tests": ["tests/unit/test_numerical_stability.py", "tests/unit/test_algorithm_parity.py"],
+      "tests": ["tests/unit/test_numerical_stability.py", "tests/unit/test_metamorphic_properties.py", "tests/unit/test_algorithm_parity.py"],
       "documentation_paths": ["docs/api/sdhmm.rst", "docs/guide/state_space_methods.md"],
       "reproduction_artifact": "No independent scaled-Dirichlet gradient oracle yet.",
       "deviations": ["Uses local digamma approximation and projected gradient updates."],
@@ -310,7 +315,7 @@
       "implemented_equations_or_algorithms": ["per-state scaled-Dirichlet mixtures", "variational mixture responsibilities", "Dirichlet mixture-weight update", "state forward-backward"],
       "code_paths": ["src/changepoint_lab/algorithms/state_space/sdhmm_mix_vi.py"],
       "public_api": ["changepoint_lab.SDHMMMixVI", "changepoint_lab.SDHMMMixVIConfig"],
-      "tests": ["tests/unit/test_numerical_stability.py"],
+      "tests": ["tests/unit/test_numerical_stability.py", "tests/unit/test_metamorphic_properties.py"],
       "documentation_paths": ["docs/api/sdhmm.rst", "docs/guide/state_space_methods.md"],
       "reproduction_artifact": "No independent VI/ELBO oracle yet.",
       "deviations": ["Mixture layer extends the single-emission SD-HMM source and needs derivation review."],

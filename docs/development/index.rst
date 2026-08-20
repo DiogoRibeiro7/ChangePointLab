@@ -11,6 +11,7 @@ Development Notes
    api_status
    ci_workflow
    documentation_workflow
+   metamorphic_properties
    randomness_reproducibility
    within_period_rjmcmc
    within_period_reproduction
