@@ -27,7 +27,7 @@ MarkedMode = Literal["independent", "shared_baseline"]
 
 @dataclass(frozen=True)
 class EventPeriod:
-    """Event times and observed exposure intervals for one repeated period."""
+    """Event times and observed ``[start, end)`` exposure intervals for one period."""
 
     event_times: tuple[float, ...]
     exposure_intervals: tuple[Interval, ...] = ()
@@ -178,7 +178,9 @@ def normalize_event_periods(
     periods: Sequence[EventPeriod | Sequence[float]],
     period: float,
 ) -> tuple[EventPeriod, ...]:
-    """Validate and normalize event periods to immutable records."""
+    """Validate periods and store canonical immutable exposure interval unions."""
+    if period <= 0.0 or not math.isfinite(period):
+        raise ValueError("period must be positive and finite.")
     normalized: list[EventPeriod] = []
     for item in periods:
         if isinstance(item, EventPeriod):
@@ -189,12 +191,7 @@ def normalize_event_periods(
             exposure = ((0.0, period),)
         if any(t < 0.0 or t >= period or not math.isfinite(t) for t in event_times):
             raise ValueError("event times must be finite and inside [0, period).")
-        clean_exposure = tuple((float(a), float(b)) for a, b in exposure)
-        if not clean_exposure:
-            raise ValueError("each period must have at least one exposure interval.")
-        for start, end in clean_exposure:
-            if not (0.0 <= start < end <= period):
-                raise ValueError("exposure intervals must satisfy 0 <= start < end <= period.")
+        clean_exposure = _canonicalize_exposure_intervals(exposure, period=period)
         for t in event_times:
             if not any(start <= t < end for start, end in clean_exposure):
                 raise ValueError("event times must lie inside observed exposure intervals.")
@@ -204,11 +201,45 @@ def normalize_event_periods(
     return tuple(normalized)
 
 
+def _canonicalize_exposure_intervals(
+    exposure_intervals: Sequence[Interval],
+    *,
+    period: float,
+) -> tuple[Interval, ...]:
+    """Return the sorted non-overlapping union of valid ``[start, end)`` intervals."""
+    if not exposure_intervals:
+        raise ValueError("each period must have at least one exposure interval.")
+    parsed: list[Interval] = []
+    for start_raw, end_raw in exposure_intervals:
+        start = float(start_raw)
+        end = float(end_raw)
+        if not (
+            math.isfinite(start)
+            and math.isfinite(end)
+            and 0.0 <= start < end <= period
+        ):
+            raise ValueError("exposure intervals must satisfy 0 <= start < end <= period.")
+        parsed.append((start, end))
+
+    parsed.sort()
+    merged: list[list[float]] = []
+    for start, end in parsed:
+        if not merged or start > merged[-1][1]:
+            merged.append([start, end])
+        else:
+            merged[-1][1] = max(merged[-1][1], end)
+    return tuple((start, end) for start, end in merged)
+
+
 class SlicedPoissonCost:
     """Additive optimized IHPP segment cost for PELT."""
 
-    def __init__(self, periods: tuple[EventPeriod, ...], config: SlicedPoissonConfig):
-        self.periods = periods
+    def __init__(
+        self,
+        periods: Sequence[EventPeriod | Sequence[float]],
+        config: SlicedPoissonConfig,
+    ):
+        self.periods = normalize_event_periods(periods, config.period)
         self.config = config
         self.knots = open_uniform_knots(config.period, config.n_basis, config.degree)
         self.grid_times = (np.arange(config.quadrature_points, dtype=float) + 0.5) * (
@@ -261,10 +292,10 @@ class SlicedPoissonCost:
     def _build_exposure_prefix(self) -> ArrayF:
         prefix = np.zeros((len(self.periods) + 1, self.config.quadrature_points), dtype=float)
         for idx, period in enumerate(self.periods):
-            weights = np.zeros(self.config.quadrature_points, dtype=float)
+            observed = np.zeros(self.config.quadrature_points, dtype=bool)
             for start, end in period.exposure_intervals:
-                weights += ((start <= self.grid_times) & (self.grid_times < end)).astype(float)
-            prefix[idx + 1] = prefix[idx] + weights * self.dx
+                observed |= (start <= self.grid_times) & (self.grid_times < end)
+            prefix[idx + 1] = prefix[idx] + observed.astype(float) * self.dx
         return prefix
 
     def _fit_segment_uncached(self, a: int, b: int) -> SegmentFit:

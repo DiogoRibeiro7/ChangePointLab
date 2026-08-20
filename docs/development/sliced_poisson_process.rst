@@ -39,8 +39,18 @@ Observed intervals are supplied per period:
 
    period = EventPeriod(event_times=(8.25, 9.0), exposure_intervals=((6.0, 12.0),))
 
-Events outside observed exposure intervals raise ``ValueError``. Integrals are
-evaluated by deterministic midpoint quadrature over the observed intervals.
+Exposure intervals use half-open ``[start, end)`` semantics on
+``[0, period)``. Starts are included, ends are excluded, and an event exactly
+at ``period`` is invalid. Events outside observed exposure intervals raise
+``ValueError``.
+
+Intervals are normalized before fitting. Unordered, overlapping, nested,
+duplicate, and touching intervals are converted to their sorted
+non-overlapping union. For example, ``((0.0, 0.5), (0.25, 0.75),
+(0.75, 1.0))`` is treated as ``((0.0, 1.0),)``. This preserves legacy
+non-overlapping inputs while preventing duplicated observed time from being
+counted more than once. Integrals are evaluated by deterministic midpoint
+quadrature over the canonical observed intervals.
 
 Marked extension
 ----------------
