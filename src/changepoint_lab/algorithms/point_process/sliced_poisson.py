@@ -13,6 +13,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ...core.datatypes import SegmentationResult
+from ...core.numerics import NumericalStabilityError, exp_or_inf, require_finite_array
 from ...core.random import make_rng, spawn_rngs
 from ...core.segmentation import labels_from_changepoints
 from ..optimization.pelt import pelt
@@ -314,9 +315,15 @@ class SlicedPoissonCost:
             iterations = current_iteration
             value, grad, hess = self._objective_grad_hess(weights, exposure_weights, event_sums)
             grad_norm = float(np.linalg.norm(grad, ord=2))
+            if not np.isfinite(value) or not np.all(np.isfinite(grad)) or not np.isfinite(grad_norm):
+                message = "non_finite_objective"
+                break
             if grad_norm < self.config.optimizer_tol:
                 converged = True
                 message = "converged"
+                break
+            if not np.all(np.isfinite(hess)):
+                message = "non_finite_hessian"
                 break
             try:
                 step = np.linalg.solve(
@@ -325,6 +332,9 @@ class SlicedPoissonCost:
                 )
             except np.linalg.LinAlgError:
                 step = -np.linalg.pinv(hess + self.config.ridge * np.eye(self.config.n_basis)) @ grad
+            if not np.all(np.isfinite(step)):
+                message = "non_finite_newton_step"
+                break
 
             accepted = False
             scale = 1.0
@@ -356,8 +366,13 @@ class SlicedPoissonCost:
         )
 
     def _objective(self, weights: ArrayF, exposure_weights: ArrayF, event_sums: ArrayF) -> float:
-        eta = np.clip(self.grid_basis @ weights, -745.0, 80.0)
-        return float(np.dot(exposure_weights, np.exp(eta)) - np.dot(event_sums, weights))
+        eta = require_finite_array(self.grid_basis @ weights, "sliced Poisson log-intensity")
+        active = exposure_weights > 0.0
+        intensity = exp_or_inf(eta[active])
+        value = float(
+            np.dot(exposure_weights[active], intensity) - np.dot(event_sums, weights)
+        )
+        return value if math.isfinite(value) else float("inf")
 
     def _objective_grad_hess(
         self,
@@ -365,17 +380,23 @@ class SlicedPoissonCost:
         exposure_weights: ArrayF,
         event_sums: ArrayF,
     ) -> tuple[float, ArrayF, ArrayF]:
-        eta = np.clip(self.grid_basis @ weights, -745.0, 80.0)
-        weighted_intensity = exposure_weights * np.exp(eta)
+        eta = require_finite_array(self.grid_basis @ weights, "sliced Poisson log-intensity")
+        active = exposure_weights > 0.0
+        intensity = exp_or_inf(eta[active])
+        weighted_intensity = exposure_weights[active] * intensity
         value = float(np.sum(weighted_intensity) - np.dot(event_sums, weights))
-        grad = self.grid_basis.T @ weighted_intensity - event_sums
-        hess = self.grid_basis.T @ (self.grid_basis * weighted_intensity[:, None])
+        basis = self.grid_basis[active]
+        grad = basis.T @ weighted_intensity - event_sums
+        hess = basis.T @ (basis * weighted_intensity[:, None])
         return value, grad, hess
 
     def intensity(self, weights: ArrayF, times: ArrayF) -> ArrayF:
         """Evaluate fitted intensity at supplied times."""
         basis = bspline_basis(times, self.knots, self.config.degree)
-        return np.exp(np.clip(basis @ weights, -745.0, 80.0))
+        intensity = exp_or_inf(require_finite_array(basis @ weights, "sliced Poisson intensity"))
+        if not np.all(np.isfinite(intensity)):
+            raise NumericalStabilityError("sliced Poisson fitted intensity overflowed.")
+        return intensity
 
 
 @dataclass

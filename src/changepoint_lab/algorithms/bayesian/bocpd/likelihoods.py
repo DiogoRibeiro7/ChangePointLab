@@ -40,6 +40,7 @@ from typing import Any, Mapping, Optional
 import numpy as np
 from numpy.typing import NDArray
 
+from changepoint_lab.core.numerics import NumericalStabilityError
 from changepoint_lab.core.validation import as_count_array
 
 
@@ -88,6 +89,20 @@ class ConjugateLikelihood(ABC):
     def prior_predictive_prob(self, x_t, /) -> float:
         """Compute p(x_t) under the fresh segment prior."""
         ...
+
+    def log_predictive_prob(self, x_t, /) -> ArrayF:
+        """Compute log predictive probabilities for each run-length state."""
+        probs = np.asarray(self.predictive_prob(x_t), dtype=float)
+        if np.any((probs < 0.0) | ~np.isfinite(probs)):
+            raise NumericalStabilityError("predictive probabilities must be finite and non-negative.")
+        return np.where(probs > 0.0, np.log(probs), -np.inf)
+
+    def log_prior_predictive_prob(self, x_t, /) -> float:
+        """Compute the fresh-segment log predictive probability."""
+        prob = float(self.prior_predictive_prob(x_t))
+        if prob < 0.0 or not math.isfinite(prob):
+            raise NumericalStabilityError("prior predictive probability must be finite and non-negative.")
+        return math.log(prob) if prob > 0.0 else float("-inf")
 
     @abstractmethod
     def update_cp(self, x_t) -> None:
@@ -202,11 +217,27 @@ class BetaBernoulli(ConjugateLikelihood):
         # Return P(x=xi) across all states
         return p1 if xi == 1.0 else (1.0 - p1)
 
+    def log_predictive_prob(self, x_t, /) -> ArrayF:
+        """Vectorized log predictive probability for Bernoulli observations."""
+        if self.stats is None:
+            raise RuntimeError("Call init_stats(R) before log_predictive_prob().")
+        xi = 1.0 if bool(x_t) else 0.0
+        alpha = self.stats.alpha
+        beta = self.stats.beta
+        denom_log = np.log(alpha + beta)
+        return np.log(alpha) - denom_log if xi == 1.0 else np.log(beta) - denom_log
+
     def prior_predictive_prob(self, x_t, /) -> float:
         """Predictive probability under the initial Beta prior."""
         xi = 1.0 if bool(x_t) else 0.0
         p1 = self.alpha0 / (self.alpha0 + self.beta0)
         return float(p1 if xi == 1.0 else (1.0 - p1))
+
+    def log_prior_predictive_prob(self, x_t, /) -> float:
+        """Fresh-segment log predictive probability for the Beta prior."""
+        xi = 1.0 if bool(x_t) else 0.0
+        denom = math.log(self.alpha0 + self.beta0)
+        return math.log(self.alpha0) - denom if xi == 1.0 else math.log(self.beta0) - denom
 
     def predictive_mean(self) -> ArrayF:
         if self.stats is None:
@@ -363,11 +394,25 @@ class PoissonGamma(ConjugateLikelihood):
         count = self._coerce_count(x_t)
         return np.exp(self._log_predictive(count, self.stats.shape, self.stats.rate))
 
+    def log_predictive_prob(self, x_t, /) -> ArrayF:
+        """Vectorized log predictive probability for nonnegative integer counts."""
+        if self.stats is None:
+            raise RuntimeError("Call init_stats(R) before log_predictive_prob().")
+        count = self._coerce_count(x_t)
+        return self._log_predictive(count, self.stats.shape, self.stats.rate)
+
     def prior_predictive_prob(self, x_t, /) -> float:
         count = self._coerce_count(x_t)
         shape = np.array([self.shape0], dtype=float)
         rate = np.array([self.rate0], dtype=float)
         return float(np.exp(self._log_predictive(count, shape, rate))[0])
+
+    def log_prior_predictive_prob(self, x_t, /) -> float:
+        """Fresh-segment log predictive probability for the Gamma prior."""
+        count = self._coerce_count(x_t)
+        shape = np.array([self.shape0], dtype=float)
+        rate = np.array([self.rate0], dtype=float)
+        return float(self._log_predictive(count, shape, rate)[0])
 
     def predictive_mean(self) -> ArrayF:
         if self.stats is None:

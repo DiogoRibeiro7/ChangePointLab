@@ -55,6 +55,21 @@ def test_poisson_gamma_works_through_bocpd_public_api() -> None:
     assert isinstance(model.lik, PoissonGamma)
 
 
+def test_poisson_gamma_large_count_uses_log_space_recovery() -> None:
+    model = BOCPD(
+        ConstantHazard(mean_run_length=10),
+        BOCPDConfig(max_run_length=16, store_run_length_posterior=False),
+        likelihood=PoissonGamma(shape0=1.0, rate0=1.0),
+    )
+
+    out = model.update(1_000_000)
+
+    assert np.isfinite(out["log_evidence"])
+    assert np.isclose(model.R_prev.sum(), 1.0, rtol=1e-12)
+    assert np.all(np.isfinite(model.R_prev))
+    assert model.normalization_issues_ == 1
+
+
 def test_batch_run_equals_repeated_update() -> None:
     data = [0, 1, 0, 1, 1]
     batch = BOCPD(

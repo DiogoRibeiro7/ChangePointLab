@@ -20,6 +20,8 @@ import math
 import numpy as np
 from numpy.typing import NDArray
 
+from ...core.numerics import logsumexp as _core_logsumexp
+
 
 ArrayF = NDArray[np.floating]
 ArrayI = NDArray[np.integer]
@@ -37,9 +39,7 @@ def _as_scalar(x: ArrayF | float) -> float:
 
 def logsumexp(a: ArrayF, axis: Optional[int] = None) -> ArrayF:
     """Stable logsumexp."""
-    m = np.max(a, axis=axis, keepdims=True)
-    out = m + np.log(np.sum(np.exp(a - m), axis=axis, keepdims=True))
-    return out if axis is None else np.squeeze(out, axis=axis)
+    return _core_logsumexp(a, axis=axis)
 
 
 def safe_log(x: ArrayF | float, eps: float = 1e-300) -> ArrayF | float:

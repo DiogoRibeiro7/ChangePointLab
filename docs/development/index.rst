@@ -12,6 +12,7 @@ Development Notes
    ci_workflow
    documentation_workflow
    metamorphic_properties
+   numerical_stability
    randomness_reproducibility
    within_period_rjmcmc
    within_period_reproduction

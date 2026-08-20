@@ -12,6 +12,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ...core.datatypes import LatentStateResult
+from ...core.numerics import NumericalStabilityError, exp_or_inf, logsumexp
 from ...core.segmentation import changepoints_from_labels, normalize_linear_changepoints
 from .._base import BaseDetector
 
@@ -36,15 +37,15 @@ def _as_float_array(x: np.ndarray, name: str) -> ArrayF:
 
 def _normalize_rows_stable(mat: ArrayF, eps: float = 1e-12) -> ArrayF:
     s = mat.sum(axis=1, keepdims=True)
-    s = np.where(s <= eps, 1.0, s)
+    if np.any(s <= eps):
+        raise ValueError("X rows must have positive total mass.")
     out = mat / s
-    return np.clip(out, eps, 1.0)
+    out = np.clip(out, eps, 1.0)
+    return out / out.sum(axis=1, keepdims=True)
 
 
 def _logsumexp(a: ArrayF, axis: Optional[int] = None) -> ArrayF:
-    m = np.max(a, axis=axis, keepdims=True)
-    z = np.log(np.sum(np.exp(a - m), axis=axis, keepdims=True)) + m
-    return z if axis is None else np.squeeze(z, axis=axis)
+    return logsumexp(a, axis=axis)
 
 
 def _gammaln(x: ArrayF) -> ArrayF:
@@ -399,7 +400,9 @@ class _SDHMMMixVI:
                         alpha = np.clip(alpha + self.cfg.lr_alpha * g_alpha, 1e-5, 1e9)
 
                         # mirror-descent style update for simplex beta
-                        step = np.exp(self.cfg.lr_beta * g_beta_unc)
+                        step = exp_or_inf(self.cfg.lr_beta * g_beta_unc)
+                        if not np.all(np.isfinite(step)):
+                            raise NumericalStabilityError("SD-HMM mixture beta update overflowed.")
                         beta = np.clip(beta * step, 1e-12, None)
                         beta /= beta.sum()
 

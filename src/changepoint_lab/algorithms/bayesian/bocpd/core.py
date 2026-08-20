@@ -5,11 +5,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 from typing import Any, Dict, Mapping, Optional, Sequence, Set
 import warnings
 
 import numpy as np
 from numpy.typing import NDArray
+
+from changepoint_lab.core.numerics import NumericalStabilityError, logsumexp
 
 from .likelihoods import BetaBernoulli, ConjugateLikelihood
 from .validation import int_ge, positive_float
@@ -345,8 +348,12 @@ class BOCPD:
 
         # (1) One-step-ahead predictive mean BEFORE consuming x_t
         state_means: ArrayF = self.lik.predictive_mean()        # shape (R,)
+        if not np.all(np.isfinite(state_means)):
+            raise NumericalStabilityError("BOCPD predictive means contain non-finite values.")
         mixture_mean = np.asarray(np.dot(self.R_prev, state_means), dtype=float)
         pred_mean = float(mixture_mean.reshape(-1)[0])
+        if not np.isfinite(pred_mean):
+            raise NumericalStabilityError("BOCPD mixture predictive mean is not finite.")
 
         # (2) Per-state predictive probability for the realized x_t
         pred: ArrayF = (
@@ -354,6 +361,10 @@ class BOCPD:
             if missing
             else self.lik.predictive_prob(x_t)
         )             # shape (R,)
+        if np.any((pred < 0.0) | ~np.isfinite(pred)):
+            raise NumericalStabilityError(
+                "BOCPD predictive probabilities must be finite and non-negative."
+            )
 
         # (3) Hazard per state at time t
         H = np.fromiter(
@@ -361,6 +372,8 @@ class BOCPD:
             count=self.R,
             dtype=float,
         )
+        if np.any((H < 0.0) | (H > 1.0) | ~np.isfinite(H)):
+            raise NumericalStabilityError("BOCPD hazard probabilities must be finite in [0, 1].")
         one_m_H = 1.0 - H
 
         # (4) BOCPD recursion (unnormalized): growth and changepoint mass
@@ -374,22 +387,26 @@ class BOCPD:
         # cp_scale is retained only for compatibility and is not canonical BOCPD.
         cp_mass = float(np.dot(self.R_prev, H))
         prior_predictive = 1.0 if missing else float(self.lik.prior_predictive_prob(x_t))
+        if prior_predictive < 0.0 or not np.isfinite(prior_predictive):
+            raise NumericalStabilityError(
+                "BOCPD prior predictive probability must be finite and non-negative."
+            )
         R_next[0] = cp_mass * prior_predictive
         R_next[0] *= float(self.cfg.cp_scale)
 
         # (5) Normalize robustly (underflow guard, tail pruning, optional top-k)
         tracked_normalizer = float(R_next.sum())
         full_normalizer = tracked_normalizer + dropped_growth
-        log_evidence = (
-            float(np.log(full_normalizer))
-            if np.isfinite(full_normalizer) and full_normalizer > 0.0
-            else float("-inf")
-        )
-        truncation_error = (
-            dropped_growth / full_normalizer
-            if np.isfinite(full_normalizer) and full_normalizer > 0.0
-            else 0.0
-        )
+        if not np.isfinite(full_normalizer) or full_normalizer <= float(self.cfg.stabilizer):
+            log_evidence, truncation_error = self._log_space_update(
+                R_next,
+                H,
+                missing=missing,
+                x_t=x_t,
+            )
+        else:
+            log_evidence = float(np.log(full_normalizer))
+            truncation_error = dropped_growth / full_normalizer
         pruning_error = self._prune_and_normalize(R_next)
         approximation_error = truncation_error + (1.0 - truncation_error) * pruning_error
 
@@ -508,6 +525,10 @@ class BOCPD:
         """
         eps = float(self.cfg.stabilizer)
         removed_mass = 0.0
+        if np.any((R_next < 0.0) | ~np.isfinite(R_next)):
+            raise NumericalStabilityError(
+                "BOCPD posterior mass contains negative or non-finite values."
+            )
 
         # Rescale if sum underflows
         total = float(R_next.sum())
@@ -517,7 +538,7 @@ class BOCPD:
                 R_next /= m
                 total = float(R_next.sum())
             else:
-                # Catastrophic underflow: keep mass at r=0 to avoid spurious spikes
+                # Catastrophic underflow after log-space recovery was unavailable.
                 R_next.fill(0.0)
                 R_next[0] = 1.0
                 self.normalization_issues_ += 1
@@ -564,6 +585,51 @@ class BOCPD:
                     R_next[i] = 1.0
                     self.normalization_issues_ += 1
         return float(np.clip(removed_mass, 0.0, 1.0))
+
+    def _log_space_update(
+        self,
+        R_next: ArrayF,
+        H: ArrayF,
+        *,
+        missing: bool,
+        x_t: Any,
+    ) -> tuple[float, float]:
+        """Recover the BOCPD recursion in log space after probability underflow."""
+        log_prev = np.full_like(self.R_prev, -np.inf)
+        positive = self.R_prev > 0.0
+        log_prev[positive] = np.log(self.R_prev[positive])
+        log_pred = np.zeros(self.R, dtype=float) if missing else self.lik.log_predictive_prob(x_t)
+        if np.any(~np.isfinite(log_pred) & (log_pred != -np.inf)):
+            raise NumericalStabilityError("BOCPD log predictive probabilities contain NaN.")
+
+        log_H = np.full_like(H, -np.inf)
+        positive_hazard = H > 0.0
+        log_H[positive_hazard] = np.log(H[positive_hazard])
+        log_one_m_H = np.full_like(H, -np.inf)
+        positive_growth = H < 1.0
+        log_one_m_H[positive_growth] = np.log1p(-H[positive_growth])
+        log_next = np.full_like(R_next, -np.inf)
+        if self.R > 1:
+            log_next[1:] = log_prev[:-1] + log_one_m_H[:-1] + log_pred[:-1]
+        dropped_log = log_prev[-1] + log_one_m_H[-1] + log_pred[-1]
+
+        log_cp_mass = float(logsumexp(log_prev + log_H))
+        log_prior_predictive = (
+            0.0 if missing else float(self.lik.log_prior_predictive_prob(x_t))
+        )
+        log_next[0] = log_cp_mass + log_prior_predictive + math.log(float(self.cfg.cp_scale))
+
+        log_tracked = float(logsumexp(log_next))
+        log_full = float(logsumexp(np.array([log_tracked, dropped_log], dtype=float)))
+        if not np.isfinite(log_tracked):
+            raise NumericalStabilityError("BOCPD log-space recursion lost all tracked mass.")
+
+        R_next[:] = np.exp(log_next - log_tracked)
+        truncation_error = (
+            float(np.exp(dropped_log - log_full)) if np.isfinite(dropped_log) else 0.0
+        )
+        self.normalization_issues_ += 1
+        return log_full, truncation_error
 
 
 def extract_changepoint_alerts(
