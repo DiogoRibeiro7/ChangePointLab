@@ -151,7 +151,7 @@ You can also use the citation provided by the CITATION.cff file in this reposito
 
 ## Contributing
 
-We welcome contributions to BOCPD! Please see our [contributing guidelines](CONTRIBUTING.md) for details on how to get started.
+We welcome contributions to BOCPD! Please see our [contributing guidelines](../CONTRIBUTING.md) for details on how to get started.
 
 Key areas for contributions:
 - Implementing additional likelihood models, such as Gaussian or Student-t,
@@ -163,7 +163,7 @@ Key areas for contributions:
 
 ## License
 
-BOCPD is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+BOCPD is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.
 
 ## Acknowledgements
 

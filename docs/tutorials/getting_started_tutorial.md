@@ -21,6 +21,28 @@ cd ChangePointLab
 poetry install
 ```
 
+## Executable Smoke Example
+
+The following minimal example is executed in CI against the built wheel.
+
+<!-- docs-example: execute -->
+
+```python
+import numpy as np
+
+from changepoint_lab import PELT
+from changepoint_lab.algorithms.optimization.cost_functions import NormalMeanVarUnknown
+from changepoint_lab.algorithms.optimization.pelt import bic_penalty
+
+x = np.r_[np.zeros(12), np.ones(12)]
+cost = NormalMeanVarUnknown()
+cost.precompute(x)
+result = PELT(cost_fn=cost, penalty=bic_penalty(2, len(x)), min_seg_len=4).fit_predict(x)
+
+assert result.indices.ndim == 1
+assert result.boundary_convention == "right_exclusive"
+```
+
 ## A Simple Example: COVID-19 Impact on Stock Prices
 
 Let's examine how COVID-19 affected the stock market by detecting changepoints in the S&P 500 index.
@@ -30,10 +52,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from changepoint_lab import BOCPD, PELT, EDivisive
-from changepoint_lab.algorithms.optimization.cost_functions import (
-    NormalMeanVarUnknown,
-    bic_penalty,
-)
+from changepoint_lab.algorithms.optimization.cost_functions import NormalMeanVarUnknown
+from changepoint_lab.algorithms.optimization.pelt import bic_penalty
 from changepoint_lab.algorithms.bayesian.bocpd import ConstantHazard, BOCPDConfig
 
 # Load S&P 500 data (2019-2020)
@@ -122,7 +142,7 @@ detector = BOCPD(
 result_bocpd = detector.fit_predict(negative_return)
 
 # Extract changepoint probabilities
-cp_probs = result_bocpd.metadata["cp_prob"]
+cp_probs = result_bocpd.cp_prob
 
 # Visualize results
 plt.figure(figsize=(12, 8))

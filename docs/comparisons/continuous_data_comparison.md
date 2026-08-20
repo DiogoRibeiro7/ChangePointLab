@@ -17,7 +17,9 @@ Average scores on a 5,000-point series with two mean shifts and one variance cha
 | HMM (Gaussian) | 0.89 | 35 |
 
 ## Visual Comparison
-![](../images/continuous_comparison.png)
+
+No generated visual artifact is bundled for this comparison yet. Add a
+reproducible figure source and checked-in output before citing an image here.
 
 ## Recommendations
 - **PELT** excels when Gaussian assumptions hold and segmentation optimality is required.
