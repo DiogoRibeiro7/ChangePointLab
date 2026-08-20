@@ -24,7 +24,7 @@ The core package must import and run without Matplotlib or pandas installed.
 | NumPy | Runtime core | `[project].dependencies` |
 | Matplotlib | Optional plotting | `[project.optional-dependencies].plot` |
 | pandas | Optional CSV time-binning/data I/O | `[project.optional-dependencies].data` |
-| Sphinx, pdoc, NetworkX | Documentation | `[tool.poetry.group.docs.dependencies]` |
+| Sphinx, pdoc, NetworkX | Documentation tooling: Sphinx is the canonical user docs build, pdoc is a secondary API inspection artifact, and NetworkX supports generated documentation utilities | `[tool.poetry.group.docs.dependencies]` |
 | pytest | Test execution | `[tool.poetry.group.dev.dependencies]` |
 | coverage, pytest-cov, Ruff, Mypy, pydocstyle, types-setuptools, tomli | Development quality gates | `[tool.poetry.group.dev.dependencies]` |
 | LibCST | Development migration helper | `[tool.poetry.group.dev.dependencies]` |
@@ -54,9 +54,12 @@ poetry check --lock
 poetry run ruff check .
 poetry run mypy
 poetry run pydocstyle src/changepoint_lab
+poetry run sphinx-build -W --keep-going -b html docs docs/_build/html
+poetry run python scripts/validate_docs_links.py
 poetry run pytest
-poetry build
+poetry build --clean
 poetry run python scripts/validate_distribution.py dist
+poetry run python scripts/validate_docs_examples.py --dist-dir dist
 ```
 
 Manual dependency review commands:

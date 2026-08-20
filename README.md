@@ -40,6 +40,8 @@ Development installs use `poetry install --with dev,docs --extras "plot data"`.
 
 ## Quick Start
 
+<!-- docs-example: execute -->
+
 ```python
 import numpy as np
 from changepoint_lab import PELT
