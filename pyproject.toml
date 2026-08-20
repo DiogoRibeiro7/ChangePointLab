@@ -153,3 +153,11 @@ markers = [
   "integration: integration tests requiring external resources",
   "slow: long-running tests"
 ]
+
+[tool.coverage.run]
+source = ["src/changepoint_lab"]
+
+[tool.coverage.report]
+fail_under = 65
+show_missing = true
+skip_covered = false
