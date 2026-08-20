@@ -150,13 +150,11 @@ Exit criteria:
 
 Repair correctness issues in dependency order:
 
-1. Replace fixed-grid exposure accounting with interval-aware integration.
-2. Track direct integer event sufficient statistics.
-3. Define optimizer-failure propagation policy for segment costs.
+1. Track direct integer event sufficient statistics.
+2. Define optimizer-failure propagation policy for segment costs.
 
 Exit criteria:
 
-- Sub-grid exposure cases have analytical tests.
 - Non-converged segment fits cannot silently affect changepoint selection.
 - The `sliced_poisson_process` registry entry remains `partially_verified` until
   external or independent parity evidence exists.

@@ -34,6 +34,14 @@ class EventPeriod:
 
 
 @dataclass(frozen=True)
+class _ExposureDesign:
+    """Quadrature basis and weights for observed exposure."""
+
+    basis: ArrayF
+    weights: ArrayF
+
+
+@dataclass(frozen=True)
 class SlicedPoissonConfig:
     """Configuration for sliced Poisson process changepoint detection."""
 
@@ -248,7 +256,8 @@ class SlicedPoissonCost:
         self.grid_basis = bspline_basis(self.grid_times, self.knots, config.degree)
         self.dx = config.period / config.quadrature_points
         self._event_basis_prefix = self._build_event_basis_prefix()
-        self._exposure_prefix = self._build_exposure_prefix()
+        self._period_exposure_designs = self._build_period_exposure_designs()
+        self.exposure_integration_diagnostics = self._build_integration_diagnostics()
         self._cache: dict[tuple[int, int], SegmentFit] = {}
 
     def precompute(self, y: ArrayF) -> None:
@@ -289,20 +298,57 @@ class SlicedPoissonCost:
                 prefix[idx + 1] = prefix[idx]
         return prefix
 
-    def _build_exposure_prefix(self) -> ArrayF:
-        prefix = np.zeros((len(self.periods) + 1, self.config.quadrature_points), dtype=float)
-        for idx, period in enumerate(self.periods):
-            observed = np.zeros(self.config.quadrature_points, dtype=bool)
+    def _build_period_exposure_designs(self) -> tuple[_ExposureDesign, ...]:
+        nodes, weights = np.polynomial.legendre.leggauss(self.config.quadrature_points)
+        designs: list[_ExposureDesign] = []
+        for period in self.periods:
+            interval_basis: list[ArrayF] = []
+            interval_weights: list[ArrayF] = []
             for start, end in period.exposure_intervals:
-                observed |= (start <= self.grid_times) & (self.grid_times < end)
-            prefix[idx + 1] = prefix[idx] + observed.astype(float) * self.dx
-        return prefix
+                half_width = 0.5 * (end - start)
+                midpoint = 0.5 * (start + end)
+                local_times = midpoint + half_width * nodes
+                local_weights = half_width * weights
+                interval_basis.append(bspline_basis(local_times, self.knots, self.config.degree))
+                interval_weights.append(local_weights)
+            designs.append(
+                _ExposureDesign(
+                    basis=np.vstack(interval_basis),
+                    weights=np.concatenate(interval_weights).astype(float),
+                )
+            )
+        return tuple(designs)
+
+    def _build_integration_diagnostics(self) -> dict[str, object]:
+        node_counts = [int(design.weights.size) for design in self._period_exposure_designs]
+        return {
+            "scheme": "interval_gauss_legendre",
+            "nodes_per_interval": self.config.quadrature_points,
+            "total_quadrature_nodes": int(sum(node_counts)),
+            "max_nodes_per_period": int(max(node_counts, default=0)),
+            "error_control": (
+                "Increase SlicedPoissonConfig.quadrature_points; no adaptive error estimator "
+                "is applied."
+            ),
+        }
+
+    def _exposure_design_for_segment(self, a: int, b: int) -> _ExposureDesign:
+        designs = self._period_exposure_designs[a:b]
+        if not designs:
+            return _ExposureDesign(
+                basis=np.zeros((0, self.config.n_basis), dtype=float),
+                weights=np.zeros(0, dtype=float),
+            )
+        return _ExposureDesign(
+            basis=np.vstack([design.basis for design in designs]),
+            weights=np.concatenate([design.weights for design in designs]),
+        )
 
     def _fit_segment_uncached(self, a: int, b: int) -> SegmentFit:
         event_sums = self._event_basis_prefix[b] - self._event_basis_prefix[a]
-        exposure_weights = self._exposure_prefix[b] - self._exposure_prefix[a]
+        exposure_design = self._exposure_design_for_segment(a, b)
         total_events = int(round(float(event_sums.sum())))
-        total_exposure = float(exposure_weights.sum())
+        total_exposure = float(exposure_design.weights.sum())
         if total_exposure <= 0:
             return SegmentFit(
                 start=a,
@@ -339,12 +385,22 @@ class SlicedPoissonCost:
         converged = False
         message = "max_iter"
         grad_norm = float("inf")
-        value = self._objective(weights, exposure_weights, event_sums)
+        value = self._objective(
+            weights,
+            exposure_design.basis,
+            exposure_design.weights,
+            event_sums,
+        )
         iterations = 0
 
         for current_iteration in range(1, self.config.optimizer_max_iter + 1):
             iterations = current_iteration
-            value, grad, hess = self._objective_grad_hess(weights, exposure_weights, event_sums)
+            value, grad, hess = self._objective_grad_hess(
+                weights,
+                exposure_design.basis,
+                exposure_design.weights,
+                event_sums,
+            )
             grad_norm = float(np.linalg.norm(grad, ord=2))
             if not np.isfinite(value) or not np.all(np.isfinite(grad)) or not np.isfinite(grad_norm):
                 message = "non_finite_objective"
@@ -371,7 +427,12 @@ class SlicedPoissonCost:
             scale = 1.0
             for _ in range(20):
                 candidate = weights + scale * step
-                candidate_value = self._objective(candidate, exposure_weights, event_sums)
+                candidate_value = self._objective(
+                    candidate,
+                    exposure_design.basis,
+                    exposure_design.weights,
+                    event_sums,
+                )
                 if math.isfinite(candidate_value) and candidate_value <= value:
                     weights = candidate
                     value = candidate_value
@@ -396,29 +457,33 @@ class SlicedPoissonCost:
             message=message,
         )
 
-    def _objective(self, weights: ArrayF, exposure_weights: ArrayF, event_sums: ArrayF) -> float:
-        eta = require_finite_array(self.grid_basis @ weights, "sliced Poisson log-intensity")
-        active = exposure_weights > 0.0
-        intensity = exp_or_inf(eta[active])
+    def _objective(
+        self,
+        weights: ArrayF,
+        exposure_basis: ArrayF,
+        exposure_weights: ArrayF,
+        event_sums: ArrayF,
+    ) -> float:
+        eta = require_finite_array(exposure_basis @ weights, "sliced Poisson log-intensity")
+        intensity = exp_or_inf(eta)
         value = float(
-            np.dot(exposure_weights[active], intensity) - np.dot(event_sums, weights)
+            np.dot(exposure_weights, intensity) - np.dot(event_sums, weights)
         )
         return value if math.isfinite(value) else float("inf")
 
     def _objective_grad_hess(
         self,
         weights: ArrayF,
+        exposure_basis: ArrayF,
         exposure_weights: ArrayF,
         event_sums: ArrayF,
     ) -> tuple[float, ArrayF, ArrayF]:
-        eta = require_finite_array(self.grid_basis @ weights, "sliced Poisson log-intensity")
-        active = exposure_weights > 0.0
-        intensity = exp_or_inf(eta[active])
-        weighted_intensity = exposure_weights[active] * intensity
+        eta = require_finite_array(exposure_basis @ weights, "sliced Poisson log-intensity")
+        intensity = exp_or_inf(eta)
+        weighted_intensity = exposure_weights * intensity
         value = float(np.sum(weighted_intensity) - np.dot(event_sums, weights))
-        basis = self.grid_basis[active]
-        grad = basis.T @ weighted_intensity - event_sums
-        hess = basis.T @ (basis * weighted_intensity[:, None])
+        grad = exposure_basis.T @ weighted_intensity - event_sums
+        hess = exposure_basis.T @ (exposure_basis * weighted_intensity[:, None])
         return value, grad, hess
 
     def intensity(self, weights: ArrayF, times: ArrayF) -> ArrayF:
@@ -488,6 +553,7 @@ class SlicedPoissonCPD:
                 "penalty": penalty,
                 "penalty_mode": self.config.penalty,
                 "optimization_failures": failures,
+                "exposure_integration": cost.exposure_integration_diagnostics,
                 "pelt_objective": (
                     "Cost is optimized minus twice log-likelihood and passed through the shared "
                     "exact PELT objective; K is retained only as a compatibility argument."

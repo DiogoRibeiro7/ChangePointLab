@@ -49,8 +49,17 @@ duplicate, and touching intervals are converted to their sorted
 non-overlapping union. For example, ``((0.0, 0.5), (0.25, 0.75),
 (0.75, 1.0))`` is treated as ``((0.0, 1.0),)``. This preserves legacy
 non-overlapping inputs while preventing duplicated observed time from being
-counted more than once. Integrals are evaluated by deterministic midpoint
-quadrature over the canonical observed intervals.
+counted more than once.
+
+Likelihood integrals use deterministic interval-local Gauss-Legendre
+quadrature over each canonical observed interval. ``quadrature_points`` is the
+number of nodes per interval, not a global period-wide mask. This means a valid
+narrow observation window always contributes positive numerical exposure even
+when it is much shorter than the display grid spacing. Constant-intensity
+models integrate to the analytical observed-time measure. For non-constant
+B-spline intensities, increase ``quadrature_points`` to reduce approximation
+error; ``SlicedPoissonResult.diagnostics["exposure_integration"]`` records the
+scheme, nodes per interval, total nodes, and error-control note.
 
 Marked extension
 ----------------
@@ -70,6 +79,7 @@ labels, optimization convergence messages, and the generic
 Limitations
 -----------
 
-The implementation uses a NumPy-only Newton solver and midpoint quadrature.
+The implementation uses a NumPy-only Newton solver and fixed-order
+Gauss-Legendre quadrature. The quadrature is deterministic but not adaptive.
 The Howz data from the paper are not bundled, so tests use analytical cases
 and deterministic simulations rather than paper-data parity.

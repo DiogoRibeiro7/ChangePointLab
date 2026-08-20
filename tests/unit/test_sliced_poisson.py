@@ -142,6 +142,149 @@ def test_total_exposure_counts_union_measure_for_overlapping_windows() -> None:
     assert math.exp(fit.weights[0]) == pytest.approx(1.0)
 
 
+def test_narrow_exposure_window_contributes_positive_measure() -> None:
+    periods = (EventPeriod(event_times=(0.5005,), exposure_intervals=((0.5, 0.501),)),)
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=1,
+        degree=0,
+        min_segment_periods=1,
+        penalty=0.0,
+        quadrature_points=8,
+    )
+
+    fit = SlicedPoissonCost(periods, config).fit_segment(0, 1)
+
+    assert fit.converged
+    assert fit.total_exposure == pytest.approx(0.001)
+    assert math.exp(fit.weights[0]) == pytest.approx(1000.0)
+
+
+def test_irregular_exposure_windows_match_constant_intensity_oracle() -> None:
+    periods = (
+        EventPeriod(event_times=(0.05, 0.45), exposure_intervals=((0.0, 0.1), (0.4, 0.7))),
+        EventPeriod(event_times=(0.2,), exposure_intervals=((0.15, 0.25), (0.75, 0.9))),
+    )
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=1,
+        degree=0,
+        min_segment_periods=1,
+        penalty=0.0,
+        quadrature_points=8,
+    )
+
+    fit = SlicedPoissonCost(periods, config).fit_segment(0, 2)
+
+    total_events = 3
+    total_exposure = 0.65
+    expected_nll = total_events - total_events * math.log(total_events / total_exposure)
+    assert fit.total_exposure == pytest.approx(total_exposure)
+    assert fit.cost == pytest.approx(2.0 * expected_nll)
+
+
+def test_exposure_quadrature_converges_with_more_interval_nodes() -> None:
+    intervals = ((0.03, 0.17), (0.42, 0.615), (0.72, 0.93))
+    theta = np.array([1.2, -0.7, 0.8, -0.2])
+
+    def integral(quadrature_points: int) -> float:
+        config = SlicedPoissonConfig(
+            period=1.0,
+            n_basis=4,
+            degree=2,
+            min_segment_periods=1,
+            quadrature_points=quadrature_points,
+        )
+        cost = SlicedPoissonCost(
+            (EventPeriod(event_times=(), exposure_intervals=intervals),),
+            config,
+        )
+        design = cost._exposure_design_for_segment(0, 1)
+        return float(np.dot(design.weights, np.exp(design.basis @ theta)))
+
+    coarse = integral(8)
+    fine = integral(32)
+    reference = integral(128)
+
+    assert abs(fine - reference) < abs(coarse - reference)
+
+
+def test_objective_gradient_and_hessian_match_finite_differences() -> None:
+    periods = (
+        EventPeriod(
+            event_times=(0.08, 0.51, 0.83),
+            exposure_intervals=((0.0, 0.2), (0.45, 0.6), (0.75, 0.95)),
+        ),
+    )
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=3,
+        degree=1,
+        min_segment_periods=1,
+        quadrature_points=32,
+    )
+    cost = SlicedPoissonCost(periods, config)
+    design = cost._exposure_design_for_segment(0, 1)
+    event_sums = cost._event_basis_prefix[1] - cost._event_basis_prefix[0]
+    theta = np.array([-0.4, 0.25, 0.6])
+
+    _, grad, hess = cost._objective_grad_hess(
+        theta,
+        design.basis,
+        design.weights,
+        event_sums,
+    )
+
+    eps = 1e-6
+    numerical_grad = np.zeros_like(theta)
+    numerical_hess = np.zeros_like(hess)
+    for idx in range(theta.size):
+        step = np.zeros_like(theta)
+        step[idx] = eps
+        upper_value = cost._objective(theta + step, design.basis, design.weights, event_sums)
+        lower_value = cost._objective(theta - step, design.basis, design.weights, event_sums)
+        numerical_grad[idx] = (upper_value - lower_value) / (2.0 * eps)
+
+        _, upper_grad, _ = cost._objective_grad_hess(
+            theta + step,
+            design.basis,
+            design.weights,
+            event_sums,
+        )
+        _, lower_grad, _ = cost._objective_grad_hess(
+            theta - step,
+            design.basis,
+            design.weights,
+            event_sums,
+        )
+        numerical_hess[:, idx] = (upper_grad - lower_grad) / (2.0 * eps)
+
+    assert grad == pytest.approx(numerical_grad)
+    assert hess == pytest.approx(numerical_hess)
+
+
+def test_exposure_integration_diagnostics_are_reported() -> None:
+    periods = [
+        EventPeriod(event_times=(0.1,), exposure_intervals=((0.0, 0.2),)),
+        EventPeriod(event_times=(0.3,), exposure_intervals=((0.25, 0.5),)),
+    ]
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=1,
+        degree=0,
+        min_segment_periods=1,
+        penalty=0.0,
+        quadrature_points=12,
+    )
+
+    result = SlicedPoissonCPD(config).fit_predict(periods)
+
+    diagnostics = result.diagnostics["exposure_integration"]
+    assert diagnostics["scheme"] == "interval_gauss_legendre"
+    assert diagnostics["nodes_per_interval"] == 12
+    assert diagnostics["total_quadrature_nodes"] == 24
+
+
 def test_non_overlapping_exposure_windows_are_preserved() -> None:
     period = EventPeriod(
         event_times=(0.1, 0.6),

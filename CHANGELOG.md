@@ -4,6 +4,8 @@
 ### Fixed
 - Canonicalized sliced Poisson exposure intervals so overlapping, nested,
   duplicate, and touching windows count as a half-open observed-time union.
+- Replaced sliced Poisson global midpoint exposure masking with interval-local
+  quadrature so narrow observed windows contribute positive exposure.
 
 ## [0.1.15] - 2026-08-20
 ### Added
