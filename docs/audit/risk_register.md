@@ -70,6 +70,7 @@ Severity levels:
 | RR-026 | Partially resolved | E-Divisive now has independent energy-statistic and split-search oracles, deterministic resampling-path tests, small null-calibration and power-curve tests, public wrapper/CLI resampling controls, and corrected admissible split masking. External implementation parity and broad multiple-testing calibration remain pending. |
 | RR-028 | Resolved | Sliced Poisson exposure intervals are canonicalized into sorted half-open interval unions before event validation and integration. Unit tests cover overlapping, nested, duplicate, touching, and exact-boundary cases with an analytical union-measure oracle. |
 | RR-029 | Resolved | Sliced Poisson exposure integration now uses interval-local Gauss-Legendre quadrature. Unit tests cover narrow sub-grid windows, irregular exposure windows, constant-intensity analytical exposure, quadrature convergence, and finite-difference gradient/Hessian consistency. |
+| RR-030 | Resolved | Sliced Poisson segment event totals now come from direct integer prefix counts instead of reconstructed B-spline basis sums. Unit tests cover knot-boundary events across degrees, large event counts, zero-event handling, and partition-of-unity assertions. |
 
 ## Blockers Before External Scientific Readiness
 

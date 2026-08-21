@@ -256,6 +256,7 @@ class SlicedPoissonCost:
         self.grid_basis = bspline_basis(self.grid_times, self.knots, config.degree)
         self.dx = config.period / config.quadrature_points
         self._event_basis_prefix = self._build_event_basis_prefix()
+        self._event_count_prefix = self._build_event_count_prefix()
         self._period_exposure_designs = self._build_period_exposure_designs()
         self.exposure_integration_diagnostics = self._build_integration_diagnostics()
         self._cache: dict[tuple[int, int], SegmentFit] = {}
@@ -293,9 +294,23 @@ class SlicedPoissonCost:
         for idx, period in enumerate(self.periods):
             if period.event_times:
                 basis = bspline_basis(period.event_times, self.knots, self.config.degree)
+                basis_event_count = float(basis.sum())
+                direct_event_count = len(period.event_times)
+                assert math.isclose(
+                    basis_event_count,
+                    direct_event_count,
+                    rel_tol=1e-10,
+                    abs_tol=1e-10,
+                ), "B-spline partition-of-unity event count mismatch."
                 prefix[idx + 1] = prefix[idx] + basis.sum(axis=0)
             else:
                 prefix[idx + 1] = prefix[idx]
+        return prefix
+
+    def _build_event_count_prefix(self) -> ArrayI:
+        prefix = np.zeros(len(self.periods) + 1, dtype=np.int64)
+        for idx, period in enumerate(self.periods):
+            prefix[idx + 1] = prefix[idx] + len(period.event_times)
         return prefix
 
     def _build_period_exposure_designs(self) -> tuple[_ExposureDesign, ...]:
@@ -347,7 +362,13 @@ class SlicedPoissonCost:
     def _fit_segment_uncached(self, a: int, b: int) -> SegmentFit:
         event_sums = self._event_basis_prefix[b] - self._event_basis_prefix[a]
         exposure_design = self._exposure_design_for_segment(a, b)
-        total_events = int(round(float(event_sums.sum())))
+        total_events = int(self._event_count_prefix[b] - self._event_count_prefix[a])
+        assert math.isclose(
+            float(event_sums.sum()),
+            total_events,
+            rel_tol=1e-10,
+            abs_tol=1e-10,
+        ), "B-spline sufficient statistics do not match direct event count."
         total_exposure = float(exposure_design.weights.sum())
         if total_exposure <= 0:
             return SegmentFit(

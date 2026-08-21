@@ -28,6 +28,16 @@ log-likelihood. This additive objective is passed through the shared PELT
 interface. The optimizer currently uses exact candidate retention for bundled
 costs, so ``K`` is retained only as a compatibility argument.
 
+Point-process sufficient statistics
+-----------------------------------
+
+The likelihood uses B-spline basis sums at event times for the log-intensity
+term. Segment event totals, diagnostics, and zero-event handling use a separate
+integer prefix count over periods. This keeps total event counts exact even at
+spline knot boundaries, with repeated event times, or with large event totals.
+Development assertions compare the partition-of-unity basis sums against the
+direct counts so basis regressions fail early.
+
 Exposure intervals
 ------------------
 
