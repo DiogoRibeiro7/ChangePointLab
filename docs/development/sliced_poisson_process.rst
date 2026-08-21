@@ -86,10 +86,38 @@ Diagnostics
 labels, optimization convergence messages, and the generic
 ``SegmentationResult`` view through ``to_changepoint_result()``.
 
+Optimizer failure policy
+------------------------
+
+Segment fits use a stabilized Newton objective where the objective, gradient,
+and Hessian are evaluated from the same finite-checked intensity values. Each
+iteration rejects non-finite objectives, gradients, Hessians, or candidate
+steps.
+
+``SlicedPoissonConfig.optimizer_failure_policy`` controls what happens when a
+segment cannot be fitted:
+
+``"raise"``
+   Default. Raise ``NumericalStabilityError`` before the invalid segment cost
+   can affect PELT selection.
+
+``"retry"``
+   Retry once from a zero-weight initialization with the same deterministic
+   damping and fallback rules. If the retry still fails, return an infinite
+   segment cost.
+
+``"penalize_invalid"``
+   Return an infinite segment cost without raising. This keeps the segment
+   ineligible for optimum selection while preserving diagnostics.
+
+Every failed non-raising fit reports its convergence reason, accepted step
+scale, Hessian condition estimate, and retry count in the stored
+``SegmentFit``.
+
 Limitations
 -----------
 
-The implementation uses a NumPy-only Newton solver and fixed-order
+The implementation uses a NumPy-only damped Newton solver and fixed-order
 Gauss-Legendre quadrature. The quadrature is deterministic but not adaptive.
 The Howz data from the paper are not bundled, so tests use analytical cases
 and deterministic simulations rather than paper-data parity.

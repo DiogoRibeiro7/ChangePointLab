@@ -17,6 +17,7 @@ from changepoint_lab.algorithms.point_process.sliced_poisson import (
     open_uniform_knots,
     simulate_sliced_poisson_segments,
 )
+from changepoint_lab.core.numerics import NumericalStabilityError
 
 
 def test_bspline_basis_is_nonnegative_and_partitions_unity() -> None:
@@ -264,6 +265,141 @@ def test_objective_gradient_and_hessian_match_finite_differences() -> None:
     assert hess == pytest.approx(numerical_hess)
 
 
+def test_extreme_intensity_fit_stays_finite_with_step_diagnostics() -> None:
+    event_times = tuple(float(t) for t in np.linspace(0.5, 0.501, 64, endpoint=False))
+    periods = (EventPeriod(event_times=event_times, exposure_intervals=((0.5, 0.501),)),)
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=1,
+        degree=0,
+        min_segment_periods=1,
+        penalty=0.0,
+        quadrature_points=16,
+    )
+
+    fit = SlicedPoissonCost(periods, config).fit_segment(0, 1)
+
+    assert fit.converged
+    assert np.all(np.isfinite(fit.weights))
+    assert math.isfinite(fit.cost)
+    assert fit.accepted_step_scale >= 0.0
+    assert math.isfinite(fit.hessian_condition)
+
+
+def test_singular_hessian_uses_deterministic_damping_retry() -> None:
+    periods = (
+        EventPeriod(event_times=(0.05, 0.06, 0.07), exposure_intervals=((0.0, 0.5),)),
+    )
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=4,
+        degree=0,
+        min_segment_periods=1,
+        penalty=0.0,
+        ridge=0.0,
+        quadrature_points=16,
+    )
+
+    fit = SlicedPoissonCost(periods, config).fit_segment(0, 1)
+
+    assert fit.converged
+    assert fit.retries > 0
+    assert fit.hessian_condition == float("inf")
+
+
+def test_failed_segment_raises_by_default() -> None:
+    periods = (EventPeriod(event_times=(0.1, 0.2), exposure_intervals=((0.0, 1.0),)),)
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=2,
+        degree=1,
+        min_segment_periods=1,
+        optimizer_max_iter=1,
+    )
+
+    with pytest.raises(NumericalStabilityError, match="optimization failed"):
+        SlicedPoissonCost(periods, config).fit_segment(0, 1)
+
+
+def test_failed_segment_can_be_penalized_as_invalid() -> None:
+    periods = (EventPeriod(event_times=(0.1, 0.2), exposure_intervals=((0.0, 1.0),)),)
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=2,
+        degree=1,
+        min_segment_periods=1,
+        optimizer_max_iter=1,
+        optimizer_failure_policy="penalize_invalid",
+    )
+
+    fit = SlicedPoissonCost(periods, config).fit_segment(0, 1)
+
+    assert not fit.converged
+    assert fit.message == "max_iter"
+    assert fit.cost == float("inf")
+    assert fit.iterations == 1
+
+
+def test_retry_policy_attempts_restart_before_penalizing() -> None:
+    periods = (EventPeriod(event_times=(0.1, 0.2), exposure_intervals=((0.0, 1.0),)),)
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=2,
+        degree=1,
+        min_segment_periods=1,
+        optimizer_max_iter=1,
+        optimizer_failure_policy="retry",
+    )
+
+    fit = SlicedPoissonCost(periods, config).fit_segment(0, 1)
+
+    assert not fit.converged
+    assert fit.cost == float("inf")
+    assert fit.retries >= 1
+
+
+def test_forced_line_search_failure_is_not_a_finite_segment_cost(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    periods = (EventPeriod(event_times=(0.1, 0.2), exposure_intervals=((0.0, 1.0),)),)
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=2,
+        degree=1,
+        min_segment_periods=1,
+        optimizer_failure_policy="penalize_invalid",
+    )
+    cost = SlicedPoissonCost(periods, config)
+    original_objective = cost._objective
+    calls = 0
+
+    def failing_candidate_objective(
+        weights: np.ndarray,
+        exposure_basis: np.ndarray,
+        exposure_weights: np.ndarray,
+        event_sums: np.ndarray,
+    ) -> float:
+        nonlocal calls
+        calls += 1
+        if calls > 1:
+            return float("inf")
+        return original_objective(weights, exposure_basis, exposure_weights, event_sums)
+
+    monkeypatch.setattr(cost, "_objective", failing_candidate_objective)
+
+    fit = cost.fit_segment(0, 1)
+
+    assert not fit.converged
+    assert fit.message == "line_search_failed"
+    assert fit.cost == float("inf")
+    assert fit.retries > 0
+
+
+def test_optimizer_failure_policy_is_validated() -> None:
+    with pytest.raises(ValueError, match="optimizer_failure_policy"):
+        SlicedPoissonConfig(optimizer_failure_policy="ignore")  # type: ignore[arg-type]
+
+
 def test_exposure_integration_diagnostics_are_reported() -> None:
     periods = [
         EventPeriod(event_times=(0.1,), exposure_intervals=((0.0, 0.2),)),
@@ -294,6 +430,7 @@ def test_event_totals_are_direct_counts_at_knot_boundaries(degree: int) -> None:
         degree=degree,
         min_segment_periods=1,
         penalty=0.0,
+        optimizer_failure_policy="penalize_invalid",
     )
     knots = open_uniform_knots(config.period, config.n_basis, config.degree)
     event_times = tuple(float(knot) for knot in knots if 0.0 <= knot < 1.0)

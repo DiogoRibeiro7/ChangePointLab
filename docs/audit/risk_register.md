@@ -32,7 +32,6 @@ Severity levels:
 | R-016 | Low | Repository hygiene | Empty marker files are expected, but package `__init__.py` files are inconsistent about exports. | Discoverability and API boundaries are unclear. | Normalize package exports after public API contract decision. |
 | R-017 | Medium | Scientific reproducibility | Taylor et al. case-study sensor data are not bundled; `scripts/run_within_period_reproduction.py` generates synthetic analogues and records discrepancies. | Users may mistake synthetic MySense outputs for recreation of the proprietary case-study figures. | Keep paper-consistent and MySense-extension artifacts separated, and add real cached data only with license and checksum documentation. |
 | R-018 | Medium | Scientific reproducibility | Sliced Poisson tests cover analytical and simulated cases, but the Howz data and supplementary code parity are not bundled. | Users may overinterpret the implementation as full reproduction of Martínez-Hernández and Killick (2024). | Keep the method marked `partially_verified`; add licensed reference data or supplementary-code parity only when available. |
-| R-021 | High | Scientific correctness | `src/changepoint_lab/algorithms/point_process/sliced_poisson.py` records segment optimizer failures but `SlicedPoissonCost.cost()` still returns the fitted segment cost; registry method `sliced_poisson_process` remains `partially_verified`. | Non-converged segment fits can influence PELT changepoint selection. | Define a failure policy that makes invalid segment fits ineligible or raises; add line-search/max-iteration characterization tests before changing behavior. |
 | R-022 | Medium | Type/quality | `pyproject.toml` scopes mypy to a small stable subset and Ruff still selects only critical syntax/name rules; `.github/workflows/ci.yml` mirrors those gates. | Public typed-package surfaces can drift despite the `py.typed` marker. | Broaden static checks in controlled steps after baseline truth; keep failures explicit while expanding coverage. |
 | R-023 | Medium | Documentation | `docs/architecture/index.md` is not synchronized with the current `src/changepoint_lab` package tree and BOCPD layout. | Architecture documentation can mislead contributors about active modules and ownership boundaries. | Regenerate or rewrite architecture docs from the current tree and add a docs consistency check. |
 | R-024 | Medium | Process | `.github/workflows/ci.yml` runs `coverage report`, and CI now enforces measured overall and selected package-area coverage floors. | New low-coverage modules can still enter if they do not move the aggregate below the floor. | Ratchet the floor upward and add targeted per-module floors as new oracle tests land. |
@@ -71,16 +70,15 @@ Severity levels:
 | RR-028 | Resolved | Sliced Poisson exposure intervals are canonicalized into sorted half-open interval unions before event validation and integration. Unit tests cover overlapping, nested, duplicate, touching, and exact-boundary cases with an analytical union-measure oracle. |
 | RR-029 | Resolved | Sliced Poisson exposure integration now uses interval-local Gauss-Legendre quadrature. Unit tests cover narrow sub-grid windows, irregular exposure windows, constant-intensity analytical exposure, quadrature convergence, and finite-difference gradient/Hessian consistency. |
 | RR-030 | Resolved | Sliced Poisson segment event totals now come from direct integer prefix counts instead of reconstructed B-spline basis sums. Unit tests cover knot-boundary events across degrees, large event counts, zero-event handling, and partition-of-unity assertions. |
+| RR-031 | Resolved | Sliced Poisson segment optimizer failures now raise by default or return infinite costs under explicit non-raising policies. Unit tests cover finite-difference derivatives, extreme intensities, singular Hessians, forced maximum iterations, retry behavior, and forced line-search failure. |
 
 ## Blockers Before External Scientific Readiness
 
-1. Fix sliced-Poisson optimizer-failure propagation before adding new
-   point-process features.
-2. Fix or document broken public compatibility paths such as legacy `bocpd`.
-3. Broaden result/input invariants, static checks, docs consistency, and coverage
+1. Fix or document broken public compatibility paths such as legacy `bocpd`.
+2. Broaden result/input invariants, static checks, docs consistency, and coverage
    gates without changing scientific behavior.
-4. Add independent oracles for HSMM, SD-HMM, BOCPD Gaussian paths, KCP/RFF
+3. Add independent oracles for HSMM, SD-HMM, BOCPD Gaussian paths, KCP/RFF
    approximation behavior, and E-Divisive multiple-testing calibration before
    upgrading verification status.
-5. Keep benchmark, paper-parity, and release claims blocked until generated
+4. Keep benchmark, paper-parity, and release claims blocked until generated
    artifacts and external validation exist.

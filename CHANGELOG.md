@@ -8,6 +8,8 @@
   quadrature so narrow observed windows contribute positive exposure.
 - Tracked sliced Poisson event totals with direct integer prefixes instead of
   reconstructing counts from floating B-spline sufficient statistics.
+- Made sliced Poisson segment optimizer failures raise by default or become
+  infinite-cost fits under explicit non-raising policies.
 
 ## [0.1.15] - 2026-08-20
 ### Added
