@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.1.16] - 2026-08-21
 ### Fixed
 - Canonicalized sliced Poisson exposure intervals so overlapping, nested,
   duplicate, and touching windows count as a half-open observed-time union.

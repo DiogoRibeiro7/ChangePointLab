@@ -20,7 +20,7 @@ artifacts in this repository. Those claims are preserved in
 ## Current Status
 
 No cross-library benchmark table is currently verified for ChangePointLab
-0.1.15. Existing tests exercise package behavior, CLI integration, selected
+0.1.16. Existing tests exercise package behavior, CLI integration, selected
 edge cases, and a local benchmark-harness smoke run, but they are not a
 cross-library benchmark suite.
 

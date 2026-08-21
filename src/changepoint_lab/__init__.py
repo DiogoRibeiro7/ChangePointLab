@@ -67,7 +67,7 @@ from .core.segmentation import (
 )
 from .core.random import choose_from_sequence, make_rng, spawn_rngs
 
-__version__ = "0.1.15"
+__version__ = "0.1.16"
 
 __stable__ = stable_symbols()
 __experimental__ = experimental_symbols()
