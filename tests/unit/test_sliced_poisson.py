@@ -5,6 +5,7 @@ import math
 import numpy as np
 import pytest
 
+import changepoint_lab.algorithms.point_process.sliced_poisson as sliced_poisson_module
 from changepoint_lab.algorithms.point_process.sliced_poisson import (
     EventPeriod,
     SlicedPoissonCPD,
@@ -283,6 +284,94 @@ def test_exposure_integration_diagnostics_are_reported() -> None:
     assert diagnostics["scheme"] == "interval_gauss_legendre"
     assert diagnostics["nodes_per_interval"] == 12
     assert diagnostics["total_quadrature_nodes"] == 24
+
+
+@pytest.mark.parametrize("degree", [0, 1, 2, 3])
+def test_event_totals_are_direct_counts_at_knot_boundaries(degree: int) -> None:
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=degree + 3,
+        degree=degree,
+        min_segment_periods=1,
+        penalty=0.0,
+    )
+    knots = open_uniform_knots(config.period, config.n_basis, config.degree)
+    event_times = tuple(float(knot) for knot in knots if 0.0 <= knot < 1.0)
+    periods = (EventPeriod(event_times=event_times, exposure_intervals=((0.0, 1.0),)),)
+
+    cost = SlicedPoissonCost(periods, config)
+    fit = cost.fit_segment(0, 1)
+
+    assert fit.total_events == len(event_times)
+    assert int(cost._event_count_prefix[1]) == len(event_times)
+    event_sums = cost._event_basis_prefix[1] - cost._event_basis_prefix[0]
+    assert float(event_sums.sum()) == pytest.approx(len(event_times))
+
+
+def test_large_event_totals_stay_exact_in_constant_intensity_fit() -> None:
+    event_times = tuple(float(t) for t in np.linspace(0.0, 1.0, 4096, endpoint=False))
+    periods = (EventPeriod(event_times=event_times, exposure_intervals=((0.0, 1.0),)),)
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=1,
+        degree=0,
+        min_segment_periods=1,
+        penalty=0.0,
+    )
+
+    fit = SlicedPoissonCost(periods, config).fit_segment(0, 1)
+
+    assert fit.total_events == 4096
+    assert math.exp(fit.weights[0]) == pytest.approx(4096.0)
+
+
+def test_zero_event_branch_uses_direct_integer_counts() -> None:
+    periods = (EventPeriod(event_times=(), exposure_intervals=((0.0, 1.0),)),)
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=3,
+        degree=1,
+        min_segment_periods=1,
+        penalty=0.0,
+    )
+
+    cost = SlicedPoissonCost(periods, config)
+    fit = cost.fit_segment(0, 1)
+
+    assert cost._event_count_prefix.dtype == np.int64
+    assert fit.total_events == 0
+    assert fit.converged
+    assert fit.message == "zero_events_intensity_floor"
+
+
+def test_event_count_assertion_detects_basis_partition_drift(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_bspline_basis = sliced_poisson_module.bspline_basis
+
+    def broken_bspline_basis(
+        times: list[float] | np.ndarray | tuple[float, ...],
+        knots: np.ndarray,
+        degree: int,
+    ) -> np.ndarray:
+        basis = original_bspline_basis(times, knots, degree)
+        if len(np.asarray(times, dtype=float)) == 2:
+            return 0.5 * basis
+        return basis
+
+    monkeypatch.setattr(sliced_poisson_module, "bspline_basis", broken_bspline_basis)
+    config = SlicedPoissonConfig(
+        period=1.0,
+        n_basis=2,
+        degree=1,
+        min_segment_periods=1,
+    )
+
+    with pytest.raises(AssertionError, match="partition-of-unity"):
+        SlicedPoissonCost(
+            (EventPeriod(event_times=(0.2, 0.8), exposure_intervals=((0.0, 1.0),)),),
+            config,
+        )
 
 
 def test_non_overlapping_exposure_windows_are_preserved() -> None:

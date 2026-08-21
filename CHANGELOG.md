@@ -6,6 +6,8 @@
   duplicate, and touching windows count as a half-open observed-time union.
 - Replaced sliced Poisson global midpoint exposure masking with interval-local
   quadrature so narrow observed windows contribute positive exposure.
+- Tracked sliced Poisson event totals with direct integer prefixes instead of
+  reconstructing counts from floating B-spline sufficient statistics.
 
 ## [0.1.15] - 2026-08-20
 ### Added

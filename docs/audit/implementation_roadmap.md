@@ -150,8 +150,7 @@ Exit criteria:
 
 Repair correctness issues in dependency order:
 
-1. Track direct integer event sufficient statistics.
-2. Define optimizer-failure propagation policy for segment costs.
+1. Define optimizer-failure propagation policy for segment costs.
 
 Exit criteria:
 
