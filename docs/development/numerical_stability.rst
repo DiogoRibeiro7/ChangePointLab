@@ -38,8 +38,17 @@ Sliced Poisson segment fitting evaluates the Poisson objective on
 interval-local Gauss-Legendre exposure nodes, so positive observed windows do
 not disappear because of a period-wide grid alignment. Candidate Newton steps
 that overflow the intensity have infinite objective value and are rejected by
-the line search. Non-finite gradients, Hessians, or Newton steps stop the
-segment fit with an explicit diagnostic message.
+the line search. The objective, gradient, and Hessian share the same stabilized
+finite-value evaluation path.
+
+Singular Hessians use deterministic damping candidates before falling back to a
+normalized gradient step. Non-finite gradients, Hessians, objectives, or line
+search failures stop the segment fit with an explicit diagnostic message. By
+default the detector raises ``NumericalStabilityError`` before a failed segment
+can affect changepoint selection. ``optimizer_failure_policy="retry"`` retries
+once from zero weights, and ``"penalize_invalid"`` records an infinite-cost
+fit with convergence reason, accepted step scale, Hessian condition estimate,
+and retry count.
 
 Kernel CPD
 ----------

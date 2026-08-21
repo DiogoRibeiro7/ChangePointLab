@@ -148,9 +148,9 @@ Exit criteria:
 
 ### Gate B: sliced Poisson correctness
 
-Repair correctness issues in dependency order:
-
-1. Define optimizer-failure propagation policy for segment costs.
+The identified segment-fit correctness blocker is closed. Keep this gate open
+only for external parity evidence; new point/count-process features can proceed
+through Gate C without depending on optimizer-failure propagation work.
 
 Exit criteria:
 

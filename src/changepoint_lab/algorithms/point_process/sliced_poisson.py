@@ -23,6 +23,7 @@ ArrayI = NDArray[np.integer]
 Interval = tuple[float, float]
 Penalty = Literal["sic", "bic", "aic"]
 MarkedMode = Literal["independent", "shared_baseline"]
+OptimizerFailurePolicy = Literal["raise", "retry", "penalize_invalid"]
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,7 @@ class SlicedPoissonConfig:
     optimizer_tol: float = 1e-7
     ridge: float = 1e-8
     intensity_floor: float = 1e-9
+    optimizer_failure_policy: OptimizerFailurePolicy = "raise"
 
     def __post_init__(self) -> None:
         if self.period <= 0 or not math.isfinite(self.period):
@@ -71,6 +73,10 @@ class SlicedPoissonConfig:
             raise ValueError("optimizer settings must be positive.")
         if self.ridge < 0 or self.intensity_floor <= 0:
             raise ValueError("ridge must be non-negative and intensity_floor positive.")
+        if self.optimizer_failure_policy not in {"raise", "retry", "penalize_invalid"}:
+            raise ValueError(
+                "optimizer_failure_policy must be 'raise', 'retry', or 'penalize_invalid'."
+            )
 
 
 @dataclass(frozen=True)
@@ -88,6 +94,9 @@ class SegmentFit:
     iterations: int
     gradient_norm: float
     message: str
+    accepted_step_scale: float
+    hessian_condition: float
+    retries: int
 
 
 @dataclass(frozen=True)
@@ -283,6 +292,9 @@ class SlicedPoissonCost:
                 iterations=0,
                 gradient_norm=float("inf"),
                 message="empty_segment",
+                accepted_step_scale=0.0,
+                hessian_condition=float("inf"),
+                retries=0,
             )
         key = (a, b)
         if key not in self._cache:
@@ -383,14 +395,17 @@ class SlicedPoissonCost:
                 iterations=0,
                 gradient_norm=float("inf"),
                 message="zero_exposure",
+                accepted_step_scale=0.0,
+                hessian_condition=float("inf"),
+                retries=0,
             )
         if total_events == 0:
-            weights = np.full(self.config.n_basis, math.log(self.config.intensity_floor))
+            zero_weights = np.full(self.config.n_basis, math.log(self.config.intensity_floor))
             nll = total_exposure * self.config.intensity_floor
             return SegmentFit(
                 start=a,
                 end=b,
-                weights=weights,
+                weights=zero_weights,
                 cost=2.0 * nll,
                 neg_log_likelihood=nll,
                 total_events=0,
@@ -399,70 +414,69 @@ class SlicedPoissonCost:
                 iterations=0,
                 gradient_norm=0.0,
                 message="zero_events_intensity_floor",
+                accepted_step_scale=0.0,
+                hessian_condition=0.0,
+                retries=0,
             )
 
         initial_rate = max(total_events / total_exposure, self.config.intensity_floor)
-        weights = np.full(self.config.n_basis, math.log(initial_rate), dtype=float)
-        converged = False
-        message = "max_iter"
-        grad_norm = float("inf")
-        value = self._objective(
-            weights,
+        opt_result = self._optimize_segment(
+            np.full(self.config.n_basis, math.log(initial_rate), dtype=float),
             exposure_design.basis,
             exposure_design.weights,
             event_sums,
         )
-        iterations = 0
-
-        for current_iteration in range(1, self.config.optimizer_max_iter + 1):
-            iterations = current_iteration
-            value, grad, hess = self._objective_grad_hess(
-                weights,
+        weights: ArrayF = opt_result[0]
+        value = opt_result[1]
+        converged = opt_result[2]
+        iterations = opt_result[3]
+        grad_norm = opt_result[4]
+        message = opt_result[5]
+        step_scale = opt_result[6]
+        condition = opt_result[7]
+        retries = opt_result[8]
+        if not converged and self.config.optimizer_failure_policy == "retry":
+            retry_result = self._optimize_segment(
+                np.zeros(self.config.n_basis, dtype=float),
                 exposure_design.basis,
                 exposure_design.weights,
                 event_sums,
             )
-            grad_norm = float(np.linalg.norm(grad, ord=2))
-            if not np.isfinite(value) or not np.all(np.isfinite(grad)) or not np.isfinite(grad_norm):
-                message = "non_finite_objective"
-                break
-            if grad_norm < self.config.optimizer_tol:
-                converged = True
-                message = "converged"
-                break
-            if not np.all(np.isfinite(hess)):
-                message = "non_finite_hessian"
-                break
-            try:
-                step = np.linalg.solve(
-                    hess + self.config.ridge * np.eye(self.config.n_basis),
-                    -grad,
-                )
-            except np.linalg.LinAlgError:
-                step = -np.linalg.pinv(hess + self.config.ridge * np.eye(self.config.n_basis)) @ grad
-            if not np.all(np.isfinite(step)):
-                message = "non_finite_newton_step"
-                break
+            retry_weights: ArrayF = retry_result[0]
+            retry_value = retry_result[1]
+            retry_converged = retry_result[2]
+            retry_iterations = retry_result[3]
+            retry_grad_norm = retry_result[4]
+            retry_message = retry_result[5]
+            retry_step_scale = retry_result[6]
+            retry_condition = retry_result[7]
+            retry_retries = retry_result[8]
+            retries += retry_retries + 1
+            if retry_converged or retry_value < value:
+                weights = retry_weights
+                value = retry_value
+                converged = retry_converged
+                iterations += retry_iterations
+                grad_norm = retry_grad_norm
+                message = retry_message
+                step_scale = retry_step_scale
+                condition = retry_condition
 
-            accepted = False
-            scale = 1.0
-            for _ in range(20):
-                candidate = weights + scale * step
-                candidate_value = self._objective(
-                    candidate,
-                    exposure_design.basis,
-                    exposure_design.weights,
-                    event_sums,
-                )
-                if math.isfinite(candidate_value) and candidate_value <= value:
-                    weights = candidate
-                    value = candidate_value
-                    accepted = True
-                    break
-                scale *= 0.5
-            if not accepted:
-                message = "line_search_failed"
-                break
+        if not converged:
+            return self._handle_failed_fit(
+                start=a,
+                end=b,
+                weights=weights,
+                value=value,
+                total_events=total_events,
+                total_exposure=total_exposure,
+                iterations=iterations,
+                gradient_norm=grad_norm,
+                message=message,
+                accepted_step_scale=step_scale,
+                hessian_condition=condition,
+                retries=retries,
+            )
 
         return SegmentFit(
             start=a,
@@ -472,10 +486,175 @@ class SlicedPoissonCost:
             neg_log_likelihood=value,
             total_events=total_events,
             total_exposure=total_exposure,
-            converged=converged,
+            converged=True,
             iterations=iterations,
             gradient_norm=grad_norm,
             message=message,
+            accepted_step_scale=step_scale,
+            hessian_condition=condition,
+            retries=retries,
+        )
+
+    def _optimize_segment(
+        self,
+        initial_weights: ArrayF,
+        exposure_basis: ArrayF,
+        exposure_weights: ArrayF,
+        event_sums: ArrayF,
+    ) -> tuple[ArrayF, float, bool, int, float, str, float, float, int]:
+        weights = initial_weights.copy()
+        value = self._objective(weights, exposure_basis, exposure_weights, event_sums)
+        converged = False
+        message = "max_iter"
+        grad_norm = float("inf")
+        step_scale = 0.0
+        condition = float("inf")
+        retries = 0
+        iterations = 0
+
+        for current_iteration in range(1, self.config.optimizer_max_iter + 1):
+            iterations = current_iteration
+            value, grad, hess = self._objective_grad_hess(
+                weights,
+                exposure_basis,
+                exposure_weights,
+                event_sums,
+            )
+            grad_norm = float(np.linalg.norm(grad, ord=2))
+            if not (
+                np.isfinite(value)
+                and np.all(np.isfinite(grad))
+                and np.all(np.isfinite(hess))
+                and np.isfinite(grad_norm)
+            ):
+                message = "non_finite_objective"
+                break
+            condition = self._condition_number(hess)
+            if grad_norm < self.config.optimizer_tol:
+                converged = True
+                message = "converged"
+                break
+
+            step, step_retries, condition = self._solve_newton_step(hess, grad)
+            retries += step_retries
+            if not np.all(np.isfinite(step)):
+                message = "non_finite_newton_step"
+                break
+
+            accepted, weights, value, step_scale, line_retries = self._accept_step(
+                weights,
+                step,
+                value,
+                exposure_basis,
+                exposure_weights,
+                event_sums,
+            )
+            retries += line_retries
+            if not accepted:
+                gradient_step = -grad / max(1.0, grad_norm)
+                accepted, weights, value, step_scale, line_retries = self._accept_step(
+                    weights,
+                    gradient_step,
+                    value,
+                    exposure_basis,
+                    exposure_weights,
+                    event_sums,
+                )
+                retries += line_retries + 1
+            if not accepted:
+                message = "line_search_failed"
+                break
+
+        return weights, value, converged, iterations, grad_norm, message, step_scale, condition, retries
+
+    def _condition_number(self, hess: ArrayF) -> float:
+        regularized = hess + self.config.ridge * np.eye(self.config.n_basis)
+        condition = float(np.linalg.cond(regularized))
+        return condition if math.isfinite(condition) else float("inf")
+
+    def _solve_newton_step(self, hess: ArrayF, grad: ArrayF) -> tuple[ArrayF, int, float]:
+        damping_values = [self.config.ridge, 1e-8, 1e-6, 1e-4, 1e-2]
+        seen: set[float] = set()
+        retries = 0
+        for damping in damping_values:
+            if damping in seen:
+                continue
+            seen.add(damping)
+            regularized = hess + damping * np.eye(self.config.n_basis)
+            try:
+                condition = float(np.linalg.cond(regularized))
+                step = np.linalg.solve(regularized, -grad)
+            except np.linalg.LinAlgError:
+                retries += 1
+                continue
+            if np.all(np.isfinite(step)) and math.isfinite(condition):
+                return step, retries, condition
+            retries += 1
+        regularized = hess + max(self.config.ridge, 1e-8) * np.eye(self.config.n_basis)
+        condition = float(np.linalg.cond(regularized))
+        return -np.linalg.pinv(regularized) @ grad, retries + 1, condition
+
+    def _accept_step(
+        self,
+        weights: ArrayF,
+        step: ArrayF,
+        value: float,
+        exposure_basis: ArrayF,
+        exposure_weights: ArrayF,
+        event_sums: ArrayF,
+    ) -> tuple[bool, ArrayF, float, float, int]:
+        scale = 1.0
+        retries = 0
+        for _ in range(20):
+            candidate = weights + scale * step
+            candidate_value = self._objective(
+                candidate,
+                exposure_basis,
+                exposure_weights,
+                event_sums,
+            )
+            if math.isfinite(candidate_value) and candidate_value <= value:
+                return True, candidate, candidate_value, scale, retries
+            scale *= 0.5
+            retries += 1
+        return False, weights, value, 0.0, retries
+
+    def _handle_failed_fit(
+        self,
+        *,
+        start: int,
+        end: int,
+        weights: ArrayF,
+        value: float,
+        total_events: int,
+        total_exposure: float,
+        iterations: int,
+        gradient_norm: float,
+        message: str,
+        accepted_step_scale: float,
+        hessian_condition: float,
+        retries: int,
+    ) -> SegmentFit:
+        if self.config.optimizer_failure_policy == "raise":
+            raise NumericalStabilityError(
+                "sliced Poisson segment optimization failed "
+                f"for [{start}, {end}) with reason '{message}'."
+            )
+        return SegmentFit(
+            start=start,
+            end=end,
+            weights=weights,
+            cost=float("inf"),
+            neg_log_likelihood=value if math.isfinite(value) else float("inf"),
+            total_events=total_events,
+            total_exposure=total_exposure,
+            converged=False,
+            iterations=iterations,
+            gradient_norm=gradient_norm,
+            message=message,
+            accepted_step_scale=accepted_step_scale,
+            hessian_condition=hessian_condition,
+            retries=retries,
         )
 
     def _objective(
@@ -485,12 +664,13 @@ class SlicedPoissonCost:
         exposure_weights: ArrayF,
         event_sums: ArrayF,
     ) -> float:
-        eta = require_finite_array(exposure_basis @ weights, "sliced Poisson log-intensity")
-        intensity = exp_or_inf(eta)
-        value = float(
-            np.dot(exposure_weights, intensity) - np.dot(event_sums, weights)
+        value, _, _ = self._objective_grad_hess(
+            weights,
+            exposure_basis,
+            exposure_weights,
+            event_sums,
         )
-        return value if math.isfinite(value) else float("inf")
+        return value
 
     def _objective_grad_hess(
         self,
@@ -501,11 +681,17 @@ class SlicedPoissonCost:
     ) -> tuple[float, ArrayF, ArrayF]:
         eta = require_finite_array(exposure_basis @ weights, "sliced Poisson log-intensity")
         intensity = exp_or_inf(eta)
+        if not np.all(np.isfinite(intensity)):
+            return (
+                float("inf"),
+                np.full(self.config.n_basis, float("inf")),
+                np.full((self.config.n_basis, self.config.n_basis), float("inf")),
+            )
         weighted_intensity = exposure_weights * intensity
         value = float(np.sum(weighted_intensity) - np.dot(event_sums, weights))
         grad = exposure_basis.T @ weighted_intensity - event_sums
         hess = exposure_basis.T @ (exposure_basis * weighted_intensity[:, None])
-        return value, grad, hess
+        return value if math.isfinite(value) else float("inf"), grad, hess
 
     def intensity(self, weights: ArrayF, times: ArrayF) -> ArrayF:
         """Evaluate fitted intensity at supplied times."""
@@ -558,6 +744,9 @@ class SlicedPoissonCPD:
                 "end": segment.end,
                 "message": segment.message,
                 "gradient_norm": segment.gradient_norm,
+                "accepted_step_scale": segment.accepted_step_scale,
+                "hessian_condition": segment.hessian_condition,
+                "retries": segment.retries,
             }
             for segment in segment_fits
             if not segment.converged
@@ -573,6 +762,7 @@ class SlicedPoissonCPD:
             diagnostics={
                 "penalty": penalty,
                 "penalty_mode": self.config.penalty,
+                "optimizer_failure_policy": self.config.optimizer_failure_policy,
                 "optimization_failures": failures,
                 "exposure_integration": cost.exposure_integration_diagnostics,
                 "pelt_objective": (
