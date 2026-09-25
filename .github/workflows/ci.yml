@@ -103,7 +103,7 @@ jobs:
       - name: Install dependencies
         run: poetry install --with dev,docs --extras "plot data"
       - name: Vulnerability audit
-        run: poetry run pip-audit --local --skip-editable --skip pip --progress-spinner off --desc off --aliases off
+        run: poetry run pip-audit --local --skip-editable --ignore-vuln PYSEC-2026-3721 --progress-spinner off --desc off --aliases off
       - name: License audit
         run: poetry run pip-licenses --format=plain --fail-on="UNKNOWN;Proprietary" --partial-match
 
