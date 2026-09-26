@@ -232,6 +232,9 @@ binary_data, bins_per_day = load_binary_from_csv(
     bin_minutes=15
 )
 
+# CSV read and decoding failures raise DataLoadingError with the original cause;
+# missing requested columns raise SchemaMismatchError.
+
 # Configuration for detecting user behavior changes
 config = BOCPDConfig(
     alpha0=0.5,

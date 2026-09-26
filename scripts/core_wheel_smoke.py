@@ -27,15 +27,15 @@ def _venv_python(env_dir: Path) -> Path:
     return env_dir / "bin" / "python"
 
 
-def _run(command: list[str], cwd: Path) -> None:
-    subprocess.run(
+def _run(command: list[str], cwd: Path) -> str:
+    return subprocess.run(
         command,
         cwd=cwd,
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-    )
+    ).stdout
 
 
 def smoke_wheel(wheel: Path, numpy_spec: str) -> None:
@@ -48,6 +48,17 @@ def smoke_wheel(wheel: Path, numpy_spec: str) -> None:
         _run([str(python), "-m", "pip", "install", "--upgrade", "pip"], tmp_path)
         _run([str(python), "-m", "pip", "install", numpy_spec], tmp_path)
         _run([str(python), "-m", "pip", "install", "--no-deps", str(wheel)], tmp_path)
+        # Keep the selected NumPy version while installing the other core dependency.
+        dataexcept_spec = _run(
+            [
+                str(python), "-c",
+                "from importlib.metadata import requires; "
+                "print(next(req for req in requires('changepoint-lab') "
+                "if req.startswith('DataExcept ')))",
+            ],
+            tmp_path,
+        ).strip()
+        _run([str(python), "-m", "pip", "install", dataexcept_spec], tmp_path)
         _run(
             [
                 str(python),
@@ -55,6 +66,7 @@ def smoke_wheel(wheel: Path, numpy_spec: str) -> None:
                 (
                     "import importlib.util; "
                     "import numpy as np; "
+                    "from dataexcept import DataLoadingError; "
                     "import changepoint_lab as cpl; "
                     "from changepoint_lab.algorithms.optimization.pelt import "
                     "NormalMeanVarUnknown, bic_penalty; "

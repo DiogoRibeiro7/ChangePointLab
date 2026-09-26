@@ -7,7 +7,7 @@ name = "changepoint-lab"
 version = "0.1.16"
 description = "ChangePointLab: a unified Python toolkit for changepoint detection in time series."
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.10,<3.15"
 license = "MIT"
 authors = [
   { name = "Diogo Ribeiro", email = "dfr@esmad.ipp.pt" }
@@ -28,6 +28,7 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Artificial Intelligence"
 ]
 dependencies = [
+  "DataExcept>=1.7,<2",
   "numpy>=1.21,<2.3; python_version < '3.14'",
   "numpy>=2.3; python_version >= '3.14'"
 ]

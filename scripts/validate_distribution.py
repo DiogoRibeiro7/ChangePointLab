@@ -99,11 +99,13 @@ def validate_dist(dist_dir: Path, root: Path) -> None:
     expected_metadata = [
         f"Name: {project['name']}",
         f"Version: {project['version']}",
-        "Requires-Python: >=3.10,<4.0",
+        f"Requires-Python: {project['requires-python']}",
     ]
     for line in expected_metadata:
         if line not in metadata:
             raise AssertionError(f"missing wheel metadata line: {line}")
+    if not any(line.startswith("Requires-Dist: DataExcept (") for line in metadata.splitlines()):
+        raise AssertionError("DataExcept must be a core wheel dependency")
     for line in metadata.splitlines():
         if line.startswith("Requires-Dist: matplotlib") and "extra == \"plot\"" not in line:
             raise AssertionError(f"matplotlib must be plot-optional: {line}")

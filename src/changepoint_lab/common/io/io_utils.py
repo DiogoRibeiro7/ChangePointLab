@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import List, Sequence, Tuple
+from zipfile import BadZipFile
 
 import numpy as np
+from dataexcept import DataLoadingError, SchemaMismatchError
 from numpy.typing import NDArray
+
+from ._errors import writing
 
 # Local types shared with within-period CPD modules
 Tau = Tuple[int, ...]
@@ -56,27 +60,28 @@ def save_result_npz(
     """
     p = Path(path)
     flat, idx = _pack_tau_list(samples_tau)
-    np.savez_compressed(
-        p,
-        samples_flat=flat,
-        samples_idx=idx,
-        log_posteriors=np.asarray(log_posteriors, dtype=float),
-        cp_hist=np.asarray(changepoint_hist, dtype=np.int64),
-        mode_tau=np.asarray(mode_tau, dtype=np.int64),
+    payload = {
+        "samples_flat": flat,
+        "samples_idx": idx,
+        "log_posteriors": np.asarray(log_posteriors, dtype=float),
+        "cp_hist": np.asarray(changepoint_hist, dtype=np.int64),
+        "mode_tau": np.asarray(mode_tau, dtype=np.int64),
         # prior
-        prior_N=int(prior_obj.N),
-        prior_l=int(prior_obj.l),
-        prior_gamma=float(prior_obj.gamma),
-        prior_pois_lambda=float(prior_obj.pois_lambda),
+        "prior_N": int(prior_obj.N),
+        "prior_l": int(prior_obj.l),
+        "prior_gamma": float(prior_obj.gamma),
+        "prior_pois_lambda": float(prior_obj.pois_lambda),
         # cfg
-        cfg_iters=int(cfg_obj.iters),
-        cfg_burn=int(cfg_obj.burn),
-        cfg_thin=int(cfg_obj.thin),
-        cfg_seed=-1 if cfg_obj.seed is None else int(cfg_obj.seed),
-        cfg_move_prob=float(cfg_obj.move_prob),
-        cfg_birth_prob=float(cfg_obj.birth_prob),
-        cfg_death_prob=float(cfg_obj.death_prob),
-    )
+        "cfg_iters": int(cfg_obj.iters),
+        "cfg_burn": int(cfg_obj.burn),
+        "cfg_thin": int(cfg_obj.thin),
+        "cfg_seed": -1 if cfg_obj.seed is None else int(cfg_obj.seed),
+        "cfg_move_prob": float(cfg_obj.move_prob),
+        "cfg_birth_prob": float(cfg_obj.birth_prob),
+        "cfg_death_prob": float(cfg_obj.death_prob),
+    }
+    with writing(p):
+        np.savez_compressed(p, **payload)
 
 
 def load_result_npz(path: str | Path):
@@ -88,27 +93,45 @@ def load_result_npz(path: str | Path):
         mode_tau (Tau), prior (dict), cfg (dict)
     """
     p = Path(path)
-    z = np.load(p, allow_pickle=False)
-    samples_tau = _unpack_tau_list(z["samples_flat"], z["samples_idx"])
-    log_post = z["log_posteriors"].astype(float)
-    cp_hist = z["cp_hist"].astype(np.int64)
-    mode_tau = tuple(z["mode_tau"].astype(int).tolist())
+    try:
+        archive = np.load(p, allow_pickle=False)
+    except (OSError, ValueError, EOFError, BadZipFile) as exc:
+        raise DataLoadingError(str(p), exc) from exc
+    if not isinstance(archive, np.lib.npyio.NpzFile):
+        raise SchemaMismatchError("NPZ archive", "NumPy array")
 
-    prior = {
-        "N": int(z["prior_N"]),
-        "l": int(z["prior_l"]),
-        "gamma": float(z["prior_gamma"]),
-        "pois_lambda": float(z["prior_pois_lambda"]),
-    }
-    cfg = {
-        "iters": int(z["cfg_iters"]),
-        "burn": int(z["cfg_burn"]),
-        "thin": int(z["cfg_thin"]),
-        "seed": None if int(z["cfg_seed"]) < 0 else int(z["cfg_seed"]),
-        "move_prob": float(z["cfg_move_prob"]),
-        "birth_prob": float(z["cfg_birth_prob"]),
-        "death_prob": float(z["cfg_death_prob"]),
-    }
+    with archive as z:
+        required = {
+            "samples_flat", "samples_idx", "log_posteriors", "cp_hist", "mode_tau",
+            "prior_N", "prior_l", "prior_gamma", "prior_pois_lambda",
+            "cfg_iters", "cfg_burn", "cfg_thin", "cfg_seed",
+            "cfg_move_prob", "cfg_birth_prob", "cfg_death_prob",
+        }
+        if not required.issubset(z.files):
+            raise SchemaMismatchError(str(sorted(required)), str(sorted(z.files)))
+        try:
+            samples_tau = _unpack_tau_list(z["samples_flat"], z["samples_idx"])
+            log_post = z["log_posteriors"].astype(float)
+            cp_hist = z["cp_hist"].astype(np.int64)
+            mode_tau = tuple(z["mode_tau"].astype(int).tolist())
+
+            prior = {
+                "N": int(z["prior_N"]),
+                "l": int(z["prior_l"]),
+                "gamma": float(z["prior_gamma"]),
+                "pois_lambda": float(z["prior_pois_lambda"]),
+            }
+            cfg = {
+                "iters": int(z["cfg_iters"]),
+                "burn": int(z["cfg_burn"]),
+                "thin": int(z["cfg_thin"]),
+                "seed": None if int(z["cfg_seed"]) < 0 else int(z["cfg_seed"]),
+                "move_prob": float(z["cfg_move_prob"]),
+                "birth_prob": float(z["cfg_birth_prob"]),
+                "death_prob": float(z["cfg_death_prob"]),
+            }
+        except (OSError, ValueError, EOFError, BadZipFile) as exc:
+            raise DataLoadingError(str(p), exc) from exc
 
     return {
         "samples_tau": samples_tau,

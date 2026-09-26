@@ -15,6 +15,8 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 from numpy.typing import NDArray
 
+from changepoint_lab.common.io._errors import writing
+
 # Import shared types
 from changepoint_lab.common.types.types import (
     ChangePointResult,
@@ -972,7 +974,8 @@ def example_usage() -> None:
     for cp in result.change_points:
         plt.axvline(cp, color="r", linestyle="--")
     plt.title("KCP Results")
-    plt.savefig("kcp_example.png")
+    with writing("kcp_example.png"):
+        plt.savefig("kcp_example.png")
     plt.close()
 
     # Run HSMM with the harmonized API
@@ -994,7 +997,8 @@ def example_usage() -> None:
     plt.step(range(len(hsmm_result["states"])), hsmm_result["states"])
     plt.title("HSMM States")
     plt.tight_layout()
-    plt.savefig("hsmm_example.png")
+    with writing("hsmm_example.png"):
+        plt.savefig("hsmm_example.png")
     plt.close()
 
 

@@ -47,14 +47,7 @@ def _install_wheel(python: Path, wheel: Path) -> None:
         text=True,
     )
     subprocess.run(
-        [str(python), "-m", "pip", "install", "numpy"],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-    )
-    subprocess.run(
-        [str(python), "-m", "pip", "install", "--no-deps", str(wheel)],
+        [str(python), "-m", "pip", "install", str(wheel)],
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,

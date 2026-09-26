@@ -45,6 +45,7 @@ from changepoint_lab.common.plotting.plotting_helpers import (
 )
 from changepoint_lab.common.diagnostics.diagnostics import posterior_num_segments
 from changepoint_lab.common.io.io_utils import save_result_npz, load_result_npz
+from changepoint_lab.common.io._errors import writing
 from changepoint_lab.common.io.data_loader import (
     load_binary_from_csv,
     empirical_per_bin_mean,
@@ -74,7 +75,8 @@ def _save_all_plots(
       - posterior_m.png
     """
     plt = require_matplotlib_pyplot("within-period-cli plots", backend="Agg")
-    outdir.mkdir(parents=True, exist_ok=True)
+    with writing(outdir):
+        outdir.mkdir(parents=True, exist_ok=True)
 
     # Pointwise summary from samples
     pw = model.pointwise_posterior_summary_from_samples(
@@ -91,7 +93,9 @@ def _save_all_plots(
         hours_step=hours_step,
         title=f"Changepoint posterior mass{title_suffix}",
     )
-    plt.savefig(outdir / "cp_mass.png", bbox_inches="tight", dpi=150)
+    mass_path = outdir / "cp_mass.png"
+    with writing(mass_path):
+        plt.savefig(mass_path, bbox_inches="tight", dpi=150)
     plt.close()
 
     # 2) Pointwise posterior bands (+ optional empirical overlay)
@@ -104,21 +108,27 @@ def _save_all_plots(
     )
     if empirical_mean is not None and empirical_mean.size == prior.N:
         ax.plot(np.arange(prior.N), empirical_mean, linestyle=":", linewidth=1.2)
-    plt.savefig(outdir / "pointwise_bands.png", bbox_inches="tight", dpi=150)
+    bands_path = outdir / "pointwise_bands.png"
+    with writing(bands_path):
+        plt.savefig(bands_path, bbox_inches="tight", dpi=150)
     plt.close()
 
     # 3) Posterior over m
     pm = posterior_num_segments(samples_tau)
     plot_posterior_num_segments(pm.m_values, pm.probs, title=f"Posterior over m{title_suffix}")
-    plt.savefig(outdir / "posterior_m.png", bbox_inches="tight", dpi=150)
+    posterior_path = outdir / "posterior_m.png"
+    with writing(posterior_path):
+        plt.savefig(posterior_path, bbox_inches="tight", dpi=150)
     plt.close()
 
     # Also write a tiny text summary
-    (outdir / "summary.txt").write_text(
-        f"MAP tau: {mode_tau}\n"
-        f"kept samples: {len(samples_tau)}\n"
-        f"posterior m: {list(zip(pm.m_values.tolist(), pm.probs.round(3).tolist()))}\n"
-    )
+    summary_path = outdir / "summary.txt"
+    with writing(summary_path):
+        summary_path.write_text(
+            f"MAP tau: {mode_tau}\n"
+            f"kept samples: {len(samples_tau)}\n"
+            f"posterior m: {list(zip(pm.m_values.tolist(), pm.probs.round(3).tolist()))}\n"
+        )
 
 
 # --------------------------- Data helpers ---------------------------
@@ -297,7 +307,8 @@ def main() -> None:
         cfg_for_save = RJConfig(iters=args.iters, burn=args.burn, thin=args.thin, seed=args.seed)
 
     # Save NPZ (result + prior + cfg)
-    args.outdir.mkdir(parents=True, exist_ok=True)
+    with writing(args.outdir):
+        args.outdir.mkdir(parents=True, exist_ok=True)
     npz_path = args.outdir / args.save_npz
     save_result_npz(
         npz_path,

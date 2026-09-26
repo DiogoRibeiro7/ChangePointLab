@@ -12,6 +12,7 @@ NumPy-based algorithms.
 | Python | 3.10, 3.11, 3.12, 3.13, 3.14 | CI test matrix |
 | NumPy on Python <3.14 | `>=1.21,<2.3` | Python 3.10 minimum job uses NumPy 1.21.6 |
 | NumPy on Python >=3.14 | `>=2.3` | Python 3.14 newest job uses current compatible NumPy |
+| DataExcept | `>=1.7,<2` | Typed CSV and artifact I/O failures on Python 3.10–3.14 |
 | Plotting extra | Matplotlib `>=3.3` | Full test matrix installs `plot` |
 | Data extra | pandas `>=1.5` | Full test matrix installs `data` |
 
@@ -22,6 +23,7 @@ The core package must import and run without Matplotlib or pandas installed.
 | Package | Classification | Declared in |
 | --- | --- | --- |
 | NumPy | Runtime core | `[project].dependencies` |
+| DataExcept | Runtime core | `[project].dependencies` |
 | Matplotlib | Optional plotting | `[project.optional-dependencies].plot` |
 | pandas | Optional CSV time-binning/data I/O | `[project.optional-dependencies].data` |
 | Sphinx, pdoc, NetworkX | Documentation tooling: Sphinx is the canonical user docs build, pdoc is a secondary API inspection artifact, and NetworkX supports generated documentation utilities | `[tool.poetry.group.docs.dependencies]` |
