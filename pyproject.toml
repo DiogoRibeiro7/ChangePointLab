@@ -79,7 +79,7 @@ optional = true
 
 [tool.poetry.group.dev.dependencies]
 coverage = ">=7"
-libcst = ">=1.0"
+libcst = ">=1.9.0"
 mypy = ">=1.6"
 pip-audit = ">=2.7"
 pip-licenses = ">=5"
