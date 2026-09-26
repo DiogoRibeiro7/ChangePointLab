@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional, TYPE_CHECKING, Tuple, Union
 
 import numpy as np
+from dataexcept import DataLoadingError, SchemaMismatchError
 from numpy.typing import NDArray
 
 from changepoint_lab._optional import require_pandas
@@ -63,6 +64,13 @@ def load_binary_from_csv(
         24 * 60 / bin_minutes (number of bins in a standard 24h day).
     time_bins : pd.DatetimeIndex, optional
         Bin edges as a tz-aware (if timezone given) or naive index.
+
+    Raises
+    ------
+    DataLoadingError
+        Reading or decoding the CSV failed. The original exception is preserved.
+    SchemaMismatchError
+        The CSV does not contain a requested timestamp or value column.
     """
     pd = require_pandas("CSV time-binning")
     if bin_minutes <= 0 or bin_minutes > 1440 or 1440 % bin_minutes != 0:
@@ -72,11 +80,14 @@ def load_binary_from_csv(
     if not (0 <= start_hour < 24):
         raise ValueError(f"start_hour must be in range [0, 23], got {start_hour}")
 
-    df = pd.read_csv(csv_path)
+    try:
+        df = pd.read_csv(csv_path)
+    except (OSError, UnicodeError, pd.errors.ParserError) as exc:
+        raise DataLoadingError(str(csv_path), exc) from exc
     if timestamp_col not in df.columns:
-        raise ValueError(f"Timestamp column '{timestamp_col}' not found in CSV")
+        raise SchemaMismatchError(f"timestamp column '{timestamp_col}'", str(list(df.columns)))
     if value_col is not None and value_col not in df.columns:
-        raise ValueError(f"Value column '{value_col}' not found in CSV")
+        raise SchemaMismatchError(f"value column '{value_col}'", str(list(df.columns)))
 
     ts = pd.to_datetime(df[timestamp_col], errors="coerce", utc=False)
 

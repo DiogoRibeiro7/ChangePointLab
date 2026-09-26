@@ -11,6 +11,7 @@ from typing import Iterable, Mapping
 import numpy as np
 from numpy.typing import NDArray
 
+from ....common.io._errors import writing
 from ....core.random import make_rng, spawn_rngs
 from .within_period_cpd import MCMCResult, ModelPrior, RJConfig, Tau, WithinPeriodCore, _is_valid_tau
 
@@ -533,11 +534,14 @@ def write_reproduction_artifacts(
     """Run reproduction and write JSON, CSV, and SVG artifacts."""
     selected_profile = profile_by_name(profile) if isinstance(profile, str) else profile
     out = Path(output_dir)
-    out.mkdir(parents=True, exist_ok=True)
+    with writing(out):
+        out.mkdir(parents=True, exist_ok=True)
     report = run_reproduction(selected_profile)
 
     summary_path = out / "within_period_reproduction_summary.json"
-    summary_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    summary_text = json.dumps(report, indent=2, sort_keys=True)
+    with writing(summary_path):
+        summary_path.write_text(summary_text, encoding="utf-8")
 
     scenario_csv = out / "paper_scenario_summary.csv"
     _write_csv(
@@ -587,7 +591,7 @@ def write_reproduction_artifacts(
 
 def _write_csv(path: Path, rows: Iterable[Mapping[str, object]], fields: list[str]) -> None:
     """Write simple CSV rows with JSON encoding for structured fields."""
-    with path.open("w", newline="", encoding="utf-8") as handle:
+    with writing(path), path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         for row in rows:
@@ -628,4 +632,5 @@ def _write_mass_svg(path: Path, summaries: Iterable[Mapping[str, object]]) -> No
                 'fill="#2563eb"/>'
             )
     parts.append("</svg>")
-    path.write_text("\n".join(parts), encoding="utf-8")
+    with writing(path):
+        path.write_text("\n".join(parts), encoding="utf-8")

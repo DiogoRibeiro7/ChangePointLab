@@ -28,8 +28,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
+from dataexcept import SchemaMismatchError
 
 from changepoint_lab._optional import require_matplotlib_pyplot
+from changepoint_lab.common.io._errors import reading, writing
 
 
 def _require_cli_pyplot(feature: str):
@@ -51,9 +53,11 @@ def load_csv_data(
         column_names: list of selected column names
         timestamps: optional timestamp array if timestamp_col provided
     """
-    with Path(filepath).open() as f:
+    with reading(filepath), Path(filepath).open() as f:
         reader = csv.DictReader(f)
         fieldnames = reader.fieldnames
+        if fieldnames is None:
+            raise SchemaMismatchError("CSV header", "empty file")
 
         if columns:
             selected_cols = [c.strip() for c in columns.split(",")]
@@ -63,10 +67,10 @@ def load_csv_data(
         # Validate columns exist
         missing = set(selected_cols) - set(fieldnames)
         if missing:
-            raise ValueError(f"Columns not found in CSV: {missing}")
+            raise SchemaMismatchError(str(sorted(selected_cols)), str(fieldnames))
 
         if timestamp_col and timestamp_col not in fieldnames:
-            raise ValueError(f"Timestamp column '{timestamp_col}' not found")
+            raise SchemaMismatchError(f"timestamp column '{timestamp_col}'", str(fieldnames))
 
         rows = []
         timestamps = []
@@ -101,31 +105,36 @@ def save_results(
 ) -> None:
     """Save results, plots, and metadata to output directory."""
     plt = _require_cli_pyplot("cpd-cli plot export")
-    output_dir.mkdir(parents=True, exist_ok=True)
+    with writing(output_dir):
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     # Save numerical results as NPZ
-    np.savez_compressed(
-        output_dir / f"{method_name}_results.npz",
-        **{k: v for k, v in results.items() if isinstance(v, np.ndarray)},
-    )
+    npz_path = output_dir / f"{method_name}_results.npz"
+    npz_data = {k: v for k, v in results.items() if isinstance(v, np.ndarray)}
+    with writing(npz_path):
+        np.savez_compressed(npz_path, **npz_data)
 
     # Save metadata as JSON
     metadata = {
         k: v for k, v in results.items() if not isinstance(v, np.ndarray) and not callable(v)
     }
-    with (output_dir / f"{method_name}_metadata.json").open("w") as f:
+    json_path = output_dir / f"{method_name}_metadata.json"
+    with writing(json_path), json_path.open("w") as f:
         json.dump(metadata, f, indent=2, default=str)
 
     # Save plots
     for name, fig in plots.items():
-        fig.savefig(output_dir / f"{method_name}_{name}.png", dpi=150, bbox_inches="tight")
+        image_path = output_dir / f"{method_name}_{name}.png"
+        with writing(image_path):
+            fig.savefig(image_path, dpi=150, bbox_inches="tight")
         plt.close(fig)
 
     # Save CSV summary
     if "change_points" in results:
         cps = results["change_points"]
         if len(cps) > 0:
-            with (output_dir / f"{method_name}_changepoints.csv").open("w", newline="") as f:
+            csv_path = output_dir / f"{method_name}_changepoints.csv"
+            with writing(csv_path), csv_path.open("w", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(["change_point_index", "position"])
                 for i, cp in enumerate(cps):

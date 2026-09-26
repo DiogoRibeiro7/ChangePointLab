@@ -22,6 +22,7 @@ from changepoint_lab.algorithms.bayesian.bocpd import (
     extract_changepoint_alerts,
 )
 from changepoint_lab.common.io.data_loader import load_binary_from_csv
+from changepoint_lab.common.io._errors import writing
 
 
 def _parse_schedule(s: Optional[str]) -> Optional[np.ndarray]:
@@ -160,27 +161,34 @@ def main() -> None:
         plot_run_length_heatmap,
     )
 
-    args.outdir.mkdir(parents=True, exist_ok=True)
+    with writing(args.outdir):
+        args.outdir.mkdir(parents=True, exist_ok=True)
     if res.run_length_posterior is not None:
         plot_run_length_heatmap(res.run_length_posterior, title="Run-length posterior (BOCPD)")
-        plt.savefig(args.outdir / "rl_posterior.png", bbox_inches="tight", dpi=150)
+        heatmap_path = args.outdir / "rl_posterior.png"
+        with writing(heatmap_path):
+            plt.savefig(heatmap_path, bbox_inches="tight", dpi=150)
         plt.close()
 
     plot_cp_probability(res.cp_prob, title="P(r_t=0 | x_{1:t})")
     plt.axhline(args.cp_threshold, linestyle="--")
-    plt.savefig(args.outdir / "cp_probability.png", bbox_inches="tight", dpi=150)
+    probability_path = args.outdir / "cp_probability.png"
+    with writing(probability_path):
+        plt.savefig(probability_path, bbox_inches="tight", dpi=150)
     plt.close()
 
     # ---- Simple event report ----
     cps = extract_changepoint_alerts(res, cfg.alert_config).tolist()
-    (args.outdir / "summary.txt").write_text(
-        f"N={N}\n"
-        f"alpha0={args.alpha0}, beta0={args.beta0}\n"
-        f"Rmax={args.Rmax}\n"
-        f"CP threshold={args.cp_threshold}\n"
-        f"#CP flagged={len(cps)}\n"
-        f"indices={cps}\n"
-    )
+    summary_path = args.outdir / "summary.txt"
+    with writing(summary_path):
+        summary_path.write_text(
+            f"N={N}\n"
+            f"alpha0={args.alpha0}, beta0={args.beta0}\n"
+            f"Rmax={args.Rmax}\n"
+            f"CP threshold={args.cp_threshold}\n"
+            f"#CP flagged={len(cps)}\n"
+            f"indices={cps}\n"
+        )
 
     # ---- Optional per-step CSV (machine-readable) ----
     if args.out_csv:
@@ -192,8 +200,9 @@ def main() -> None:
 
         import csv
         out_path = Path(args.out_csv)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        with out_path.open("w", newline="") as f:
+        with writing(out_path.parent):
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+        with writing(out_path), out_path.open("w", newline="") as f:
             w = csv.writer(f)
             w.writerow(["t", "timestamp", "cp_prob", "map_run_length", "pred_mean", "is_cp"])
             for t in range(len(res.cp_prob)):

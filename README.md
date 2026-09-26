@@ -29,8 +29,8 @@ cd ChangePointLab
 poetry install
 ```
 
-Requires Python 3.10 or later. Core installs require NumPy only. Plotting and
-CSV time-binning helpers are optional:
+Requires Python 3.10–3.14. Core installs require NumPy and DataExcept. Plotting
+and CSV time-binning helpers are optional:
 
 ```bash
 poetry install --extras "plot data"
