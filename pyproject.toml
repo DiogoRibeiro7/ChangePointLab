@@ -78,7 +78,7 @@ optional = true
 [tool.poetry.group.bench.dependencies]
 
 [tool.poetry.group.dev.dependencies]
-coverage = ">=7"
+coverage = ">=7.16.1"
 libcst = ">=1.9.0"
 mypy = ">=1.6"
 pip-audit = ">=2.7"
