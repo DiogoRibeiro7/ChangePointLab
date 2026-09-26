@@ -86,7 +86,7 @@ pip-licenses = ">=5"
 pydocstyle = ">=6"
 pytest = ">=7"
 pytest-cov = ">=4"
-ruff = ">=0.3"
+ruff = ">=0.16.8"
 tomli = { version = ">=2", python = "<3.11" }
 types-setuptools = "*"
 
