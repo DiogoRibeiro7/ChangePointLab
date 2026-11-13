@@ -19,6 +19,18 @@ class ApiSymbol(TypedDict, total=False):
 
 API_MANIFEST: tuple[ApiSymbol, ...] = (
     {
+        "name": "GaussianSegmentSample",
+        "status": "experimental",
+        "import_path": "changepoint_lab.GaussianSegmentSample",
+        "note": "Synthetic data generator result; API may evolve.",
+    },
+    {
+        "name": "simulate_gaussian_segments",
+        "status": "experimental",
+        "import_path": "changepoint_lab.simulate_gaussian_segments",
+        "note": "Synthetic data generator; API may evolve.",
+    },
+    {
         "name": "ChangePointScores",
         "status": "experimental",
         "import_path": "changepoint_lab.ChangePointScores",
