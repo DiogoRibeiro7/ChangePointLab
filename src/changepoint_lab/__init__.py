@@ -56,6 +56,7 @@ from .core.datatypes import (
     SegmentationResult,
 )
 from .core.metrics import ChangePointScores, score_changepoints
+from .core.synthetic import GaussianSegmentSample, simulate_gaussian_segments
 from .core.segmentation import (
     CircularChangePoints,
     CircularSegment,
