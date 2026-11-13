@@ -19,6 +19,24 @@ class ApiSymbol(TypedDict, total=False):
 
 API_MANIFEST: tuple[ApiSymbol, ...] = (
     {
+        "name": "ComparableDetector",
+        "status": "experimental",
+        "import_path": "changepoint_lab.ComparableDetector",
+        "note": "Minimal comparison protocol; API may evolve.",
+    },
+    {
+        "name": "DetectorComparison",
+        "status": "experimental",
+        "import_path": "changepoint_lab.DetectorComparison",
+        "note": "Comparison result contract; API may evolve.",
+    },
+    {
+        "name": "compare_detectors",
+        "status": "experimental",
+        "import_path": "changepoint_lab.compare_detectors",
+        "note": "Offline detector comparison; API may evolve.",
+    },
+    {
         "name": "GaussianSegmentSample",
         "status": "experimental",
         "import_path": "changepoint_lab.GaussianSegmentSample",

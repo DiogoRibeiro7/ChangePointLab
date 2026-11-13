@@ -57,6 +57,7 @@ from .core.datatypes import (
 )
 from .core.metrics import ChangePointScores, score_changepoints
 from .core.synthetic import GaussianSegmentSample, simulate_gaussian_segments
+from .core.comparison import ComparableDetector, DetectorComparison, compare_detectors
 from .core.segmentation import (
     CircularChangePoints,
     CircularSegment,
