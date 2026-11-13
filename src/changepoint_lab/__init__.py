@@ -55,6 +55,7 @@ from .core.datatypes import (
     PosteriorSampler,
     SegmentationResult,
 )
+from .core.metrics import ChangePointScores, score_changepoints
 from .core.segmentation import (
     CircularChangePoints,
     CircularSegment,

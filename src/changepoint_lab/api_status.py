@@ -18,6 +18,18 @@ class ApiSymbol(TypedDict, total=False):
 
 
 API_MANIFEST: tuple[ApiSymbol, ...] = (
+    {
+        "name": "ChangePointScores",
+        "status": "experimental",
+        "import_path": "changepoint_lab.ChangePointScores",
+        "note": "Evaluation metrics API; matching conventions may evolve.",
+    },
+    {
+        "name": "score_changepoints",
+        "status": "experimental",
+        "import_path": "changepoint_lab.score_changepoints",
+        "note": "Evaluation metrics API; matching conventions may evolve.",
+    },
     {"name": "__version__", "status": "stable", "import_path": "changepoint_lab.__version__"},
     {"name": "PELT", "status": "stable", "import_path": "changepoint_lab.PELT"},
     {"name": "EventPeriod", "status": "stable", "import_path": "changepoint_lab.EventPeriod"},
