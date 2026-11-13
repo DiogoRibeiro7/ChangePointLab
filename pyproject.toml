@@ -81,7 +81,7 @@ optional = true
 coverage = ">=7"
 libcst = ">=1.9.0"
 mypy = ">=1.6"
-pip-audit = ">=2.7"
+pip-audit = { version = ">=2.7", python = ">=3.11" }
 pip-licenses = ">=5"
 pydocstyle = ">=6"
 pytest = ">=7"
