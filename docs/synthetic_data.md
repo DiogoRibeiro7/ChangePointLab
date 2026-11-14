@@ -84,5 +84,25 @@ changepoints. The input sample remains unchanged and the transformation also
 works on AR(1) samples. This operation produces an outlier-contaminated
 mixture, not an exact Gaussian AR(1) distribution.
 
+To evaluate drift sensitivity, add a continuous deterministic linear trend:
+
+```python
+from changepoint_lab import add_gaussian_linear_drift, simulate_gaussian_segments
+
+baseline = simulate_gaussian_segments([100, 100], [0, 3], [1, 1], seed=7)
+drifting = add_gaussian_linear_drift(baseline, slope=0.02)
+assert drifting.changepoints.tolist() == [100]
+assert drifting.drift[0] == 0.0
+assert drifting.drift[-1] == 0.02 * 199
+```
+
+The added trend is `slope * t` for zero-based observation index `t`. It is
+continuous across segment boundaries, meaning it does not introduce artificial
+step changes. Original changepoints remain the reference boundaries; the drift
+itself is **not** labelled as a changepoint. The input sample is unchanged.
+Apply the transformation to either independent or AR(1) Gaussian samples.
+For zero slope, the observations are unchanged. Nonfinite slopes or outputs
+are rejected.
+
 These datasets provide ground truth for benchmark correctness but do not yet
-model gradual drift or missingness. Those remain separate stress-test settings.
+model missingness. That remains a separate stress-test setting.
