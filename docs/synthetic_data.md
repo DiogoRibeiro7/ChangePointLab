@@ -35,6 +35,30 @@ An explicit seed produces the same observations across repeated calls under
 the same NumPy random-generator implementation. For controlled Monte Carlo
 experiments, supply a caller-owned `numpy.random.Generator` instead of a seed.
 
-These datasets provide ground truth for benchmark correctness but do not model
-autocorrelation, drift, outliers or missingness. Those are separate stress-test
-settings, not implicit assumptions of this baseline generator.
+For autocorrelated observations, use `simulate_gaussian_ar1_segments`:
+
+```python
+from changepoint_lab import simulate_gaussian_ar1_segments
+
+sample = simulate_gaussian_ar1_segments(
+    lengths=[200, 200],
+    means=[0.0, 3.0],
+    standard_deviations=[1.0, 1.5],
+    autocorrelation=0.7,
+    seed=42,
+)
+assert sample.changepoints.tolist() == [200]
+```
+
+This generator uses a stationary Gaussian AR(1) process within each segment.
+The supplied standard deviations describe the **marginal distribution**, not
+the innovations; the innovation standard deviation is multiplied by
+`sqrt(1 - autocorrelation**2)`. The process restarts from a stationary draw at
+each boundary. Consequently, changepoints are known and do not depend on a
+previous segment's latent state. Autocorrelation must be strictly between -1
+and 1. Setting it to zero reproduces `simulate_gaussian_segments` exactly for
+the same seed.
+
+These datasets provide ground truth for benchmark correctness but do not yet
+model gradual drift, outliers or missingness. Those remain separate stress-test
+settings, not implicit assumptions of the baseline generators.
