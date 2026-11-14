@@ -19,6 +19,18 @@ class ApiSymbol(TypedDict, total=False):
 
 API_MANIFEST: tuple[ApiSymbol, ...] = (
     {
+        "name": "DetectorFactory",
+        "status": "experimental",
+        "import_path": "changepoint_lab.DetectorFactory",
+        "note": "Factory typing alias; API may evolve.",
+    },
+    {
+        "name": "DetectorRegistry",
+        "status": "experimental",
+        "import_path": "changepoint_lab.DetectorRegistry",
+        "note": "Explicit detector factory registry; API may evolve.",
+    },
+    {
         "name": "ComparableDetector",
         "status": "experimental",
         "import_path": "changepoint_lab.ComparableDetector",
