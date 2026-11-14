@@ -85,6 +85,12 @@ API_MANIFEST: tuple[ApiSymbol, ...] = (
         "note": "Synthetic data generator; API may evolve.",
     },
     {
+        "name": "simulate_gaussian_ar1_segments",
+        "status": "experimental",
+        "import_path": "changepoint_lab.simulate_gaussian_ar1_segments",
+        "note": "Stationary within-segment AR(1) synthetic data; API may evolve.",
+    },
+    {
         "name": "ChangePointScores",
         "status": "experimental",
         "import_path": "changepoint_lab.ChangePointScores",
