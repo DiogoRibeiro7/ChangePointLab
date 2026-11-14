@@ -57,8 +57,10 @@ from .core.datatypes import (
 )
 from .core.metrics import ChangePointScores, score_changepoints
 from .core.synthetic import (
+    GaussianDriftSample,
     GaussianOutlierSample,
     GaussianSegmentSample,
+    add_gaussian_linear_drift,
     contaminate_gaussian_sample,
     simulate_gaussian_ar1_segments,
     simulate_gaussian_segments,
