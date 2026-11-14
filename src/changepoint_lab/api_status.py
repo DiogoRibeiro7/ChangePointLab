@@ -19,6 +19,30 @@ class ApiSymbol(TypedDict, total=False):
 
 API_MANIFEST: tuple[ApiSymbol, ...] = (
     {
+        "name": "BenchmarkReplicate",
+        "status": "experimental",
+        "import_path": "changepoint_lab.BenchmarkReplicate",
+        "note": "Monte Carlo benchmark result contract; API may evolve.",
+    },
+    {
+        "name": "BenchmarkSummary",
+        "status": "experimental",
+        "import_path": "changepoint_lab.BenchmarkSummary",
+        "note": "Monte Carlo benchmark summary; API may evolve.",
+    },
+    {
+        "name": "GaussianBenchmarkResult",
+        "status": "experimental",
+        "import_path": "changepoint_lab.GaussianBenchmarkResult",
+        "note": "Gaussian simulation benchmark contract; API may evolve.",
+    },
+    {
+        "name": "benchmark_gaussian_detectors",
+        "status": "experimental",
+        "import_path": "changepoint_lab.benchmark_gaussian_detectors",
+        "note": "Gaussian Monte Carlo benchmarking; API may evolve.",
+    },
+    {
         "name": "DetectorFactory",
         "status": "experimental",
         "import_path": "changepoint_lab.DetectorFactory",
