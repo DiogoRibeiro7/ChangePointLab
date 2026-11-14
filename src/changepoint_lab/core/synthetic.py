@@ -75,3 +75,55 @@ def simulate_gaussian_segments(
         changepoints=edges[:-1].astype(int, copy=False),
         labels=labels.astype(int, copy=False),
     )
+
+
+def simulate_gaussian_ar1_segments(
+    lengths: Sequence[int],
+    means: Sequence[float],
+    standard_deviations: Sequence[float],
+    *,
+    autocorrelation: float,
+    seed: int | None = None,
+    rng: np.random.Generator | None = None,
+) -> GaussianSegmentSample:
+    """Simulate stationary Gaussian AR(1) data within independent segments.
+
+    ``standard_deviations`` specify *marginal*, not innovation, standard
+    deviations. Each segment starts at its stationary distribution, and the
+    autoregressive state resets at known right-exclusive boundaries. Thus
+    segment transitions do not inherit a previous segment's mean or variance.
+
+    ``autocorrelation`` is a finite scalar strictly between -1 and 1, shared
+    by all segments. Zero gives exactly the independent Gaussian generator for
+    the same seed or caller-owned random stream.
+    """
+    if isinstance(autocorrelation, (bool, np.bool_)) or not isinstance(
+        autocorrelation, (int, float, np.integer, np.floating)
+    ):
+        raise ValueError("autocorrelation must be a finite scalar in (-1, 1)")
+    phi = float(autocorrelation)
+    if not np.isfinite(phi) or abs(phi) >= 1.0:
+        raise ValueError("autocorrelation must be a finite scalar in (-1, 1)")
+
+    # Reuse the independent generator's validation and random-stream contract.
+    sample = simulate_gaussian_segments(lengths, means, standard_deviations, seed=seed, rng=rng)
+    if phi == 0.0:
+        return sample
+
+    values = sample.values.copy()
+    innovation_scale = float(np.sqrt(1.0 - phi * phi))
+    start = 0
+    for end, mean in zip([*sample.changepoints.tolist(), len(values)], means, strict=True):
+        segment_mean = float(mean)
+        # The first sample already has the required stationary marginal law.
+        for index in range(start + 1, end):
+            values[index] = (
+                segment_mean
+                + phi * (values[index - 1] - segment_mean)
+                + innovation_scale * (sample.values[index] - segment_mean)
+            )
+        start = end
+
+    return GaussianSegmentSample(
+        values=values, changepoints=sample.changepoints, labels=sample.labels
+    )

@@ -56,7 +56,11 @@ from .core.datatypes import (
     SegmentationResult,
 )
 from .core.metrics import ChangePointScores, score_changepoints
-from .core.synthetic import GaussianSegmentSample, simulate_gaussian_segments
+from .core.synthetic import (
+    GaussianSegmentSample,
+    simulate_gaussian_ar1_segments,
+    simulate_gaussian_segments,
+)
 from .core.comparison import ComparableDetector, DetectorComparison, compare_detectors
 from .core.registry import DetectorFactory, DetectorRegistry
 from .core.benchmarking import (
