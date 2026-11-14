@@ -34,6 +34,16 @@ class GaussianOutlierSample:
     outlier_mask: NDArray[np.bool_]
 
 
+@dataclass(frozen=True)
+class GaussianDriftSample:
+    """Labelled observations with a known deterministic drift component."""
+
+    values: NDArray[np.float64]
+    changepoints: NDArray[np.int_]
+    labels: NDArray[np.int_]
+    drift: NDArray[np.float64]
+
+
 def simulate_gaussian_segments(
     lengths: Sequence[int],
     means: Sequence[float],
@@ -186,4 +196,45 @@ def contaminate_gaussian_sample(
         changepoints=sample.changepoints.copy(),
         labels=sample.labels.copy(),
         outlier_mask=mask,
+    )
+
+
+def add_gaussian_linear_drift(
+    sample: GaussianSegmentSample,
+    *,
+    slope: float,
+) -> GaussianDriftSample:
+    """Superimpose a continuous linear trend without adding changepoints.
+
+    The deterministic offset at observation ``t`` is ``slope * t`` (with
+    zero-based ``t``). The same trend crosses every segment boundary, so the
+    transformation introduces no artificial jumps. ``changepoints`` continue
+    to describe the original segment boundaries, not the trend itself.
+    """
+    if not isinstance(sample, GaussianSegmentSample):
+        raise TypeError("sample must be a GaussianSegmentSample")
+    if isinstance(slope, (bool, np.bool_)) or not isinstance(
+        slope, (int, float, np.integer, np.floating)
+    ):
+        raise ValueError("slope must be finite")
+    if not np.isfinite(slope):
+        raise ValueError("slope must be finite")
+
+    n_samples = sample.values.size
+    if sample.values.ndim != 1 or sample.labels.shape != (n_samples,):
+        raise ValueError("sample values and labels must be matching 1-D arrays")
+    if sample.changepoints.ndim != 1 or not np.all(np.isfinite(sample.values)):
+        raise ValueError("sample boundaries and values must be valid arrays")
+
+    with np.errstate(over="ignore", invalid="ignore"):
+        drift = float(slope) * np.arange(n_samples, dtype=np.float64)
+        values = sample.values + drift
+    if not np.all(np.isfinite(drift)) or not np.all(np.isfinite(values)):
+        raise ValueError("drift produces nonfinite observations")
+
+    return GaussianDriftSample(
+        values=values,
+        changepoints=sample.changepoints.copy(),
+        labels=sample.labels.copy(),
+        drift=drift,
     )
