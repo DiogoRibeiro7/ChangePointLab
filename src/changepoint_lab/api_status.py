@@ -79,6 +79,18 @@ API_MANIFEST: tuple[ApiSymbol, ...] = (
         "note": "Synthetic data generator result; API may evolve.",
     },
     {
+        "name": "GaussianOutlierSample",
+        "status": "experimental",
+        "import_path": "changepoint_lab.GaussianOutlierSample",
+        "note": "Contaminated synthetic sample with labelled outliers; API may evolve.",
+    },
+    {
+        "name": "contaminate_gaussian_sample",
+        "status": "experimental",
+        "import_path": "changepoint_lab.contaminate_gaussian_sample",
+        "note": "Additive Gaussian outlier contamination; API may evolve.",
+    },
+    {
         "name": "simulate_gaussian_segments",
         "status": "experimental",
         "import_path": "changepoint_lab.simulate_gaussian_segments",

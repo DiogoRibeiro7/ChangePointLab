@@ -24,6 +24,16 @@ class GaussianSegmentSample:
     labels: NDArray[np.int_]
 
 
+@dataclass(frozen=True)
+class GaussianOutlierSample:
+    """A contaminated sample with a Boolean mask of injected outliers."""
+
+    values: NDArray[np.float64]
+    changepoints: NDArray[np.int_]
+    labels: NDArray[np.int_]
+    outlier_mask: NDArray[np.bool_]
+
+
 def simulate_gaussian_segments(
     lengths: Sequence[int],
     means: Sequence[float],
@@ -126,4 +136,54 @@ def simulate_gaussian_ar1_segments(
 
     return GaussianSegmentSample(
         values=values, changepoints=sample.changepoints, labels=sample.labels
+    )
+
+
+def contaminate_gaussian_sample(
+    sample: GaussianSegmentSample,
+    *,
+    probability: float,
+    outlier_standard_deviation: float,
+    seed: int | None = None,
+    rng: np.random.Generator | None = None,
+) -> GaussianOutlierSample:
+    """Inject independent additive Gaussian outliers into labelled observations.
+
+    Each observation is independently selected with Bernoulli probability
+    ``probability``. Selected observations receive a zero-mean Gaussian impulse
+    with the given *absolute* standard deviation, independent of segment scale.
+    Ground-truth boundaries and labels are preserved, so injected observations
+    are not treated as new changepoints. The mask identifies selected indices,
+    even when a generated Gaussian impulse happens to be close to zero.
+    """
+    if not isinstance(sample, GaussianSegmentSample):
+        raise TypeError("sample must be a GaussianSegmentSample")
+    for name, value, minimum, maximum in (
+        ("probability", probability, 0.0, 1.0),
+        ("outlier_standard_deviation", outlier_standard_deviation, 0.0, None),
+    ):
+        if isinstance(value, (bool, np.bool_)) or not isinstance(
+            value, (int, float, np.integer, np.floating)
+        ):
+            raise ValueError(f"{name} must be finite and within the supported range")
+        if not np.isfinite(value) or value < minimum or (maximum is not None and value > maximum):
+            raise ValueError(f"{name} must be finite and within the supported range")
+    if outlier_standard_deviation <= 0:
+        raise ValueError("outlier_standard_deviation must be strictly positive")
+
+    n_samples = sample.values.size
+    if sample.values.ndim != 1 or sample.labels.shape != (n_samples,):
+        raise ValueError("sample values and labels must be matching 1-D arrays")
+    if sample.changepoints.ndim != 1 or not np.all(np.isfinite(sample.values)):
+        raise ValueError("sample boundaries and values must be valid arrays")
+
+    generator = make_rng(seed=seed, rng=rng)
+    mask = generator.random(n_samples) < probability
+    values = sample.values.copy()
+    values[mask] += generator.normal(0.0, float(outlier_standard_deviation), size=int(mask.sum()))
+    return GaussianOutlierSample(
+        values=values,
+        changepoints=sample.changepoints.copy(),
+        labels=sample.labels.copy(),
+        outlier_mask=mask,
     )

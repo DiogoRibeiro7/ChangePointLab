@@ -59,6 +59,30 @@ previous segment's latent state. Autocorrelation must be strictly between -1
 and 1. Setting it to zero reproduces `simulate_gaussian_segments` exactly for
 the same seed.
 
+To stress-test detectors against isolated anomalous observations, contaminate
+either baseline using `contaminate_gaussian_sample`:
+
+```python
+from changepoint_lab import contaminate_gaussian_sample, simulate_gaussian_segments
+
+baseline = simulate_gaussian_segments([100, 100], [0, 3], [1, 1], seed=7)
+stress = contaminate_gaussian_sample(
+    baseline,
+    probability=0.05,
+    outlier_standard_deviation=10.0,
+    seed=8,
+)
+assert stress.changepoints.tolist() == [100]
+assert stress.outlier_mask.dtype == bool
+```
+
+Each observation is independently selected with probability `probability` and
+receives additive zero-mean Gaussian noise of the specified *absolute* scale.
+The number of contaminated observations is random, not fixed. The returned
+Boolean mask records selected observations; these are not additional true
+changepoints. The input sample remains unchanged and the transformation also
+works on AR(1) samples. This operation produces an outlier-contaminated
+mixture, not an exact Gaussian AR(1) distribution.
+
 These datasets provide ground truth for benchmark correctness but do not yet
-model gradual drift, outliers or missingness. Those remain separate stress-test
-settings, not implicit assumptions of the baseline generators.
+model gradual drift or missingness. Those remain separate stress-test settings.
