@@ -85,6 +85,18 @@ API_MANIFEST: tuple[ApiSymbol, ...] = (
         "note": "Contaminated synthetic sample with labelled outliers; API may evolve.",
     },
     {
+        "name": "GaussianDriftSample",
+        "status": "experimental",
+        "import_path": "changepoint_lab.GaussianDriftSample",
+        "note": "Synthetic data with a known deterministic trend; API may evolve.",
+    },
+    {
+        "name": "add_gaussian_linear_drift",
+        "status": "experimental",
+        "import_path": "changepoint_lab.add_gaussian_linear_drift",
+        "note": "Continuous linear drift stress test; API may evolve.",
+    },
+    {
         "name": "contaminate_gaussian_sample",
         "status": "experimental",
         "import_path": "changepoint_lab.contaminate_gaussian_sample",
