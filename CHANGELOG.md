@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+## [0.1.17] - 2026-11-16
+### Added
+- Added tolerance-aware changepoint precision, recall, and F1 evaluation with
+  explicit matching conventions.
+- Added labelled Gaussian synthetic segments with deterministic seeds and
+  right-exclusive ground-truth boundaries.
+- Added a common offline detector comparison interface and an explicit
+  detector factory registry for independent detector instances.
+- Added reproducible Gaussian Monte Carlo benchmarking with per-replicate
+  results, summary statistics, and Monte Carlo standard errors.
+- Added synthetic stress tests for Gaussian AR(1) autocorrelation, additive
+  outlier contamination, and continuous linear drift.
+
+### Changed
+- Expanded experimental API lifecycle metadata and documentation for the
+  evaluation and synthetic benchmarking interfaces.
+
+### Fixed
+- Updated locked development dependencies to resolve security audit findings
+  and constrained pip-audit to supported Python versions.
+
 ## [0.1.16] - 2026-08-21
 ### Fixed
 - Canonicalized sliced Poisson exposure intervals so overlapping, nested,
