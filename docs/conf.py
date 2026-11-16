@@ -2,7 +2,7 @@ from __future__ import annotations
 
 project = "ChangePointLab"
 author = "Diogo Ribeiro"
-release = "0.1.16"
+release = "0.1.17"
 
 extensions = [
     "sphinx.ext.autodoc",
